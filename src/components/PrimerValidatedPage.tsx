@@ -76,7 +76,7 @@ export const PrimerValidatedPage = ({ onTryAgain, onBackToLibrary }: PrimerValid
             Thank you for being part of BioSim Lab's mission to close the biotech skills gap.
           </p>
           <a
-            href="https://docs.google.com/forms/d/e/1FAIpQLScZ8hQPMW6XyLMx-sZ5iu9W5Hw4XPOPvYwVm5PCtd9ZWLP-1g/viewform"
+            href="https://forms.gle/bvmZBQjBjsNjBgn96"
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-bold transition-all no-underline"
