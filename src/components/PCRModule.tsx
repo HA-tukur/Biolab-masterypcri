@@ -1,5 +1,8 @@
 import { X, Dna, Beaker, Thermometer, Zap, Package, Droplets, ExternalLink } from "lucide-react";
 import { useState } from "react";
+import { validatePrimerPair } from "../utils/primerValidation";
+import { PrimerValidatedPage } from "./PrimerValidatedPage";
+import { PrimerNotValidatedPage } from "./PrimerNotValidatedPage";
 
 interface PCRModuleProps {
   onClose: () => void;
@@ -29,7 +32,8 @@ export const PCRModule = ({ onClose, onComplete, missionId = "lagos-diagnostic" 
 
   const [primerForward, setPrimerForward] = useState("");
   const [primerReverse, setPrimerReverse] = useState("");
-  const [primerValidated, setPrimerValidated] = useState(false);
+  const [validationResult, setValidationResult] = useState<{ isValid: boolean; errors: string[] } | null>(null);
+  const [showFinalPage, setShowFinalPage] = useState(false);
 
   const [primerOrdered, setPrimerOrdered] = useState(false);
   const [reconstitutionDone, setReconstitutionDone] = useState(false);
@@ -49,14 +53,20 @@ export const PCRModule = ({ onClose, onComplete, missionId = "lagos-diagnostic" 
 
   const totalCycles = 35;
 
-  const missionData: Record<string, { targetGene: string, geneDesc: string }> = {
+  const missionData: Record<string, { targetGene: string, geneDesc: string, ncbiGeneId?: string, ncbiAccession?: string, ncbiGeneUrl?: string, ncbiAccessionUrl?: string }> = {
     "lagos-diagnostic": {
       targetGene: "HBB",
-      geneDesc: "β-globin gene for Sickle Cell Disease diagnosis"
+      geneDesc: "β-globin gene for Sickle Cell Disease diagnosis",
+      ncbiGeneId: "3043",
+      ncbiAccession: "NM_000518.5",
+      ncbiGeneUrl: "https://www.ncbi.nlm.nih.gov/gene/3043",
+      ncbiAccessionUrl: "https://www.ncbi.nlm.nih.gov/nuccore/NM_000518.5"
     },
     "great-green-wall": {
       targetGene: "DREB1",
-      geneDesc: "Drought tolerance marker in pearl millet"
+      geneDesc: "Drought tolerance marker in pearl millet",
+      ncbiAccession: "XM_020855695.2",
+      ncbiAccessionUrl: "https://www.ncbi.nlm.nih.gov/nuccore/XM_020855695.2"
     }
   };
 
@@ -78,13 +88,22 @@ export const PCRModule = ({ onClose, onComplete, missionId = "lagos-diagnostic" 
   };
 
   const validatePrimers = () => {
-    const forwardValid = primerForward.length >= 18 && primerForward.length <= 30;
-    const reverseValid = primerReverse.length >= 18 && primerReverse.length <= 30;
+    const result = validatePrimerPair({
+      forward: primerForward,
+      reverse: primerReverse
+    });
 
-    if (forwardValid && reverseValid) {
-      setPrimerValidated(true);
-      markStageComplete("primer-design");
-    }
+    setValidationResult(result);
+    setShowFinalPage(true);
+  };
+
+  const handleTryAgain = () => {
+    setShowFinalPage(false);
+    setValidationResult(null);
+  };
+
+  const handleBackToLibrary = () => {
+    onClose();
   };
 
   const handleOrderPrimers = () => {
@@ -192,7 +211,13 @@ export const PCRModule = ({ onClose, onComplete, missionId = "lagos-diagnostic" 
         </div>
 
         <div className="p-8 space-y-6 text-white max-h-[600px] overflow-y-auto">
-          {currentStage === "primer-design" && (
+          {showFinalPage ? (
+            validationResult?.isValid ? (
+              <PrimerValidatedPage onTryAgain={handleTryAgain} onBackToLibrary={handleBackToLibrary} />
+            ) : (
+              <PrimerNotValidatedPage onTryAgain={handleTryAgain} onBackToLibrary={handleBackToLibrary} errors={validationResult?.errors || []} />
+            )
+          ) : currentStage === "primer-design" && (
             <div className="space-y-6">
               <div className="text-center">
                 <h2 className="text-2xl font-black uppercase mb-2">Primer Design</h2>
@@ -201,10 +226,56 @@ export const PCRModule = ({ onClose, onComplete, missionId = "lagos-diagnostic" 
                 </p>
               </div>
 
+              <div className="bg-emerald-900/20 border border-emerald-500/30 p-4 rounded-xl">
+                <p className="text-sm text-emerald-300 font-bold mb-2">Target Gene Reference</p>
+                <div className="space-y-2">
+                  <div className="text-sm">
+                    <span className="text-emerald-400 font-bold">Gene: </span>
+                    <span className="text-white">{mission.targetGene} ({mission.geneDesc})</span>
+                  </div>
+                  {mission.ncbiGeneId && (
+                    <div className="text-sm">
+                      <span className="text-emerald-400 font-bold">NCBI Gene ID: </span>
+                      <span className="text-white">{mission.ncbiGeneId}</span>
+                    </div>
+                  )}
+                  {mission.ncbiAccession && (
+                    <div className="text-sm">
+                      <span className="text-emerald-400 font-bold">RefSeq{mission.ncbiGeneId ? ' mRNA' : ' Accession'}: </span>
+                      <span className="text-white">{mission.ncbiAccession}</span>
+                    </div>
+                  )}
+                  <div className="flex gap-2 mt-3 flex-wrap">
+                    {mission.ncbiGeneUrl && (
+                      <a
+                        href={mission.ncbiGeneUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 px-3 py-2 bg-emerald-800/30 hover:bg-emerald-800/50 border border-emerald-500/30 rounded-lg transition-all no-underline text-xs font-bold text-emerald-200"
+                      >
+                        <span>NCBI Gene Page</span>
+                        <ExternalLink size={14} className="text-emerald-400" />
+                      </a>
+                    )}
+                    {mission.ncbiAccessionUrl && (
+                      <a
+                        href={mission.ncbiAccessionUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 px-3 py-2 bg-emerald-800/30 hover:bg-emerald-800/50 border border-emerald-500/30 rounded-lg transition-all no-underline text-xs font-bold text-emerald-200"
+                      >
+                        <span>NCBI Sequence Page</span>
+                        <ExternalLink size={14} className="text-emerald-400" />
+                      </a>
+                    )}
+                  </div>
+                </div>
+              </div>
+
               <div className="bg-blue-900/20 border border-blue-500/30 p-4 rounded-xl">
-                <p className="text-sm text-blue-300 font-bold mb-2">🔧 External Design Tools</p>
+                <p className="text-sm text-blue-300 font-bold mb-2">External Design Tools</p>
                 <p className="text-xs text-blue-200 mb-3">
-                  Use these computational tools to design your primers. Note: In <span className="font-bold">Primer3</span>, primers are labeled <span className="font-bold">Left/Right</span>; in <span className="font-bold">NCBI Primer-BLAST</span>, they are labeled <span className="font-bold">Forward/Reverse</span>.
+                  Primer-BLAST uses Forward/Reverse primers; Primer3 uses Left/Right primers.
                 </p>
                 <div className="grid md:grid-cols-2 gap-3">
                   <a
@@ -288,10 +359,10 @@ export const PCRModule = ({ onClose, onComplete, missionId = "lagos-diagnostic" 
 
                 <button
                   onClick={validatePrimers}
-                  disabled={primerValidated || primerForward.length < 18 || primerReverse.length < 18}
+                  disabled={primerForward.length === 0 || primerReverse.length === 0}
                   className="w-full bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-700 disabled:cursor-not-allowed text-white py-3 rounded-lg font-bold uppercase border-0 cursor-pointer transition-all"
                 >
-                  {primerValidated ? "Primers Validated ✓" : "Validate Primers"}
+                  Validate Primers
                 </button>
               </div>
             </div>
