@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <!-- Existing tags like <title>, <meta charset>, etc. -->
+    
+    <!-- Open Graph / Social Media Meta Tags -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://biosim-lab.vercel.app/">
+    <meta property="og:title" content="BioSim Lab - Virtual Molecular Biology Laboratory">
+    <meta property="og:description" content="Interactive virtual laboratory for learning molecular biology techniques. Free hands-on training in DNA/RNA techniques, protein analysis, genetic engineering, and microscopy.">
+    <meta property="og:image" content="https://biosim-lab.vercel.app/preview-image.jpg">
+    
+    <!-- Twitter Card Meta Tags -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://biosim-lab.vercel.app/">
+    <meta property="twitter:title" content="BioSim Lab - Virtual Molecular Biology Laboratory">
+    <meta property="twitter:description" content="Interactive virtual laboratory for learning molecular biology techniques.">
+    <meta property="twitter:image" content="https://biosim-lab.vercel.app/preview-image.jpg">
+     
+    <style>
+      /* Prevent white flash immediately */
+      html, body {
+        margin: 0;
+        padding: 0;
+        background-color: #0a0e27;
+        overflow-x: hidden;
+      }
+
+      /* Loading screen - shows instantly */
+      #loading-screen {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100vh;
+        background: linear-gradient(135deg, #0a0e27 0%, #1a1f3a 100%);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+        transition: opacity 0.5s ease, visibility 0.5s ease;
+      }
+
+      #loading-screen.hidden {
+        opacity: 0;
+        visibility: hidden;
+      }
+
+      /* Animated loader */
+      .loader {
+        width: 60px;
+        height: 60px;
+        border: 5px solid rgba(76, 175, 80, 0.2);
+        border-top: 5px solid #4CAF50;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+      }
+
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+
+      /* Loading text */
+      .loading-text {
+        margin-top: 20px;
+        color: #ffffff;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        font-size: 16px;
+        font-weight: 500;
+        letter-spacing: 1px;
+        opacity: 0.8;
+      }
+
+      /* DNA helix animation */
+      .dna-loader {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 30px;
+      }
+
+      .dna-strand {
+        width: 8px;
+        height: 40px;
+        background: #4CAF50;
+        border-radius: 4px;
+        animation: dnaFloat 1.2s ease-in-out infinite;
+      }
+
+      .dna-strand:nth-child(2) {
+        animation-delay: 0.2s;
+        background: #2196F3;
+      }
+
+      .dna-strand:nth-child(3) {
+        animation-delay: 0.4s;
+        background: #FF9800;
+      }
+
+      .dna-strand:nth-child(4) {
+        animation-delay: 0.6s;
+        background: #E91E63;
+      }
+
+      @keyframes dnaFloat {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-15px); }
+      }
+
+      /* Fade in main content */
+      #main-content {
+        opacity: 0;
+        animation: fadeIn 0.5s ease forwards 0.3s;
+      }
+
+      @keyframes fadeIn {
+        to { opacity: 1; }
+      }
+    </style>
+
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
+<!-- trigger deploy -->
