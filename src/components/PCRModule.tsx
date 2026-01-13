@@ -7,6 +7,7 @@ import { PrimerNotValidatedPage } from "./PrimerNotValidatedPage";
 interface PCRModuleProps {
   onClose: () => void;
   onComplete: () => void;
+  onBackToLibrary: () => void;
   missionId?: string;
 }
 
@@ -26,7 +27,7 @@ const GelLaneComp = ({ bands = [], smear = false, faint = false, blank = false }
 
 type PCRStage = "primer-design" | "primer-ordering" | "primer-reconstitution" | "reaction-setup" | "thermal-cycling" | "gel-electrophoresis";
 
-export const PCRModule = ({ onClose, onComplete, missionId = "lagos-diagnostic" }: PCRModuleProps) => {
+export const PCRModule = ({ onClose, onComplete, onBackToLibrary, missionId = "lagos-diagnostic" }: PCRModuleProps) => {
   const [currentStage, setCurrentStage] = useState<PCRStage>("primer-design");
   const [completedStages, setCompletedStages] = useState<Set<PCRStage>>(new Set());
 
@@ -103,7 +104,7 @@ export const PCRModule = ({ onClose, onComplete, missionId = "lagos-diagnostic" 
   };
 
   const handleBackToLibrary = () => {
-    onClose();
+    onBackToLibrary();
   };
 
   const handleOrderPrimers = () => {
@@ -300,23 +301,51 @@ export const PCRModule = ({ onClose, onComplete, missionId = "lagos-diagnostic" 
               </div>
 
               <div className="bg-slate-900/50 border border-slate-700 rounded-2xl p-6 space-y-4">
+                <div className="bg-emerald-900/30 border border-emerald-500/50 p-4 rounded-lg mb-4">
+                  <h4 className="font-bold text-emerald-300 mb-2 flex items-center gap-2">
+                    <span className="text-lg">✓</span> How to Succeed: Validation Criteria
+                  </h4>
+                  <p className="text-sm text-emerald-200 mb-3">
+                    Your primers must meet ALL of these requirements to pass validation:
+                  </p>
+                  <ul className="space-y-2 text-sm text-emerald-100">
+                    <li className="flex items-start gap-2">
+                      <span className="text-emerald-400 font-bold">1.</span>
+                      <span><strong>Characters:</strong> Only A, T, C, G allowed (no N or other ambiguous bases)</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-emerald-400 font-bold">2.</span>
+                      <span><strong>Length:</strong> Both primers must be 18-30 bp (nucleotides)</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-emerald-400 font-bold">3.</span>
+                      <span><strong>GC Content:</strong> Both primers must have 40-60% GC content</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-emerald-400 font-bold">4.</span>
+                      <span><strong>Tm Match:</strong> Melting temperatures must be within 5°C of each other</span>
+                    </li>
+                  </ul>
+                </div>
+
                 <div className="grid md:grid-cols-2 gap-4 text-sm">
-                  <div className="bg-slate-800/50 p-4 rounded-lg">
-                    <h4 className="font-bold text-emerald-400 mb-2">Primer Requirements:</h4>
-                    <ul className="space-y-1 text-slate-300">
-                      <li>• Length: 18-30 nucleotides</li>
-                      <li>• Tm: 55-65°C (within 5°C)</li>
-                      <li>• GC Content: 40-60%</li>
-                      <li>• Avoid self-complementarity</li>
-                    </ul>
-                  </div>
                   <div className="bg-slate-800/50 p-4 rounded-lg">
                     <h4 className="font-bold text-amber-400 mb-2">Design Tips:</h4>
                     <ul className="space-y-1 text-slate-300">
+                      <li>• Use external tools (Primer-BLAST or Primer3)</li>
                       <li>• Check specificity in databases</li>
-                      <li>• Avoid repeats (poly-G/C)</li>
-                      <li>• End with G or C (clamp)</li>
-                      <li>• Target 100-500 bp product</li>
+                      <li>• Avoid repeats (poly-G/C runs)</li>
+                      <li>• End with G or C for stability (GC clamp)</li>
+                      <li>• Target 100-500 bp amplicon size</li>
+                    </ul>
+                  </div>
+                  <div className="bg-slate-800/50 p-4 rounded-lg">
+                    <h4 className="font-bold text-blue-400 mb-2">Quick Reference:</h4>
+                    <ul className="space-y-1 text-slate-300">
+                      <li>• <strong>Optimal Tm:</strong> 55-65°C</li>
+                      <li>• <strong>Optimal Length:</strong> 20-24 bp</li>
+                      <li>• <strong>GC Clamp:</strong> 1-2 G/C at 3' end</li>
+                      <li>• <strong>Specificity:</strong> Unique to target</li>
                     </ul>
                   </div>
                 </div>
