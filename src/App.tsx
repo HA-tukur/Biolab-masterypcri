@@ -1154,6 +1154,8 @@ const NanodropVisualComp = ({ step, measured, hasDNA = true }) => {
 export default function App() {
   const [user, setUser] = useState(null);
   const [historyRecords, setHistoryRecords] = useState([]);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [savedRecordId, setSavedRecordId] = useState(null);
 
   useEffect(() => {
     const setupAuth = async () => {
@@ -1453,6 +1455,16 @@ export default function App() {
     addLog(`Temperature set to ${newTemp}°C`, "info");
   };
 
+  const getOrCreateStudentId = () => {
+    let studentId = localStorage.getItem('biosim_user_id');
+    if (!studentId) {
+      const randomNum = Math.floor(1000 + Math.random() * 9000);
+      studentId = `BioStudent-${randomNum}`;
+      localStorage.setItem('biosim_user_id', studentId);
+    }
+    return studentId;
+  };
+
   const finalizeCalculations = async () => {
     // Check lab practice (PPE)
     const hasGloves = has("gloves");
@@ -1574,20 +1586,33 @@ export default function App() {
       setShowQuant(true);
     }
 
-    if (user) {
-      try {
-        await historyStore.addHistoryRecord(user.id, {
-          mission: String(MISSIONS_DATA[techniqueId][missionId]?.title),
+    const studentId = getOrCreateStudentId();
+    const missionTitle = MISSIONS_DATA[techniqueId][missionId]?.title || 'DNA Extraction';
+    const statusText = localStatus === 'mastery' ? 'Verified Mastery' : 'Mission Failed';
+
+    try {
+      const { data, error } = await supabase
+        .from('lab_history')
+        .insert([{
+          student_id: studentId,
+          mission: missionTitle,
+          score: parseFloat(localPurity),
+          status: statusText,
           concentration: localConc,
-          purity: localPurity,
-          status: localStatus.toUpperCase(),
-          created_at: new Date().toISOString()
-        });
-        const updatedHistory = await historyStore.fetchHistory(user.id);
-        setHistoryRecords(updatedHistory);
-      } catch (error) {
-        console.error("Error saving history:", error);
+          purity: localPurity
+        }])
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      if (data) {
+        setSavedRecordId(data.id);
+        setShowSuccessModal(true);
       }
+    } catch (error) {
+      console.error("Database save error:", error);
+      alert(`Failed to save results to database:\n${error.message}\n\nPlease check your connection and try again.`);
     }
   };
 
@@ -2710,6 +2735,58 @@ export default function App() {
           )}
         </main>
       </div>
+
+      {showSuccessModal && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+          <div className="bg-gradient-to-br from-slate-900 to-slate-800 border-2 border-emerald-500/50 rounded-3xl shadow-2xl max-w-md w-full p-8 relative animate-in fade-in duration-300">
+            <button
+              onClick={() => setShowSuccessModal(false)}
+              className="absolute top-4 right-4 text-slate-400 hover:text-white transition-colors"
+            >
+              <X size={24} />
+            </button>
+
+            <div className="text-center space-y-6">
+              <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-emerald-500/20 border-2 border-emerald-500/50 mb-4">
+                <Dna size={40} className="text-emerald-400" />
+              </div>
+
+              <div>
+                <h2 className="text-2xl font-black text-emerald-400 mb-2 flex items-center justify-center gap-2">
+                  <span>Protocol Logged</span>
+                </h2>
+                <p className="text-slate-400 text-sm font-mono">
+                  ID: {savedRecordId?.substring(0, 8)}...
+                </p>
+              </div>
+
+              <div className="bg-slate-800/50 border border-emerald-500/30 rounded-xl p-6 space-y-3">
+                <p className="text-slate-300 text-sm leading-relaxed">
+                  Your mastery has been verified and synced to the BioSim Research Cloud for instructor review.
+                </p>
+
+                <div className="pt-4 border-t border-slate-700">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-slate-400 text-xs uppercase tracking-wider">Final Purity</span>
+                    <span className="text-emerald-400 text-2xl font-black">{a260_280}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-400 text-xs uppercase tracking-wider">Concentration</span>
+                    <span className="text-slate-300 text-lg font-bold">{finalConc} ng/µL</span>
+                  </div>
+                </div>
+              </div>
+
+              <button
+                onClick={() => setShowSuccessModal(false)}
+                className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-4 rounded-xl transition-all uppercase tracking-wider text-sm"
+              >
+                Continue
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
