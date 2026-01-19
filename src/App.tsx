@@ -1592,14 +1592,11 @@ export default function App() {
 
     try {
       const { data, error } = await supabase
-        .from('lab_history')
+        .from('lab_results')
         .insert([{
-          student_id: studentId,
           mission: missionTitle,
-          score: parseFloat(localPurity),
-          status: statusText,
-          concentration: localConc,
-          purity: localPurity
+          purity_score: parseFloat(localPurity),
+          status: statusText
         }])
         .select()
         .single();
@@ -1612,7 +1609,6 @@ export default function App() {
       }
     } catch (error) {
       console.error("Database save error:", error);
-      alert(`Failed to save results to database:\n${error.message}\n\nPlease check your connection and try again.`);
     }
   };
 
