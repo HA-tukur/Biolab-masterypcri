@@ -3,6 +3,11 @@ import { useState } from "react";
 import { validatePrimerPair } from "../utils/primerValidation";
 import { PrimerValidatedPage } from "./PrimerValidatedPage";
 import { PrimerNotValidatedPage } from "./PrimerNotValidatedPage";
+import { createClient } from "@supabase/supabase-js";
+
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 interface PCRModuleProps {
   onClose: () => void;
@@ -88,7 +93,7 @@ export const PCRModule = ({ onClose, onComplete, onBackToLibrary, missionId = "l
     setCompletedStages(newCompleted);
   };
 
-  const validatePrimers = () => {
+  const validatePrimers = async () => {
     const result = validatePrimerPair({
       forward: primerForward,
       reverse: primerReverse
@@ -96,6 +101,18 @@ export const PCRModule = ({ onClose, onComplete, onBackToLibrary, missionId = "l
 
     setValidationResult(result);
     setShowFinalPage(true);
+
+    if (result.isValid) {
+      try {
+        await supabase.from('lab_results').insert({
+          mission: `PCR - ${mission.targetGene}`,
+          purity_score: 100,
+          status: 'Primer Validated'
+        });
+      } catch (error) {
+        console.error('Failed to save result:', error);
+      }
+    }
   };
 
   const handleTryAgain = () => {
