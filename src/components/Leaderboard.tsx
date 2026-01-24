@@ -205,9 +205,9 @@ export default function Leaderboard() {
   };
 
   const getRankBadge = (rank: number) => {
-    if (rank === 1) return 'bg-gradient-to-r from-yellow-600 to-amber-500 border-yellow-400';
-    if (rank === 2) return 'bg-gradient-to-r from-gray-400 to-slate-400 border-gray-300';
-    if (rank === 3) return 'bg-gradient-to-r from-amber-700 to-orange-600 border-amber-500';
+    if (rank === 1) return 'bg-gradient-to-br from-amber-400 via-yellow-500 to-amber-500 border-amber-400';
+    if (rank === 2) return 'bg-gradient-to-br from-slate-300 via-gray-200 to-slate-300 border-slate-300';
+    if (rank === 3) return 'bg-gradient-to-br from-orange-400 via-amber-500 to-orange-500 border-orange-400';
     if (rank <= 10) return 'bg-gradient-to-r from-indigo-900/40 to-purple-900/40 border-indigo-500/30';
     return 'bg-slate-800 border-slate-700';
   };
@@ -370,7 +370,7 @@ export default function Leaderboard() {
                 return (
                   <div
                     key={profile.id}
-                    className={`border-2 rounded-xl p-4 transition-all hover:scale-[1.02] ${
+                    className={`border-2 rounded-xl p-5 transition-all hover:scale-[1.02] ${
                       getRankBadge(profile.rank!)
                     } ${profile.student_id === studentId ? 'ring-2 ring-amber-400' : ''}`}
                   >
@@ -380,36 +380,36 @@ export default function Leaderboard() {
                           {getRankIcon(profile.rank!)}
                         </div>
                         <div>
-                          <h3 className={`font-bold ${textColorMain} text-lg flex items-center gap-2`}>
+                          <h3 className={`font-black ${textColorMain} text-xl flex items-center gap-2`}>
                             {profile.display_name}
                             {profile.student_id === studentId && (
-                              <span className={`text-xs ${isTopThree ? 'bg-slate-900 text-white' : 'bg-amber-500 text-white'} px-2 py-0.5 rounded-full`}>YOU</span>
+                              <span className={`text-xs ${isTopThree ? 'bg-slate-900 text-white' : 'bg-amber-500 text-white'} px-2 py-0.5 rounded-full font-bold`}>YOU</span>
                             )}
                           </h3>
-                          <p className={`${textColorSub} text-sm font-medium`}>
+                          <p className={`${textColorSub} text-sm font-normal mt-0.5`}>
                             {profile.school_name || 'Independent'} • {profile.country}
                           </p>
-                          <p className={`${textColorTertiary} text-xs mt-1 capitalize font-medium`}>
+                          <p className={`${textColorTertiary} text-xs mt-1 capitalize font-normal`}>
                             {profile.user_type.replace('_', ' ')}
                           </p>
                         </div>
                       </div>
-                      <div className="flex gap-6">
+                      <div className="flex gap-8">
                         <div className="text-center">
-                          <div className={`text-xl font-bold ${statColor}`}>{profile.total_score.toFixed(1)}</div>
-                          <div className={`text-xs ${labelColor} font-medium`}>Total Score</div>
+                          <div className={`text-2xl font-black ${statColor} mb-1`}>{profile.total_score.toFixed(1)}</div>
+                          <div className={`text-xs ${labelColor} font-bold uppercase tracking-wide`}>Total Score</div>
                         </div>
                         <div className="text-center">
-                          <div className={`text-xl font-bold ${statColor}`}>{profile.missions_completed}</div>
-                          <div className={`text-xs ${labelColor} font-medium`}>Missions</div>
+                          <div className={`text-2xl font-black ${statColor} mb-1`}>{profile.missions_completed}</div>
+                          <div className={`text-xs ${labelColor} font-bold uppercase tracking-wide`}>Missions</div>
                         </div>
                         <div className="text-center">
-                          <div className={`text-xl font-bold ${statColor}`}>{profile.best_purity_score.toFixed(2)}</div>
-                          <div className={`text-xs ${labelColor} font-medium`}>Best Purity</div>
+                          <div className={`text-2xl font-black ${statColor} mb-1`}>{profile.best_purity_score.toFixed(2)}</div>
+                          <div className={`text-xs ${labelColor} font-bold uppercase tracking-wide`}>Best Purity</div>
                         </div>
                         <div className="text-center">
-                          <div className={`text-xl font-bold ${statColor}`}>{profile.average_score.toFixed(2)}</div>
-                          <div className={`text-xs ${labelColor} font-medium`}>Average</div>
+                          <div className={`text-2xl font-black ${statColor} mb-1`}>{profile.average_score.toFixed(2)}</div>
+                          <div className={`text-xs ${labelColor} font-bold uppercase tracking-wide`}>Average</div>
                         </div>
                       </div>
                     </div>
