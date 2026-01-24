@@ -56,7 +56,8 @@ import {
   Scissors,
   Shirt,
   Glasses,
-  Computer
+  Computer,
+  Trophy
 } from "lucide-react";
 import { SupabaseHistoryStore, HistoryStore } from "./services/historyStore";
 import { PCRModule } from "./components/PCRModule";
@@ -1816,6 +1817,40 @@ export default function App() {
                     <p className="text-slate-400 text-sm text-center leading-relaxed">
                       All paths access the same high-quality simulations. Choose based on whether you need instructor tracking or prefer independent progress monitoring.
                     </p>
+                  </div>
+                </section>
+
+                <section className="max-w-4xl mx-auto">
+                  <div
+                    onClick={() => {
+                      window.history.pushState({}, '', '/leaderboard');
+                      window.dispatchEvent(new PopStateEvent('popstate'));
+                    }}
+                    className="bg-gradient-to-r from-amber-900/40 via-yellow-900/30 to-amber-900/40 border-2 border-amber-400/60 rounded-2xl p-8 cursor-pointer hover:scale-[1.02] transition-transform hover:border-amber-300 hover:shadow-2xl hover:shadow-amber-500/20"
+                  >
+                    <div className="flex items-center justify-between flex-wrap gap-6">
+                      <div className="flex items-center gap-6">
+                        <div className="bg-gradient-to-br from-amber-500 to-yellow-600 p-5 rounded-2xl shadow-xl">
+                          <Trophy size={40} className="text-white" />
+                        </div>
+                        <div>
+                          <h3 className="text-3xl font-black text-white mb-2 flex items-center gap-3">
+                            National Biotech Leaderboard
+                            <span className="text-sm bg-amber-500 px-3 py-1 rounded-full font-bold animate-pulse">NEW</span>
+                          </h3>
+                          <p className="text-slate-300 text-lg mb-1">
+                            Compete with students nationwide. Track your ranking. Share your achievements.
+                          </p>
+                          <p className="text-amber-400 text-sm font-semibold">
+                            Perfect for high school students looking to stand out
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3 text-amber-400 font-black text-lg">
+                        <span>View Rankings</span>
+                        <ChevronRight size={24} />
+                      </div>
+                    </div>
                   </div>
                 </section>
               </section>
