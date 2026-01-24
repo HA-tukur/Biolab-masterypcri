@@ -1753,60 +1753,68 @@ export default function App() {
                 
                 <section className="max-w-4xl mx-auto space-y-6">
                   <h3 className="text-2xl font-black text-slate-50 uppercase text-center mb-8">
-                    Who Can Use BioSim Lab?
+                    Choose Your Learning Path
                   </h3>
 
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div className="bg-slate-800 border border-slate-700 p-6 rounded-2xl">
-                      <div className="bg-emerald-600 w-12 h-12 rounded-xl flex items-center justify-center mb-4">
-                        <GraduationCap size={24} className="text-white" />
+                    <div
+                      onClick={() => setShowClassCodePrompt(true)}
+                      className="bg-gradient-to-br from-emerald-900/40 to-emerald-800/20 border-2 border-emerald-500/50 p-6 rounded-2xl cursor-pointer hover:scale-105 transition-transform hover:border-emerald-400"
+                    >
+                      <div className="bg-emerald-600 w-14 h-14 rounded-xl flex items-center justify-center mb-4 shadow-lg">
+                        <GraduationCap size={28} className="text-white" />
                       </div>
-                      <h4 className="text-white font-bold mb-2">University Students</h4>
-                      <p className="text-slate-400 text-sm">
-                        BSc/MSc students preparing for lab practicals or entering PhD programs.
+                      <h4 className="text-white font-black text-xl mb-2">University Student</h4>
+                      <p className="text-slate-300 text-sm mb-3 leading-relaxed">
+                        Join your instructor's class. Enter code to sync with your faculty dashboard.
                       </p>
-                      <p className="text-emerald-400 text-xs font-bold mt-3 uppercase">
-                        Primary Users
-                      </p>
+                      <div className="flex items-center gap-2 text-emerald-400 font-bold text-sm mt-4">
+                        <span>Enter Class Code</span>
+                        <ChevronRight size={16} />
+                      </div>
                     </div>
 
-                    <div className="bg-slate-800 border border-slate-700 p-6 rounded-2xl">
-                      <div className="bg-amber-600 w-12 h-12 rounded-xl flex items-center justify-center mb-4">
-                        <BookOpen size={24} className="text-white" />
+                    <div
+                      onClick={() => {
+                        window.history.pushState({}, '', '/profile');
+                        window.dispatchEvent(new PopStateEvent('popstate'));
+                      }}
+                      className="bg-gradient-to-br from-indigo-900/40 to-indigo-800/20 border-2 border-indigo-500/50 p-6 rounded-2xl cursor-pointer hover:scale-105 transition-transform hover:border-indigo-400"
+                    >
+                      <div className="bg-indigo-600 w-14 h-14 rounded-xl flex items-center justify-center mb-4 shadow-lg">
+                        <Target size={28} className="text-white" />
                       </div>
-                      <h4 className="text-white font-bold mb-2">Secondary Students (O/A Level)</h4>
-                      <p className="text-slate-400 text-sm">
-                        Ambitious students preparing for university molecular biology/biotech programs.
+                      <h4 className="text-white font-black text-xl mb-2">Independent Learner</h4>
+                      <p className="text-slate-300 text-sm mb-3 leading-relaxed">
+                        Master lab techniques at your own pace. Build your digital lab resume.
                       </p>
-                      <p className="text-amber-400 text-xs font-bold mt-3 uppercase">
-                        Advanced Preview
-                      </p>
+                      <div className="flex items-center gap-2 text-indigo-400 font-bold text-sm mt-4">
+                        <span>View My Profile</span>
+                        <ChevronRight size={16} />
+                      </div>
                     </div>
 
-                    <div className="bg-slate-800 border border-slate-700 p-6 rounded-2xl">
-                      <div className="bg-indigo-600 w-12 h-12 rounded-xl flex items-center justify-center mb-4">
-                        <Users size={24} className="text-white" />
+                    <div
+                      onClick={() => setScreen("categories")}
+                      className="bg-gradient-to-br from-amber-900/40 to-amber-800/20 border-2 border-amber-500/50 p-6 rounded-2xl cursor-pointer hover:scale-105 transition-transform hover:border-amber-400"
+                    >
+                      <div className="bg-amber-600 w-14 h-14 rounded-xl flex items-center justify-center mb-4 shadow-lg">
+                        <Sparkles size={28} className="text-white" />
                       </div>
-                      <h4 className="text-white font-bold mb-2">Self-Taught Learners</h4>
-                      <p className="text-slate-400 text-sm">
-                        Anyone curious about lab work without access to physical equipment.
+                      <h4 className="text-white font-black text-xl mb-2">Advanced High School</h4>
+                      <p className="text-slate-300 text-sm mb-3 leading-relaxed">
+                        Get a head start on college science. Explore molecular biology basics.
                       </p>
-                      <p className="text-indigo-400 text-xs font-bold mt-3 uppercase">
-                        Open to All
-                      </p>
+                      <div className="flex items-center gap-2 text-amber-400 font-bold text-sm mt-4">
+                        <span>Start Learning</span>
+                        <ChevronRight size={16} />
+                      </div>
                     </div>
                   </div>
 
-                  <div className="bg-slate-800 border border-slate-700 p-6 rounded-2xl">
-                    <h4 className="text-white font-bold mb-3 flex items-center gap-2">
-                      <Info size={18} className="text-indigo-400" />
-                      For O Level / Secondary Students:
-                    </h4>
-                    <p className="text-slate-400 text-sm leading-relaxed">
-                      BioSim Lab teaches university-level techniques, but ambitious secondary students
-                      can absolutely use it to preview what lab work looks like. Think of it as exploring
-                      what you'll learn in university. Some concepts (like DNA purity ratios, stoichiometry)
-                      assume basic chemistry knowledge.
+                  <div className="bg-slate-800/50 border border-slate-700 p-5 rounded-2xl">
+                    <p className="text-slate-400 text-sm text-center leading-relaxed">
+                      All paths access the same high-quality simulations. Choose based on whether you need instructor tracking or prefer independent progress monitoring.
                     </p>
                   </div>
                 </section>

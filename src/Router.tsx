@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import App from './App';
 import InstructorSetup from './components/InstructorSetup';
 import InstructorDashboard from './components/InstructorDashboard';
+import StudentProfile from './components/StudentProfile';
 
 export default function Router() {
   const [currentPath, setCurrentPath] = useState(window.location.pathname);
@@ -14,6 +15,10 @@ export default function Router() {
     window.addEventListener('popstate', handleLocationChange);
     return () => window.removeEventListener('popstate', handleLocationChange);
   }, []);
+
+  if (currentPath === '/profile') {
+    return <StudentProfile />;
+  }
 
   if (currentPath === '/instructor/setup') {
     return <InstructorSetup />;
