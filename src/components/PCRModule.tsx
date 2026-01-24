@@ -4,6 +4,7 @@ import { validatePrimerPair } from "../utils/primerValidation";
 import { PrimerValidatedPage } from "./PrimerValidatedPage";
 import { PrimerNotValidatedPage } from "./PrimerNotValidatedPage";
 import { createClient } from "@supabase/supabase-js";
+import { getOrCreateStudentId } from "../utils/studentId";
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -104,10 +105,15 @@ export const PCRModule = ({ onClose, onComplete, onBackToLibrary, missionId = "l
 
     if (result.isValid) {
       try {
+        const studentId = getOrCreateStudentId();
+        const classId = localStorage.getItem('biosim_class_id');
+
         await supabase.from('lab_results').insert({
+          student_id: studentId,
           mission: `PCR - ${mission.targetGene}`,
           purity_score: 100,
-          status: 'Primer Validated'
+          status: 'Primer Validated',
+          class_id: classId || null
         });
       } catch (error) {
         console.error('Failed to save result:', error);

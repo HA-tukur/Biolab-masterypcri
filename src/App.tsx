@@ -65,6 +65,7 @@ import { TechniqueCategories } from "./components/TechniqueCategories";
 import { CategoryTechniques } from "./components/CategoryTechniques";
 import { PCRMissions } from "./components/PCRMissions";
 import { AntibodyIcon } from "./components/AntibodyIcon";
+import ClassCodePrompt from "./components/ClassCodePrompt";
 import { config } from "./config";
 
 const supabase = createClient(config.supabase.url, config.supabase.anonKey);
@@ -1156,6 +1157,7 @@ export default function App() {
   const [historyRecords, setHistoryRecords] = useState([]);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [savedRecordId, setSavedRecordId] = useState(null);
+  const [showClassCodePrompt, setShowClassCodePrompt] = useState(false);
 
   useEffect(() => {
     const setupAuth = async () => {
@@ -1181,6 +1183,13 @@ export default function App() {
     };
     fetchHistory();
   }, [user]);
+
+  useEffect(() => {
+    const hasSeenPrompt = localStorage.getItem('biosim_class_prompt_shown');
+    if (!hasSeenPrompt) {
+      setShowClassCodePrompt(true);
+    }
+  }, []);
 
   const [screen, setScreen] = useState("welcome");
   const [selectedCategory, setSelectedCategory] = useState(null);
@@ -1590,13 +1599,17 @@ export default function App() {
     const missionTitle = MISSIONS_DATA[techniqueId][missionId]?.title || 'DNA Extraction';
     const statusText = localStatus === 'mastery' ? 'Verified Mastery' : 'Mission Failed';
 
+    const classId = localStorage.getItem('biosim_class_id');
+
     try {
       const { data, error } = await supabase
         .from('lab_results')
         .insert([{
+          student_id: studentId,
           mission: missionTitle,
           purity_score: parseFloat(localPurity),
-          status: statusText
+          status: statusText,
+          class_id: classId || null
         }])
         .select()
         .single();
@@ -1659,6 +1672,7 @@ export default function App() {
   return (
     <div className="min-h-screen text-slate-100 font-sans bg-[#0f172a]">
 
+      {showClassCodePrompt && <ClassCodePrompt onComplete={() => setShowClassCodePrompt(false)} />}
       {showManual && <LabManualOverlay onClose={() => setShowManual(false)} />}
       {showProtocol && <ProtocolBookOverlay onClose={() => setShowProtocol(false)} />}
       {showLedger && <LabLedgerOverlay onClose={() => setShowLedger(false)} historyRecords={historyRecords} user={user} />}
