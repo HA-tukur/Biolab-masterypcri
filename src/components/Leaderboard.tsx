@@ -359,54 +359,63 @@ export default function Leaderboard() {
             </div>
           ) : (
             <div className="space-y-3">
-              {profiles.map((profile) => (
-                <div
-                  key={profile.id}
-                  className={`border-2 rounded-xl p-4 transition-all hover:scale-[1.02] ${
-                    getRankBadge(profile.rank!)
-                  } ${profile.student_id === studentId ? 'ring-2 ring-amber-400' : ''}`}
-                >
-                  <div className="flex items-center justify-between flex-wrap gap-4">
-                    <div className="flex items-center gap-4">
-                      <div className="w-12 text-center">
-                        {getRankIcon(profile.rank!)}
+              {profiles.map((profile) => {
+                const isTopThree = profile.rank! <= 3;
+                const textColorMain = isTopThree ? 'text-slate-900' : 'text-white';
+                const textColorSub = isTopThree ? 'text-slate-800' : 'text-slate-300';
+                const textColorTertiary = isTopThree ? 'text-slate-700' : 'text-slate-400';
+                const statColor = isTopThree ? 'text-slate-900' : 'text-white';
+                const labelColor = isTopThree ? 'text-slate-700' : 'text-slate-400';
+
+                return (
+                  <div
+                    key={profile.id}
+                    className={`border-2 rounded-xl p-4 transition-all hover:scale-[1.02] ${
+                      getRankBadge(profile.rank!)
+                    } ${profile.student_id === studentId ? 'ring-2 ring-amber-400' : ''}`}
+                  >
+                    <div className="flex items-center justify-between flex-wrap gap-4">
+                      <div className="flex items-center gap-4">
+                        <div className="w-12 text-center">
+                          {getRankIcon(profile.rank!)}
+                        </div>
+                        <div>
+                          <h3 className={`font-bold ${textColorMain} text-lg flex items-center gap-2`}>
+                            {profile.display_name}
+                            {profile.student_id === studentId && (
+                              <span className={`text-xs ${isTopThree ? 'bg-slate-900 text-white' : 'bg-amber-500 text-white'} px-2 py-0.5 rounded-full`}>YOU</span>
+                            )}
+                          </h3>
+                          <p className={`${textColorSub} text-sm font-medium`}>
+                            {profile.school_name || 'Independent'} • {profile.country}
+                          </p>
+                          <p className={`${textColorTertiary} text-xs mt-1 capitalize font-medium`}>
+                            {profile.user_type.replace('_', ' ')}
+                          </p>
+                        </div>
                       </div>
-                      <div>
-                        <h3 className="font-bold text-white text-lg flex items-center gap-2">
-                          {profile.display_name}
-                          {profile.student_id === studentId && (
-                            <span className="text-xs bg-amber-500 px-2 py-0.5 rounded-full">YOU</span>
-                          )}
-                        </h3>
-                        <p className="text-slate-300 text-sm">
-                          {profile.school_name || 'Independent'} • {profile.country}
-                        </p>
-                        <p className="text-slate-400 text-xs mt-1 capitalize">
-                          {profile.user_type.replace('_', ' ')}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex gap-6">
-                      <div className="text-center">
-                        <div className="text-xl font-bold text-white">{profile.total_score.toFixed(1)}</div>
-                        <div className="text-xs text-slate-400">Total Score</div>
-                      </div>
-                      <div className="text-center">
-                        <div className="text-xl font-bold text-white">{profile.missions_completed}</div>
-                        <div className="text-xs text-slate-400">Missions</div>
-                      </div>
-                      <div className="text-center">
-                        <div className="text-xl font-bold text-white">{profile.best_purity_score.toFixed(2)}</div>
-                        <div className="text-xs text-slate-400">Best Purity</div>
-                      </div>
-                      <div className="text-center">
-                        <div className="text-xl font-bold text-white">{profile.average_score.toFixed(2)}</div>
-                        <div className="text-xs text-slate-400">Average</div>
+                      <div className="flex gap-6">
+                        <div className="text-center">
+                          <div className={`text-xl font-bold ${statColor}`}>{profile.total_score.toFixed(1)}</div>
+                          <div className={`text-xs ${labelColor} font-medium`}>Total Score</div>
+                        </div>
+                        <div className="text-center">
+                          <div className={`text-xl font-bold ${statColor}`}>{profile.missions_completed}</div>
+                          <div className={`text-xs ${labelColor} font-medium`}>Missions</div>
+                        </div>
+                        <div className="text-center">
+                          <div className={`text-xl font-bold ${statColor}`}>{profile.best_purity_score.toFixed(2)}</div>
+                          <div className={`text-xs ${labelColor} font-medium`}>Best Purity</div>
+                        </div>
+                        <div className="text-center">
+                          <div className={`text-xl font-bold ${statColor}`}>{profile.average_score.toFixed(2)}</div>
+                          <div className={`text-xs ${labelColor} font-medium`}>Average</div>
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
