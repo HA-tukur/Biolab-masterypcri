@@ -1601,6 +1601,11 @@ export default function App() {
 
     const classId = localStorage.getItem('biosim_class_id');
 
+    const errorLogs = logs.filter(log => log.type === 'error').map(log => ({
+      message: log.msg,
+      type: log.type
+    }));
+
     try {
       const { data, error } = await supabase
         .from('lab_results')
@@ -1609,7 +1614,8 @@ export default function App() {
           mission: missionTitle,
           purity_score: parseFloat(localPurity),
           status: statusText,
-          class_id: classId || null
+          class_id: classId || null,
+          event_log: errorLogs
         }])
         .select()
         .single();

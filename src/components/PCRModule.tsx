@@ -113,7 +113,8 @@ export const PCRModule = ({ onClose, onComplete, onBackToLibrary, missionId = "l
           mission: `PCR - ${mission.targetGene}`,
           purity_score: 100,
           status: 'Primer Validated',
-          class_id: classId || null
+          class_id: classId || null,
+          event_log: result.errors.length > 0 ? result.errors.map(e => ({ message: e, type: 'error' })) : []
         });
       } catch (error) {
         console.error('Failed to save result:', error);

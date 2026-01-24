@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 import { createClient } from '@supabase/supabase-js';
+import ReadinessMeter from './ReadinessMeter';
+import ErrorAnalyticsChart from './ErrorAnalyticsChart';
 
 const supabase = createClient(
   import.meta.env.VITE_SUPABASE_URL,
@@ -20,12 +22,20 @@ interface StudentResult {
   bestScore: number;
   attempts: number;
   hasMastery: boolean;
+  hasHighMastery: boolean;
 }
 
 interface DashboardStats {
   totalStudents: number;
   avgScore: number;
   masteryRate: number;
+  highMasteryRate: number;
+  readyStudents: number;
+}
+
+interface ErrorData {
+  error: string;
+  count: number;
 }
 
 interface InstructorDashboardProps {
@@ -36,6 +46,7 @@ export default function InstructorDashboard({ classCode }: InstructorDashboardPr
   const [classInfo, setClassInfo] = useState<ClassInfo | null>(null);
   const [students, setStudents] = useState<StudentResult[]>([]);
   const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [errorData, setErrorData] = useState<ErrorData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -68,18 +79,20 @@ export default function InstructorDashboard({ classCode }: InstructorDashboardPr
         .from('lab_results')
         .select('*')
         .eq('class_id', classData.id)
-        .order('timestamp', { ascending: false });
+        .order('created_at', { ascending: false });
 
       if (resultsError) throw resultsError;
 
       if (!results || results.length === 0) {
         setStudents([]);
-        setStats({ totalStudents: 0, avgScore: 0, masteryRate: 0 });
+        setStats({ totalStudents: 0, avgScore: 0, masteryRate: 0, highMasteryRate: 0, readyStudents: 0 });
+        setErrorData([]);
         setLoading(false);
         return;
       }
 
       const studentMap: Record<string, { scores: number[]; attempts: number }> = {};
+      const errorCounts: Record<string, number> = {};
 
       results.forEach((result) => {
         if (!studentMap[result.student_id]) {
@@ -87,6 +100,15 @@ export default function InstructorDashboard({ classCode }: InstructorDashboardPr
         }
         studentMap[result.student_id].scores.push(result.purity_score || 0);
         studentMap[result.student_id].attempts++;
+
+        if (result.event_log && Array.isArray(result.event_log)) {
+          result.event_log.forEach((log: { message?: string; type?: string }) => {
+            if (log.message && log.type === 'error') {
+              const normalizedMessage = log.message.trim();
+              errorCounts[normalizedMessage] = (errorCounts[normalizedMessage] || 0) + 1;
+            }
+          });
+        }
       });
 
       const studentList: StudentResult[] = Object.entries(studentMap).map(([studentId, data]) => {
@@ -95,7 +117,8 @@ export default function InstructorDashboard({ classCode }: InstructorDashboardPr
           studentId,
           bestScore,
           attempts: data.attempts,
-          hasMastery: bestScore >= 0.75
+          hasMastery: bestScore >= 1.7,
+          hasHighMastery: bestScore >= 1.8
         };
       }).sort((a, b) => b.bestScore - a.bestScore);
 
@@ -104,9 +127,23 @@ export default function InstructorDashboard({ classCode }: InstructorDashboardPr
       const totalStudents = studentList.length;
       const avgScore = studentList.reduce((sum, s) => sum + s.bestScore, 0) / totalStudents;
       const masteryCount = studentList.filter(s => s.hasMastery).length;
+      const highMasteryCount = studentList.filter(s => s.hasHighMastery).length;
       const masteryRate = (masteryCount / totalStudents) * 100;
+      const highMasteryRate = (highMasteryCount / totalStudents) * 100;
 
-      setStats({ totalStudents, avgScore, masteryRate });
+      setStats({
+        totalStudents,
+        avgScore,
+        masteryRate,
+        highMasteryRate,
+        readyStudents: highMasteryCount
+      });
+
+      const errorList: ErrorData[] = Object.entries(errorCounts)
+        .map(([err, count]) => ({ error: err, count }))
+        .sort((a, b) => b.count - a.count);
+
+      setErrorData(errorList);
     } catch (err) {
       setError('Failed to load dashboard data. Please try again.');
       console.error(err);
@@ -123,7 +160,7 @@ export default function InstructorDashboard({ classCode }: InstructorDashboardPr
       s.studentId,
       s.bestScore.toFixed(2),
       s.attempts.toString(),
-      s.hasMastery ? 'Mastery' : 'In Progress'
+      s.hasHighMastery ? 'Ready (>0.90)' : s.hasMastery ? 'Mastery' : 'In Progress'
     ]);
 
     const csv = [
@@ -205,7 +242,7 @@ export default function InstructorDashboard({ classCode }: InstructorDashboardPr
 
         <div className="mb-6">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Quick Stats</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="bg-white rounded-lg shadow p-6">
               <div className="text-3xl font-bold text-blue-600 mb-1">
                 {stats?.totalStudents || 0}
@@ -219,12 +256,27 @@ export default function InstructorDashboard({ classCode }: InstructorDashboardPr
               <div className="text-gray-600">Average Score</div>
             </div>
             <div className="bg-white rounded-lg shadow p-6">
-              <div className="text-3xl font-bold text-blue-600 mb-1">
+              <div className="text-3xl font-bold text-green-600 mb-1">
                 {stats ? Math.round(stats.masteryRate) : 0}%
               </div>
-              <div className="text-gray-600">Mastery Rate</div>
+              <div className="text-gray-600">Mastery Rate (&ge;1.7)</div>
+            </div>
+            <div className="bg-white rounded-lg shadow p-6">
+              <div className="text-3xl font-bold text-emerald-600 mb-1">
+                {stats ? Math.round(stats.highMasteryRate) : 0}%
+              </div>
+              <div className="text-gray-600">Ready (&ge;1.8)</div>
             </div>
           </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+          <ReadinessMeter
+            percentage={stats?.highMasteryRate || 0}
+            totalStudents={stats?.totalStudents || 0}
+            readyStudents={stats?.readyStudents || 0}
+          />
+          <ErrorAnalyticsChart errors={errorData} />
         </div>
 
         <div className="bg-white rounded-lg shadow-lg p-6">
@@ -238,7 +290,7 @@ export default function InstructorDashboard({ classCode }: InstructorDashboardPr
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
-                Export CSV
+                Download CSV
               </button>
             )}
           </div>
@@ -275,14 +327,22 @@ export default function InstructorDashboard({ classCode }: InstructorDashboardPr
                       <td className="py-3 px-4 text-gray-900">{student.studentId}</td>
                       <td className="py-3 px-4">
                         <span className={`font-semibold ${
-                          student.bestScore >= 0.75 ? 'text-green-600' : 'text-orange-600'
+                          student.hasHighMastery ? 'text-emerald-600' :
+                          student.hasMastery ? 'text-green-600' : 'text-orange-600'
                         }`}>
                           {student.bestScore.toFixed(2)}
                         </span>
                       </td>
                       <td className="py-3 px-4 text-gray-600">{student.attempts}</td>
                       <td className="py-3 px-4">
-                        {student.hasMastery ? (
+                        {student.hasHighMastery ? (
+                          <span className="inline-flex items-center gap-1 bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full text-sm font-medium">
+                            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                            </svg>
+                            Ready
+                          </span>
+                        ) : student.hasMastery ? (
                           <span className="inline-flex items-center gap-1 bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm font-medium">
                             <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                               <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
