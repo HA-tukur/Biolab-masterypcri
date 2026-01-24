@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import { RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, ResponsiveContainer, Tooltip } from 'recharts';
-import { Award, TrendingUp, Calendar, Download, Home, Zap, Target } from 'lucide-react';
+import { Award, TrendingUp, Calendar, Download, Home, Zap, Target, Eye, EyeOff, Trash2, LogOut, School } from 'lucide-react';
 import { getOrCreateStudentId } from '../utils/studentId';
 
 const supabase = createClient(
@@ -31,6 +31,18 @@ interface Certificate {
   score: number;
 }
 
+interface LeaderboardProfile {
+  is_visible: boolean;
+  display_name: string;
+  school_name: string | null;
+}
+
+interface ClassInfo {
+  class_id: string | null;
+  class_name: string | null;
+  class_code: string | null;
+}
+
 export default function StudentProfile() {
   const [results, setResults] = useState<LabResult[]>([]);
   const [loading, setLoading] = useState(true);
@@ -43,6 +55,17 @@ export default function StudentProfile() {
     averageScore: 0,
     practiceStreak: 0
   });
+  const [leaderboardProfile, setLeaderboardProfile] = useState<LeaderboardProfile>({
+    is_visible: true,
+    display_name: '',
+    school_name: null
+  });
+  const [classInfo, setClassInfo] = useState<ClassInfo>({
+    class_id: null,
+    class_name: null,
+    class_code: null
+  });
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   useEffect(() => {
     fetchProfileData();
@@ -56,22 +79,46 @@ export default function StudentProfile() {
     try {
       const { data, error } = await supabase
         .from('lab_results')
-        .select('*')
+        .select('*, classes(class_name, class_code)')
         .eq('student_id', id)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
+
+      const { data: profileData } = await supabase
+        .from('leaderboard_profiles')
+        .select('is_visible, display_name, school_name')
+        .eq('student_id', id)
+        .maybeSingle();
+
+      if (profileData) {
+        setLeaderboardProfile({
+          is_visible: profileData.is_visible ?? true,
+          display_name: profileData.display_name || '',
+          school_name: profileData.school_name
+        });
+      }
 
       if (!data || data.length === 0) {
         setResults([]);
         setCategoryProgress([]);
         setCertificates([]);
         setStats({ totalAttempts: 0, successfulMissions: 0, averageScore: 0, practiceStreak: 0 });
+        setClassInfo({ class_id: null, class_name: null, class_code: null });
         setLoading(false);
         return;
       }
 
       setResults(data);
+
+      const firstResultWithClass = data.find((r: any) => r.class_id && r.classes);
+      if (firstResultWithClass) {
+        setClassInfo({
+          class_id: firstResultWithClass.class_id,
+          class_name: firstResultWithClass.classes?.class_name || null,
+          class_code: firstResultWithClass.classes?.class_code || null
+        });
+      }
 
       const categoryMap: Record<string, { scores: number[]; best: number }> = {};
 
@@ -189,6 +236,78 @@ export default function StudentProfile() {
     a.click();
   };
 
+  const toggleLeaderboardVisibility = async () => {
+    try {
+      const newVisibility = !leaderboardProfile.is_visible;
+
+      const { data: existingProfile } = await supabase
+        .from('leaderboard_profiles')
+        .select('id')
+        .eq('student_id', studentId)
+        .maybeSingle();
+
+      if (existingProfile) {
+        await supabase
+          .from('leaderboard_profiles')
+          .update({ is_visible: newVisibility })
+          .eq('student_id', studentId);
+      } else {
+        await supabase
+          .from('leaderboard_profiles')
+          .insert({
+            student_id: studentId,
+            display_name: studentId,
+            is_visible: newVisibility,
+            user_type: 'independent'
+          });
+      }
+
+      setLeaderboardProfile(prev => ({ ...prev, is_visible: newVisibility }));
+    } catch (err) {
+      console.error('Failed to update leaderboard visibility:', err);
+      alert('Failed to update settings. Please try again.');
+    }
+  };
+
+  const deleteAllProgress = async () => {
+    try {
+      await supabase
+        .from('lab_results')
+        .delete()
+        .eq('student_id', studentId);
+
+      localStorage.clear();
+
+      setResults([]);
+      setCategoryProgress([]);
+      setCertificates([]);
+      setStats({ totalAttempts: 0, successfulMissions: 0, averageScore: 0, practiceStreak: 0 });
+      setClassInfo({ class_id: null, class_name: null, class_code: null });
+      setShowDeleteConfirm(false);
+
+      alert('All progress has been deleted successfully.');
+    } catch (err) {
+      console.error('Failed to delete progress:', err);
+      alert('Failed to delete progress. Please try again.');
+    }
+  };
+
+  const leaveClass = async () => {
+    try {
+      await supabase
+        .from('lab_results')
+        .update({ class_id: null })
+        .eq('student_id', studentId);
+
+      setClassInfo({ class_id: null, class_name: null, class_code: null });
+
+      alert('You have left the class successfully.');
+    } catch (err) {
+      console.error('Failed to leave class:', err);
+      alert('Failed to leave class. Please try again.');
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-900 flex items-center justify-center">
@@ -252,6 +371,115 @@ export default function StudentProfile() {
             <div className="text-3xl font-bold text-white">{stats.practiceStreak}</div>
           </div>
         </div>
+
+        <div className="bg-slate-800 border border-slate-700 rounded-2xl p-6 mb-6">
+          <h2 className="text-xl font-bold text-white mb-4">Privacy Settings</h2>
+
+          <div className="space-y-6">
+            <div className="bg-slate-700/50 rounded-xl p-5 border border-slate-600">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  {leaderboardProfile.is_visible ? (
+                    <Eye className="text-emerald-400" size={24} />
+                  ) : (
+                    <EyeOff className="text-slate-400" size={24} />
+                  )}
+                  <div>
+                    <h3 className="font-semibold text-white">National Leaderboard Visibility</h3>
+                    <p className="text-slate-400 text-sm">
+                      {leaderboardProfile.is_visible
+                        ? 'Your scores are visible on the public leaderboard'
+                        : 'Your scores are hidden from the public leaderboard'}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={toggleLeaderboardVisibility}
+                  className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                    leaderboardProfile.is_visible
+                      ? 'bg-emerald-600 hover:bg-emerald-500 text-white'
+                      : 'bg-slate-600 hover:bg-slate-500 text-slate-300'
+                  }`}
+                >
+                  {leaderboardProfile.is_visible ? 'Visible' : 'Hidden'}
+                </button>
+              </div>
+            </div>
+
+            {classInfo.class_id && (
+              <div className="bg-slate-700/50 rounded-xl p-5 border border-slate-600">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <School className="text-blue-400" size={24} />
+                    <div>
+                      <h3 className="font-semibold text-white">Current Class</h3>
+                      <p className="text-slate-400 text-sm">
+                        {classInfo.class_name} <span className="text-slate-500">({classInfo.class_code})</span>
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={leaveClass}
+                    className="flex items-center gap-2 bg-orange-600 hover:bg-orange-500 px-4 py-2 rounded-lg transition-colors font-medium text-white"
+                  >
+                    <LogOut size={18} />
+                    Leave Class
+                  </button>
+                </div>
+              </div>
+            )}
+
+            <div className="bg-red-900/20 rounded-xl p-5 border border-red-500/30">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <Trash2 className="text-red-400" size={24} />
+                  <div>
+                    <h3 className="font-semibold text-white">Delete All Progress</h3>
+                    <p className="text-slate-400 text-sm">
+                      Permanently delete all your lab results and local data
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setShowDeleteConfirm(true)}
+                  className="bg-red-600 hover:bg-red-500 px-4 py-2 rounded-lg transition-colors font-medium text-white"
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {showDeleteConfirm && (
+          <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+            <div className="bg-slate-800 border-2 border-red-500 rounded-2xl p-8 max-w-md w-full">
+              <div className="text-center mb-6">
+                <div className="w-16 h-16 bg-red-900/40 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Trash2 className="text-red-400" size={32} />
+                </div>
+                <h2 className="text-2xl font-bold text-white mb-2">Delete All Progress?</h2>
+                <p className="text-slate-300">
+                  This will permanently delete all your lab results and cannot be undone.
+                </p>
+              </div>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowDeleteConfirm(false)}
+                  className="flex-1 bg-slate-700 hover:bg-slate-600 px-4 py-3 rounded-lg transition-colors font-medium text-white"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={deleteAllProgress}
+                  className="flex-1 bg-red-600 hover:bg-red-500 px-4 py-3 rounded-lg transition-colors font-medium text-white"
+                >
+                  Delete Forever
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
           <div className="bg-slate-800 border border-slate-700 rounded-2xl p-6">
