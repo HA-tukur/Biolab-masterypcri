@@ -1681,24 +1681,27 @@ export default function App() {
         <div className="flex items-center h-full px-4 gap-6">
           <button
             onClick={() => setScreen("welcome")}
-            className={`h-full px-1 text-sm font-medium transition-colors border-b-2 whitespace-nowrap ${
+            className={`h-full px-1 text-sm transition-colors border-b-3 whitespace-nowrap ${
               screen === "welcome"
-                ? "border-[#3b82f6] text-[#111827]"
-                : "border-transparent text-[#6b7280] hover:text-[#374151]"
+                ? "border-[#3b82f6] text-[#111827] font-semibold"
+                : "border-transparent text-[#6b7280] hover:text-[#374151] font-medium"
             }`}
+            style={screen === "welcome" ? { borderBottomWidth: '3px' } : { borderBottomWidth: '3px' }}
           >
             Home
           </button>
           <button
             onClick={() => setShowManual(true)}
-            className="h-full px-1 text-sm font-medium border-b-2 border-transparent text-[#6b7280] hover:text-[#374151] transition-colors whitespace-nowrap"
+            className="h-full px-1 text-sm font-medium transition-colors text-[#6b7280] hover:text-[#374151] whitespace-nowrap"
+            style={{ borderBottom: '3px solid transparent' }}
           >
             Manual
           </button>
           {techniqueId === "DNA_EXT" && (
             <button
               onClick={() => setShowProtocol(true)}
-              className="h-full px-1 text-sm font-medium border-b-2 border-transparent text-[#6b7280] hover:text-[#374151] transition-colors whitespace-nowrap"
+              className="h-full px-1 text-sm font-medium transition-colors text-[#6b7280] hover:text-[#374151] whitespace-nowrap"
+              style={{ borderBottom: '3px solid transparent' }}
             >
               Protocol
             </button>
@@ -1706,7 +1709,7 @@ export default function App() {
         </div>
       </nav>
 
-      <div className="px-4">
+      <div className="px-4 border-t border-gray-100">
         <main>
           {screen === "welcome" && (
             <div className="space-y-12 animate-in fade-in py-8">
