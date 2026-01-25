@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import App from './App';
 import Header from './components/Header';
-import InstructorSetup from './components/InstructorSetup';
+import { InstructorSetup } from './components/InstructorSetup';
 // import InstructorDashboard from './components/InstructorDashboard'; // Temporarily disabled
 import StudentProfile from './components/StudentProfile';
 import Leaderboard from './components/Leaderboard';
