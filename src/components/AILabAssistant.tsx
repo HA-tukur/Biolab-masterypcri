@@ -13,7 +13,6 @@ export function AILabAssistant() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [apiKeyMissing, setApiKeyMissing] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -35,11 +34,6 @@ export function AILabAssistant() {
     if (!input.trim() || isLoading) return;
 
     const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
-
-    if (!apiKey || apiKey === "your_gemini_api_key_here") {
-      setApiKeyMissing(true);
-      return;
-    }
 
     const userMessage: Message = {
       role: "user",
@@ -202,17 +196,6 @@ Keep responses conversational and helpful, like a friendly lab instructor.`;
 
             <div ref={messagesEndRef} />
           </div>
-
-          {apiKeyMissing && (
-            <div className="px-4 py-2 bg-yellow-50 border-t border-yellow-200">
-              <p className="text-sm text-yellow-900 font-medium">
-                Please add your Gemini API key to use the AI Assistant.
-              </p>
-              <p className="text-xs text-yellow-800 mt-1">
-                Set VITE_GEMINI_API_KEY in your .env file and restart the dev server.
-              </p>
-            </div>
-          )}
 
           <div className="p-4 border-t border-gray-200 bg-white rounded-b-2xl">
             <div className="flex gap-2">
