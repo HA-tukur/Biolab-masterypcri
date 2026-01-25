@@ -282,7 +282,8 @@ export default function InstructorDashboard({ classCode }: InstructorDashboardPr
             totalStudents={stats?.totalStudents || 0}
             readyStudents={stats?.readyStudents || 0}
           />
-          <ErrorAnalyticsChart errors={errorData} />
+          {/* Temporarily commented out for debugging */}
+          {/* <ErrorAnalyticsChart errors={errorData} /> */}
         </div>
 
         <div className="bg-white rounded-lg shadow-lg p-6">
