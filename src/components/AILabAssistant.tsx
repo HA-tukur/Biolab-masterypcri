@@ -1,5 +1,4 @@
 import { useState, useRef, useEffect } from "react";
-import { GoogleGenerativeAI } from "@google/generative-ai";
 import { MessageCircle, Send, X, Bot, User, Loader2, Sparkles } from "lucide-react";
 
 interface Message {
@@ -33,18 +32,6 @@ export function AILabAssistant() {
   const sendMessage = async () => {
     if (!input.trim() || isLoading) return;
 
-    const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
-
-    // Debug logging - mask the API key for security
-    if (apiKey) {
-      const masked = apiKey.length > 8
-        ? `${apiKey.substring(0, 4)}...${apiKey.substring(apiKey.length - 4)}`
-        : '***';
-      console.log('Gemini API Key loaded:', masked, '(length:', apiKey.length, ')');
-    } else {
-      console.error('Gemini API Key is undefined or empty!');
-    }
-
     const userMessage: Message = {
       role: "user",
       content: input.trim(),
@@ -56,43 +43,38 @@ export function AILabAssistant() {
     setIsLoading(true);
 
     try {
-      console.log('Initializing GoogleGenerativeAI with API key...');
-      const genAI = new GoogleGenerativeAI(apiKey);
-      const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+      const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-assistant`;
 
-      const systemPrompt = `You are an AI Lab Assistant for a molecular biology simulation application called BioSim. You help students understand PCR (Polymerase Chain Reaction), primer design, gel electrophoresis, and other molecular biology techniques.
+      const response = await fetch(apiUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+        },
+        body: JSON.stringify({
+          message: userMessage.content,
+          conversationHistory: messages.map(msg => ({
+            role: msg.role,
+            content: msg.content
+          }))
+        }),
+      });
 
-You should:
-- Explain concepts clearly and concisely
-- Help students understand why their experiments succeed or fail
-- Provide guidance on primer design and validation
-- Explain PCR conditions and their effects
-- Be encouraging and educational
-- Use scientific terminology but explain it when needed
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
 
-Keep responses conversational and helpful, like a friendly lab instructor.`;
-
-      const conversationHistory = messages
-        .slice(-10)
-        .map((msg) => `${msg.role === "user" ? "Student" : "Assistant"}: ${msg.content}`)
-        .join("\n");
-
-      const prompt = `${systemPrompt}\n\nConversation History:\n${conversationHistory}\n\nStudent: ${userMessage.content}\n\nAssistant:`;
-
-      const result = await model.generateContent(prompt);
-      const response = await result.response;
-      const text = response.text();
+      const data = await response.json();
 
       const assistantMessage: Message = {
         role: "assistant",
-        content: text,
+        content: data.response,
         timestamp: new Date(),
       };
 
       setMessages((prev) => [...prev, assistantMessage]);
     } catch (error) {
-      console.error("Error calling Gemini API:", error);
-      console.error("Error details:", error instanceof Error ? error.message : String(error));
+      console.error("Error calling AI assistant:", error);
 
       const errorMessage: Message = {
         role: "assistant",
