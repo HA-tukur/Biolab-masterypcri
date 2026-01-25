@@ -1838,10 +1838,10 @@ export default function App() {
                           </h3>
                           <p className="text-slate-300 text-lg mb-1">
                             'Compete with learners worldwide. Track your progress. Build verifiable competency records.
-                            From students to researchers—see where you rank
+                            
                           </p>
                           <p className="text-amber-400 text-sm font-semibold">
-                            Perfect for high school students looking to stand out
+                            From students to researchers—see where you rank
                           </p>
                         </div>
                       </div>
