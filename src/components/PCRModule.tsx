@@ -106,7 +106,23 @@ export const PCRModule = ({ onClose, onComplete, onBackToLibrary, missionId = "l
     if (result.isValid) {
       try {
         const studentId = getOrCreateStudentId();
-        const classId = localStorage.getItem('biosim_class_id');
+
+        let classId = null;
+        try {
+          const { data: sessionData } = await supabase
+            .from('lab_sessions')
+            .select('class_id')
+            .eq('student_id', studentId)
+            .order('last_active', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+
+          if (sessionData) {
+            classId = sessionData.class_id;
+          }
+        } catch (sessionError) {
+          console.error('Error fetching session:', sessionError);
+        }
 
         await supabase.from('lab_results').insert({
           student_id: studentId,

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { createClient } from '@supabase/supabase-js';
+import { getOrCreateStudentId } from '../utils/studentId';
 
 const supabase = createClient(
   import.meta.env.VITE_SUPABASE_URL,
@@ -17,8 +18,6 @@ export default function ClassCodePrompt({ onComplete }: ClassCodePromptProps) {
   const [error, setError] = useState('');
 
   const handleSkip = () => {
-    localStorage.removeItem('biosim_class_id');
-    localStorage.setItem('biosim_class_prompt_shown', 'true');
     onComplete();
   };
 
@@ -46,10 +45,19 @@ export default function ClassCodePrompt({ onComplete }: ClassCodePromptProps) {
         return;
       }
 
-      localStorage.setItem('biosim_class_id', data.id);
-      localStorage.setItem('biosim_class_code', classCode.trim().toUpperCase());
-      localStorage.setItem('biosim_class_name', data.class_name);
-      localStorage.setItem('biosim_class_prompt_shown', 'true');
+      const studentId = getOrCreateStudentId();
+
+      const { error: sessionError } = await supabase
+        .from('lab_sessions')
+        .upsert({
+          student_id: studentId,
+          class_id: data.id,
+          last_active: new Date().toISOString()
+        }, {
+          onConflict: 'student_id,class_id'
+        });
+
+      if (sessionError) throw sessionError;
 
       onComplete();
     } catch (err) {
@@ -76,9 +84,9 @@ export default function ClassCodePrompt({ onComplete }: ClassCodePromptProps) {
               type="text"
               value={classCode}
               onChange={(e) => setClassCode(e.target.value.toUpperCase())}
-              placeholder="MOLB-XXXX"
+              placeholder="ABC123"
               className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg text-center text-lg font-semibold uppercase focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              maxLength={9}
+              maxLength={6}
             />
           </div>
 

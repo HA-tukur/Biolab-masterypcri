@@ -69,6 +69,7 @@ import { AntibodyIcon } from "./components/AntibodyIcon";
 import ClassCodePrompt from "./components/ClassCodePrompt";
 import { AILabAssistant } from "./components/AILabAssistant";
 import { config } from "./config";
+import { getOrCreateStudentId } from "./utils/studentId";
 
 const supabase = createClient(config.supabase.url, config.supabase.anonKey);
 
@@ -1601,7 +1602,22 @@ export default function App() {
     const missionTitle = MISSIONS_DATA[techniqueId][missionId]?.title || 'DNA Extraction';
     const statusText = localStatus === 'mastery' ? 'Verified Mastery' : 'Mission Failed';
 
-    const classId = localStorage.getItem('biosim_class_id');
+    let classId = null;
+    try {
+      const { data: sessionData } = await supabase
+        .from('lab_sessions')
+        .select('class_id')
+        .eq('student_id', studentId)
+        .order('last_active', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (sessionData) {
+        classId = sessionData.class_id;
+      }
+    } catch (sessionError) {
+      console.error('Error fetching session:', sessionError);
+    }
 
     const errorLogs = logs.filter(log => log.type === 'error').map(log => ({
       message: log.msg,

@@ -20,9 +20,12 @@ export default function InstructorSetup() {
   const [classCreated, setClassCreated] = useState<ClassCreatedState | null>(null);
 
   const generateClassCode = () => {
-    const prefix = 'MOLB';
-    const random = Math.random().toString(36).substring(2, 6).toUpperCase();
-    return `${prefix}-${random}`;
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    let code = '';
+    for (let i = 0; i < 6; i++) {
+      code += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return code;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
