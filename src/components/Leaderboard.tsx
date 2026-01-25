@@ -33,6 +33,7 @@ export default function Leaderboard() {
   const [profiles, setProfiles] = useState<LeaderboardProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'high_school' | 'university' | 'independent'>('all');
+  const [smartFilter, setSmartFilter] = useState<'country' | 'university' | 'class' | 'global'>('country');
   const [studentId] = useState(getOrCreateStudentId());
   const [userProfile, setUserProfile] = useState<LeaderboardProfile | null>(null);
   const [showRegistration, setShowRegistration] = useState(false);
@@ -222,9 +223,22 @@ export default function Leaderboard() {
                 <Trophy size={40} className="text-white" />
               </div>
               <div>
-                <h1 className="text-4xl font-black text-white mb-2">National Biotech Leaderboard</h1>
+                <h1 className="text-4xl font-black text-white mb-2">Global Rankings</h1>
                 <p className="text-slate-300 text-lg">Compete with students worldwide. Track your ranking. Share your achievements.</p>
               </div>
+            </div>
+            <div>
+              <label className="block text-xs text-slate-400 mb-2 font-medium">SMART FILTER</label>
+              <select
+                value={smartFilter}
+                onChange={(e) => setSmartFilter(e.target.value as any)}
+                className="bg-slate-900/80 border-2 border-amber-500/50 rounded-lg px-4 py-2 text-white font-medium focus:border-amber-500 focus:outline-none"
+              >
+                <option value="country">My Country</option>
+                <option value="university">My University</option>
+                <option value="class">My Class</option>
+                <option value="global" disabled>Global (Coming Soon)</option>
+              </select>
             </div>
             <a
               href="/"
@@ -359,54 +373,61 @@ export default function Leaderboard() {
             </div>
           ) : (
             <div className="space-y-3">
-              {profiles.map((profile) => (
-                <div
-                  key={profile.id}
-                  className={`border-2 rounded-xl p-4 transition-all hover:scale-[1.02] ${
-                    getRankBadge(profile.rank!)
-                  } ${profile.student_id === studentId ? 'ring-2 ring-amber-400' : ''}`}
-                >
-                  <div className="flex items-center justify-between flex-wrap gap-4">
-                    <div className="flex items-center gap-4">
-                      <div className="w-12 text-center">
-                        {getRankIcon(profile.rank!)}
+              {profiles.map((profile) => {
+                const isGoldOrSilver = profile.rank! <= 2;
+                const textColor = isGoldOrSilver ? 'text-[#111827]' : 'text-white';
+                const subTextColor = isGoldOrSilver ? 'text-[#374151]' : 'text-slate-300';
+                const metaTextColor = isGoldOrSilver ? 'text-[#6B7280]' : 'text-slate-400';
+
+                return (
+                  <div
+                    key={profile.id}
+                    className={`border-2 rounded-xl p-4 transition-all hover:scale-[1.02] ${
+                      getRankBadge(profile.rank!)
+                    } ${profile.student_id === studentId ? 'ring-2 ring-amber-400' : ''}`}
+                  >
+                    <div className="flex items-center justify-between flex-wrap gap-4">
+                      <div className="flex items-center gap-4">
+                        <div className="w-12 text-center">
+                          {getRankIcon(profile.rank!)}
+                        </div>
+                        <div>
+                          <h3 className={`font-bold text-lg flex items-center gap-2 ${textColor}`}>
+                            {profile.display_name}
+                            {profile.student_id === studentId && (
+                              <span className="text-xs bg-amber-500 px-2 py-0.5 rounded-full text-white">YOU</span>
+                            )}
+                          </h3>
+                          <p className={`text-sm ${subTextColor}`}>
+                            {profile.school_name || 'Independent'} • {profile.country}
+                          </p>
+                          <p className={`text-xs mt-1 capitalize ${metaTextColor}`}>
+                            {profile.user_type.replace('_', ' ')}
+                          </p>
+                        </div>
                       </div>
-                      <div>
-                        <h3 className="font-bold text-white text-lg flex items-center gap-2">
-                          {profile.display_name}
-                          {profile.student_id === studentId && (
-                            <span className="text-xs bg-amber-500 px-2 py-0.5 rounded-full">YOU</span>
-                          )}
-                        </h3>
-                        <p className="text-slate-300 text-sm">
-                          {profile.school_name || 'Independent'} • {profile.country}
-                        </p>
-                        <p className="text-slate-400 text-xs mt-1 capitalize">
-                          {profile.user_type.replace('_', ' ')}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex gap-6">
-                      <div className="text-center">
-                        <div className="text-xl font-bold text-white">{profile.total_score.toFixed(1)}</div>
-                        <div className="text-xs text-slate-400">Total Score</div>
-                      </div>
-                      <div className="text-center">
-                        <div className="text-xl font-bold text-white">{profile.missions_completed}</div>
-                        <div className="text-xs text-slate-400">Missions</div>
-                      </div>
-                      <div className="text-center">
-                        <div className="text-xl font-bold text-white">{profile.best_purity_score.toFixed(2)}</div>
-                        <div className="text-xs text-slate-400">Best Purity</div>
-                      </div>
-                      <div className="text-center">
-                        <div className="text-xl font-bold text-white">{profile.average_score.toFixed(2)}</div>
-                        <div className="text-xs text-slate-400">Average</div>
+                      <div className="flex gap-6">
+                        <div className="text-center">
+                          <div className={`text-xl font-bold ${textColor}`}>{profile.total_score.toFixed(1)}</div>
+                          <div className={`text-xs ${metaTextColor}`}>Total Score</div>
+                        </div>
+                        <div className="text-center">
+                          <div className={`text-xl font-bold ${textColor}`}>{profile.missions_completed}</div>
+                          <div className={`text-xs ${metaTextColor}`}>Missions</div>
+                        </div>
+                        <div className="text-center">
+                          <div className={`text-xl font-bold ${textColor}`}>{profile.best_purity_score.toFixed(2)}</div>
+                          <div className={`text-xs ${metaTextColor}`}>Best Purity</div>
+                        </div>
+                        <div className="text-center">
+                          <div className={`text-xl font-bold ${textColor}`}>{profile.average_score.toFixed(2)}</div>
+                          <div className={`text-xs ${metaTextColor}`}>Average</div>
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>

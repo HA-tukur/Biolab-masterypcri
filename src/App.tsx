@@ -1704,7 +1704,7 @@ export default function App() {
       {showPCRModal && <PCRModule onClose={() => setShowPCRModal(false)} onComplete={() => setShowPCRModal(false)} onBackToLibrary={() => { setShowPCRModal(false); setScreen("welcome"); }} missionId={selectedMissionId} />}
       {showBioPopup && <BiologicalPopup type={showBioPopup} onClose={() => setShowBioPopup(null)} />}
 
-      <div className="px-4 pt-4">
+      <div className="px-4">
         <main>
           {screen === "welcome" && (
             <div className="space-y-12 animate-in fade-in py-8">

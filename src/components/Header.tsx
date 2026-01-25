@@ -22,6 +22,9 @@ export default function Header() {
 
   const handleTabClick = (tab: string) => {
     setActiveTab(tab);
+    if (tab === 'home' && currentPath !== '/') {
+      handleNavigation('/');
+    }
     window.dispatchEvent(new CustomEvent('headerTabClick', { detail: { tab } }));
   };
 
