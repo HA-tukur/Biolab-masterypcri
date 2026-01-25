@@ -1677,73 +1677,43 @@ export default function App() {
       {showPCRModal && <PCRModule onClose={() => setShowPCRModal(false)} onComplete={() => setShowPCRModal(false)} onBackToLibrary={() => { setShowPCRModal(false); setScreen("welcome"); }} missionId={selectedMissionId} />}
       {showBioPopup && <BiologicalPopup type={showBioPopup} onClose={() => setShowBioPopup(null)} />}
 
-      <div className="max-w-6xl mx-auto p-4 md:p-8">
-        <header className="flex flex-wrap justify-between items-center gap-4 mb-8 bg-slate-800 p-5 rounded-2xl border border-slate-700 shadow-2xl">
-          <div className="flex-1 text-center order-2 md:order-1">
-            {techniqueId && missionId && MISSIONS_DATA[techniqueId]?.[missionId] && (
-              <h2 className="text-base md:text-lg font-bold text-white">
-                {MISSIONS_DATA[techniqueId][missionId].title}
-              </h2>
-            )}
-          </div>
-
-          <div className="flex gap-2 flex-wrap justify-center md:justify-end order-1 md:order-2">
+      <nav className="bg-[#f9fafb] h-12 border-b border-gray-200 sticky top-[56px] z-40 overflow-x-auto">
+        <div className="flex items-center h-full px-4 gap-6">
+          <button
+            onClick={() => setScreen("welcome")}
+            className={`h-full px-1 text-sm font-medium transition-colors border-b-2 whitespace-nowrap ${
+              screen === "welcome"
+                ? "border-[#3b82f6] text-[#111827]"
+                : "border-transparent text-[#6b7280] hover:text-[#374151]"
+            }`}
+          >
+            Home
+          </button>
+          <button
+            onClick={() => setShowManual(true)}
+            className="h-full px-1 text-sm font-medium border-b-2 border-transparent text-[#6b7280] hover:text-[#374151] transition-colors whitespace-nowrap"
+          >
+            Manual
+          </button>
+          {techniqueId === "DNA_EXT" && (
             <button
-              onClick={() => window.location.href = '/'}
-              className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 px-4 py-2.5 md:px-6 md:py-3 rounded-xl text-xs md:text-sm font-bold uppercase text-white transition-colors border-0 cursor-pointer touch-manipulation min-h-[44px]"
+              onClick={() => setShowProtocol(true)}
+              className="h-full px-1 text-sm font-medium border-b-2 border-transparent text-[#6b7280] hover:text-[#374151] transition-colors whitespace-nowrap"
             >
-              Lab Bench
+              Protocol
             </button>
-            <button
-              onClick={() => window.location.href = '/instructor/setup'}
-              className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 px-4 py-2.5 md:px-6 md:py-3 rounded-xl text-xs md:text-sm font-bold uppercase text-white transition-colors border-0 cursor-pointer touch-manipulation min-h-[44px]"
-            >
-              Instructor Portal
-            </button>
-          </div>
-        </header>
-
-        <div className="flex justify-center mb-8">
-          <div className="flex gap-2 flex-wrap justify-center bg-slate-800/50 p-3 rounded-xl border border-slate-700">
-            <button
-              onClick={() => setScreen("welcome")}
-              className={`flex items-center gap-2 px-4 py-2.5 md:px-5 md:py-3 rounded-lg text-xs md:text-sm font-bold uppercase transition-colors border-0 cursor-pointer touch-manipulation min-h-[44px] ${screen === "welcome" ? "bg-slate-700 text-white" : "bg-transparent text-slate-400 hover:text-white hover:bg-slate-700/50"}`}
-            >
-              <Home size={16}/> Home
-            </button>
-            {techniqueId === "DNA_EXT" && (
-              <button
-                onClick={() => setShowProtocol(true)}
-                className="flex items-center gap-2 px-4 py-2.5 md:px-5 md:py-3 rounded-lg text-xs md:text-sm font-bold uppercase bg-transparent text-emerald-400 hover:bg-emerald-900/20 transition-colors border-0 cursor-pointer touch-manipulation min-h-[44px]"
-              >
-                <ScrollText size={16}/> Protocol
-              </button>
-            )}
-            <button
-              onClick={() => setShowManual(true)}
-              className="flex items-center gap-2 px-4 py-2.5 md:px-5 md:py-3 rounded-lg text-xs md:text-sm font-bold uppercase bg-transparent text-slate-400 hover:text-white hover:bg-slate-700/50 transition-colors border-0 cursor-pointer touch-manipulation min-h-[44px]"
-            >
-              <BookOpen size={16}/> Manual
-            </button>
-          </div>
+          )}
         </div>
+      </nav>
 
+      <div className="px-4">
         <main>
           {screen === "welcome" && (
-            <div className="space-y-12 animate-in fade-in">
+            <div className="space-y-12 animate-in fade-in py-8">
               <section className="text-center space-y-6 max-w-4xl mx-auto">
-                <div className="flex items-center justify-center gap-4 mb-8">
-                  <div className="bg-indigo-600 p-3 rounded-xl">
-                    <Microscope size={32} className="text-white"/>
-                  </div>
-                  <h1 className="text-3xl md:text-4xl font-black uppercase tracking-tight text-white">
-                    BioSim Lab
-                  </h1>
-                </div>
-
-                <h2 className="text-3xl md:text-5xl font-black text-slate-50 uppercase tracking-tighter">
+                <h1 className="text-3xl md:text-5xl font-black text-slate-50 uppercase tracking-tighter">
                   Practice Lab Protocols Before Your First Real Experiment
-                </h2>
+                </h1>
 
                 <p className="text-lg text-slate-300 leading-relaxed max-w-3xl mx-auto">
                   Built for students who lack equipment access—fail safely,

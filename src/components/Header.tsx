@@ -1,37 +1,52 @@
 import { Microscope } from 'lucide-react';
 
 export default function Header() {
+  const currentPath = window.location.pathname;
+  const isLabBench = currentPath === '/' || (!currentPath.startsWith('/instructor'));
+  const isInstructor = currentPath.startsWith('/instructor');
+
   const handleNavigation = (path: string) => {
     window.history.pushState({}, '', path);
     window.dispatchEvent(new PopStateEvent('popstate'));
   };
 
   return (
-    <header className="bg-white border-b border-gray-200 sticky top-0 z-50 shadow-sm">
-      <div className="max-w-7xl mx-auto px-4 py-4">
-        <div className="flex items-center justify-between">
+    <header className="bg-[#2d2d2d] sticky top-0 z-50 min-h-[56px]">
+      <div className="flex flex-wrap items-center justify-between h-full px-4 py-2 gap-2">
+        <button
+          onClick={() => handleNavigation('/')}
+          className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+        >
+          <Microscope className="w-5 h-5 text-[#00A3AD]" />
+          <span className="text-lg" style={{ fontFamily: 'sans-serif' }}>
+            <span className="font-bold text-[#00A3AD]">BioSim</span>
+            <span className="font-normal text-white"> Lab</span>
+          </span>
+        </button>
+
+        <div className="flex items-center gap-2 flex-wrap justify-end">
           <button
             onClick={() => handleNavigation('/')}
-            className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+            title="Practice & Learn"
+            className={`px-4 py-2 rounded text-sm font-medium transition-all whitespace-nowrap ${
+              isLabBench
+                ? 'bg-[#00A3AD] text-white'
+                : 'bg-transparent text-white opacity-60 hover:opacity-100'
+            }`}
           >
-            <Microscope className="w-8 h-8 text-blue-600" />
-            <span className="text-2xl font-bold text-gray-900">BioSim Lab</span>
+            Lab Bench
           </button>
-
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => handleNavigation('/')}
-              className="px-6 py-2.5 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors shadow-sm"
-            >
-              Student View
-            </button>
-            <button
-              onClick={() => handleNavigation('/instructor/setup')}
-              className="px-6 py-2.5 bg-emerald-600 text-white rounded-lg font-medium hover:bg-emerald-700 transition-colors shadow-sm"
-            >
-              Instructor Portal
-            </button>
-          </div>
+          <button
+            onClick={() => handleNavigation('/instructor/setup')}
+            title="Manage Students"
+            className={`px-4 py-2 rounded text-sm font-medium transition-all whitespace-nowrap ${
+              isInstructor
+                ? 'bg-[#00A3AD] text-white'
+                : 'bg-transparent text-white opacity-60 hover:opacity-100'
+            }`}
+          >
+            Instructor Portal
+          </button>
         </div>
       </div>
     </header>
