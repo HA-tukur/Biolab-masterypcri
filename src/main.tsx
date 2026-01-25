@@ -53,10 +53,18 @@ class ErrorBoundary extends Component<
   }
 }
 
-createRoot(document.getElementById('root')!).render(
-  <StrictMode>
-    <ErrorBoundary>
-      <Router />
-    </ErrorBoundary>
-  </StrictMode>
-);
+const rootElement = document.getElementById('root');
+
+if (!rootElement) {
+  console.error('Root element not found');
+  document.body.innerHTML = '<div style="padding: 20px; font-family: sans-serif;"><h1>Error: Root element not found</h1></div>';
+} else {
+  console.log('Mounting React app...');
+  createRoot(rootElement).render(
+    <StrictMode>
+      <ErrorBoundary>
+        <Router />
+      </ErrorBoundary>
+    </StrictMode>
+  );
+}

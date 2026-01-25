@@ -1131,11 +1131,19 @@ const NanodropVisualComp = ({ step, measured, hasDNA = true }) => {
 };
 
 export default function App() {
+  console.log('App component rendering');
+
   const [user, setUser] = useState(null);
   const [historyRecords, setHistoryRecords] = useState([]);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [savedRecordId, setSavedRecordId] = useState(null);
   const [showClassCodePrompt, setShowClassCodePrompt] = useState(false);
+  const [screen, setScreen] = useState("welcome");
+  const [selectedCategory, setSelectedCategory] = useState(null);
+
+  useEffect(() => {
+    console.log('App mounted, screen:', screen);
+  }, []);
 
   useEffect(() => {
     const setupAuth = async () => {
@@ -1144,10 +1152,8 @@ export default function App() {
         if (session) {
           setUser(session.user);
         }
-        // App works without authentication - history just won't be saved
       } catch (error) {
         console.error("Auth error:", error);
-        // Continue without auth - app still functions
       }
     };
     setupAuth();
@@ -1156,21 +1162,26 @@ export default function App() {
   useEffect(() => {
     if (!user) return;
     const fetchHistory = async () => {
-      const data = await historyStore.fetchHistory(user.id);
-      setHistoryRecords(data);
+      try {
+        const data = await historyStore.fetchHistory(user.id);
+        setHistoryRecords(data);
+      } catch (error) {
+        console.error("History fetch error:", error);
+      }
     };
     fetchHistory();
   }, [user]);
 
   useEffect(() => {
-    const hasSeenPrompt = localStorage.getItem('biosim_class_prompt_shown');
-    if (!hasSeenPrompt) {
-      setShowClassCodePrompt(true);
+    try {
+      const hasSeenPrompt = localStorage.getItem('biosim_class_prompt_shown');
+      if (!hasSeenPrompt) {
+        setShowClassCodePrompt(true);
+      }
+    } catch (error) {
+      console.error("LocalStorage error:", error);
     }
   }, []);
-
-  const [screen, setScreen] = useState("welcome");
-  const [selectedCategory, setSelectedCategory] = useState(null);
 
   useEffect(() => {
     const handleHeaderTabClick = (e: CustomEvent) => {
@@ -1689,6 +1700,7 @@ export default function App() {
 
   return (
     <div className="min-h-screen text-slate-100 font-sans bg-[#0f172a]">
+      {console.log('Rendering App, screen state:', screen)}
 
       {showClassCodePrompt && (
         <ClassCodePrompt

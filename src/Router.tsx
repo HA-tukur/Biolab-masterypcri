@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import App from './App';
 import Header from './components/Header';
 import InstructorSetup from './components/InstructorSetup';
-import InstructorDashboard from './components/InstructorDashboard';
+// import InstructorDashboard from './components/InstructorDashboard'; // Temporarily disabled
 import StudentProfile from './components/StudentProfile';
 import Leaderboard from './components/Leaderboard';
 
@@ -27,12 +27,8 @@ export default function Router() {
   } else if (currentPath === '/instructor/setup') {
     content = <InstructorSetup />;
   } else if (currentPath.startsWith('/instructor/')) {
-    const classCode = currentPath.split('/instructor/')[1];
-    if (classCode && classCode !== 'setup') {
-      content = <InstructorDashboard classCode={classCode} />;
-    } else {
-      content = <App />;
-    }
+    // Temporarily redirect instructor dashboards to setup
+    content = <InstructorSetup />;
   } else {
     content = <App />;
   }
