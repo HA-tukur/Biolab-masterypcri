@@ -23,8 +23,11 @@ Deno.serve(async (req: Request) => {
     const apiKey = Deno.env.get("GEMINI_API_KEY");
 
     if (!apiKey || apiKey === "your_gemini_api_key_here") {
+      console.error("GEMINI_API_KEY is not set or is placeholder value");
       throw new Error("Gemini API key not configured");
     }
+
+    console.log("API Key found, length:", apiKey.length);
 
     const { message, conversationHistory }: RequestBody = await req.json();
 
