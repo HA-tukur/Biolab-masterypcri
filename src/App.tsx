@@ -1818,36 +1818,32 @@ export default function App() {
                   </div>
                 </section>
 
-                <section className="max-w-4xl mx-auto">
+                <section className="max-w-4xl mx-auto py-3">
                   <div
                     onClick={() => {
                       window.history.pushState({}, '', '/leaderboard');
                       window.dispatchEvent(new PopStateEvent('popstate'));
                     }}
-                    className="bg-gradient-to-r from-amber-900/40 via-yellow-900/30 to-amber-900/40 border-2 border-amber-400/60 rounded-2xl p-8 cursor-pointer hover:scale-[1.02] transition-transform hover:border-amber-300 hover:shadow-2xl hover:shadow-amber-500/20"
+                    className="bg-gradient-to-r from-amber-900/40 via-yellow-900/30 to-amber-900/40 border-2 border-amber-400/60 rounded-2xl p-5 cursor-pointer hover:scale-[1.02] transition-transform hover:border-amber-300 hover:shadow-2xl hover:shadow-amber-500/20"
                   >
-                    <div className="flex items-center justify-between flex-wrap gap-6">
-                      <div className="flex items-center gap-6">
-                        <div className="bg-gradient-to-br from-amber-500 to-yellow-600 p-5 rounded-2xl shadow-xl">
-                          <Trophy size={40} className="text-white" />
+                    <div className="flex items-center justify-between flex-wrap gap-4">
+                      <div className="flex items-center gap-4">
+                        <div className="bg-gradient-to-br from-amber-500 to-yellow-600 p-3 rounded-2xl shadow-xl">
+                          <Trophy size={28} className="text-white" />
                         </div>
                         <div>
-                          <h3 className="text-3xl font-black text-white mb-2 flex items-center gap-3">
+                          <h3 className="text-xl font-black text-white mb-1.5 flex items-center gap-3">
                             Global Rankings
-                            <span className="text-sm bg-amber-500 px-3 py-1 rounded-full font-bold animate-pulse">NEW</span>
+                            <span className="text-xs bg-amber-500 px-2.5 py-0.5 rounded-full font-bold animate-pulse">NEW</span>
                           </h3>
-                          <p className="text-slate-300 text-lg mb-1">
-                            Compete with learners worldwide. Track your progress. Build verifiable competency records.
-                            
-                          </p>
-                          <p className="text-amber-400 text-sm font-semibold">
-                            From students to researchers—see where you rank
+                          <p className="text-slate-300 text-sm leading-snug">
+                            Compete with learners worldwide. Track your progress. Build verifiable competency records. From students to researchers—see where you rank.
                           </p>
                         </div>
                       </div>
-                      <div className="flex items-center gap-3 text-amber-400 font-black text-lg">
+                      <div className="flex items-center gap-2 text-amber-400 font-black text-base">
                         <span>View Rankings</span>
-                        <ChevronRight size={24} />
+                        <ChevronRight size={20} />
                       </div>
                     </div>
                   </div>
