@@ -224,7 +224,7 @@ export default function Leaderboard() {
               </div>
               <div>
                 <h1 className="text-4xl font-black text-white mb-2">Global Rankings</h1>
-                <p className="text-slate-300 text-lg">Compete with students worldwide. Track your ranking. Share your achievements.</p>
+                <p className="text-slate-300 text-lg">Compete with learners worldwide. Track your progress. Build verifiable competency records. From students to researchers—see where you rank</p>
               </div>
             </div>
             <div>
@@ -240,13 +240,16 @@ export default function Leaderboard() {
                 <option value="global" disabled>Global (Coming Soon)</option>
               </select>
             </div>
-            <a
-              href="/"
+            <button
+              onClick={() => {
+                window.history.pushState({}, '', '/');
+                window.dispatchEvent(new PopStateEvent('popstate'));
+              }}
               className="flex items-center gap-2 bg-slate-700 hover:bg-slate-600 px-4 py-3 rounded-lg transition-colors font-medium"
             >
               <Home size={18} />
               Back to Lab
-            </a>
+            </button>
           </div>
 
           {userProfile ? (
