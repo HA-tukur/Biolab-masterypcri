@@ -1713,7 +1713,6 @@ export default function App() {
             <div className="bg-indigo-600 p-2.5 rounded-xl group-hover:scale-105 transition-transform"><Microscope size={22} className="text-white"/></div>
             <div>
               <h1 className="text-lg font-black uppercase tracking-tight font-sans">BioSim Lab <span className="text-indigo-400 font-mono ml-1 text-[10px]">v1.7.1</span></h1>
-              <p className="text-[9px] text-slate-500 uppercase font-bold tracking-[0.15em] mt-1.5 font-mono italic leading-none">OSV Readiness Build</p>
             </div>
           </div>
           <div className="flex gap-2">
