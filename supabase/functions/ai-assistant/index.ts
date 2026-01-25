@@ -20,7 +20,7 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
-    const apiKey = Deno.env.get("VITE_GEMINI_API_KEY");
+    const apiKey = Deno.env.get("GEMINI_API_KEY");
 
     if (!apiKey || apiKey === "your_gemini_api_key_here") {
       throw new Error("Gemini API key not configured");
