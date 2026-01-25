@@ -206,7 +206,7 @@ Keep responses conversational and helpful, like a friendly lab instructor.`;
           {apiKeyMissing && (
             <div className="px-4 py-2 bg-yellow-50 border-t border-yellow-200">
               <p className="text-xs text-yellow-800">
-                Please add your Gemini API key to the .env file to use the AI Assistant.
+                Please add your Gemini API key to the Secrets menu to use the AI Assistant.
               </p>
             </div>
           )}
