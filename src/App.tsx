@@ -67,6 +67,7 @@ import { CategoryTechniques } from "./components/CategoryTechniques";
 import { PCRMissions } from "./components/PCRMissions";
 import { AntibodyIcon } from "./components/AntibodyIcon";
 import ClassCodePrompt from "./components/ClassCodePrompt";
+import { AILabAssistant } from "./components/AILabAssistant";
 import { config } from "./config";
 
 const supabase = createClient(config.supabase.url, config.supabase.anonKey);
@@ -2846,6 +2847,8 @@ export default function App() {
           </div>
         </div>
       )}
+
+      <AILabAssistant />
     </div>
   );
 }
