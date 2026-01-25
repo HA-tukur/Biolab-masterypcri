@@ -35,6 +35,16 @@ export function AILabAssistant() {
 
     const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
 
+    // Debug logging - mask the API key for security
+    if (apiKey) {
+      const masked = apiKey.length > 8
+        ? `${apiKey.substring(0, 4)}...${apiKey.substring(apiKey.length - 4)}`
+        : '***';
+      console.log('Gemini API Key loaded:', masked, '(length:', apiKey.length, ')');
+    } else {
+      console.error('Gemini API Key is undefined or empty!');
+    }
+
     const userMessage: Message = {
       role: "user",
       content: input.trim(),
@@ -46,6 +56,7 @@ export function AILabAssistant() {
     setIsLoading(true);
 
     try {
+      console.log('Initializing GoogleGenerativeAI with API key...');
       const genAI = new GoogleGenerativeAI(apiKey);
       const model = genAI.getGenerativeModel({ model: "gemini-pro" });
 
@@ -81,6 +92,7 @@ Keep responses conversational and helpful, like a friendly lab instructor.`;
       setMessages((prev) => [...prev, assistantMessage]);
     } catch (error) {
       console.error("Error calling Gemini API:", error);
+      console.error("Error details:", error instanceof Error ? error.message : String(error));
 
       const errorMessage: Message = {
         role: "assistant",
