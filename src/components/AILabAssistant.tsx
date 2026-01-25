@@ -152,8 +152,8 @@ Keep responses conversational and helpful, like a friendly lab instructor.`;
                 <div className="bg-gradient-to-r from-blue-100 to-purple-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
                   <Bot className="h-8 w-8 text-blue-600" />
                 </div>
-                <h4 className="font-semibold text-gray-800 mb-2">Welcome to AI Lab Assistant!</h4>
-                <p className="text-sm text-gray-600 max-w-xs mx-auto">
+                <h4 className="font-semibold mb-2" style={{ color: '#1f2937' }}>Welcome to AI Lab Assistant!</h4>
+                <p className="text-sm max-w-xs mx-auto" style={{ color: '#4b5563' }}>
                   Ask me anything about PCR, primer design, or molecular biology techniques.
                 </p>
               </div>
@@ -172,12 +172,12 @@ Keep responses conversational and helpful, like a friendly lab instructor.`;
                 <div
                   className={`max-w-[75%] rounded-2xl px-4 py-2 ${
                     message.role === "user"
-                      ? "bg-blue-100 text-gray-900"
-                      : "bg-gray-100 text-gray-900"
+                      ? "bg-blue-100"
+                      : "bg-gray-100"
                   }`}
                 >
-                  <p className="text-sm whitespace-pre-wrap text-gray-900">{message.content}</p>
-                  <span className="text-xs opacity-70 mt-1 block text-gray-700">
+                  <p className="text-sm whitespace-pre-wrap" style={{ color: '#111827' }}>{message.content}</p>
+                  <span className="text-xs mt-1 block" style={{ color: '#6b7280', opacity: 0.8 }}>
                     {message.timestamp.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                   </span>
                 </div>
@@ -223,7 +223,7 @@ Keep responses conversational and helpful, like a friendly lab instructor.`;
                 onChange={(e) => setInput(e.target.value)}
                 onKeyPress={handleKeyPress}
                 placeholder="Ask about PCR, primers, or lab techniques..."
-                className="flex-1 px-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                className="flex-1 px-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm text-gray-900 placeholder-gray-500"
                 disabled={isLoading}
               />
               <button
