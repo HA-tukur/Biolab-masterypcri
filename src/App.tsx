@@ -1837,7 +1837,7 @@ export default function App() {
                             <span className="text-sm bg-amber-500 px-3 py-1 rounded-full font-bold animate-pulse">NEW</span>
                           </h3>
                           <p className="text-slate-300 text-lg mb-1">
-                            'Compete with learners worldwide. Track your progress. Build verifiable competency records.
+                            Compete with learners worldwide. Track your progress. Build verifiable competency records.
                             
                           </p>
                           <p className="text-amber-400 text-sm font-semibold">
