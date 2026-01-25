@@ -94,7 +94,7 @@ export default function ClassCodePrompt({ onComplete, onJoinMission }: ClassCode
             </svg>
           </button>
           <h2 className="text-2xl font-bold text-gray-900 mb-4">
-            Enter Secure Session
+            Enter Your Class Code
           </h2>
           <p className="text-gray-600 mb-6">
             Ask your instructor for the class code to join.
@@ -106,7 +106,7 @@ export default function ClassCodePrompt({ onComplete, onJoinMission }: ClassCode
               value={classCode}
               onChange={(e) => setClassCode(e.target.value.toUpperCase())}
               placeholder="ABC123"
-              className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg text-center text-lg font-semibold uppercase focus:ring-2 focus:ring-blue-500 focus:border-transparent text-[#4B5563] placeholder:text-gray-400"
+              className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg text-center text-lg font-semibold uppercase focus:ring-2 focus:ring-blue-500 focus:border-transparent text-[#111827] placeholder:text-gray-400"
               maxLength={6}
             />
           </div>
@@ -156,8 +156,11 @@ export default function ClassCodePrompt({ onComplete, onJoinMission }: ClassCode
             </svg>
           </div>
           <h2 className="text-2xl font-bold text-gray-900 mb-2">
-            How would you like to access the lab today?
+            Welcome to BioSim Lab
           </h2>
+          <p className="text-gray-600">
+            Are you part of a university class?
+          </p>
         </div>
 
         <div className="space-y-3">
@@ -165,7 +168,7 @@ export default function ClassCodePrompt({ onComplete, onJoinMission }: ClassCode
             onClick={() => setStep('enterCode')}
             className="w-full px-6 py-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium text-left flex items-center justify-between"
           >
-            <span>Enter Secure Session</span>
+            <span>Yes - I have a class code</span>
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
             </svg>
@@ -175,11 +178,17 @@ export default function ClassCodePrompt({ onComplete, onJoinMission }: ClassCode
             onClick={handleSkip}
             className="w-full px-6 py-4 border-2 border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium text-left flex items-center justify-between"
           >
-            <span>Open Private Lab Bench</span>
+            <span>No - Practice on my own</span>
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
             </svg>
           </button>
+        </div>
+
+        <div className="mt-6 pt-6 border-t border-gray-200 text-center">
+          <p className="text-sm text-gray-500">
+            You can always practice without joining a class
+          </p>
         </div>
       </div>
     </div>
