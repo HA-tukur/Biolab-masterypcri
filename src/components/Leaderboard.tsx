@@ -223,11 +223,8 @@ export default function Leaderboard() {
                 <Trophy size={40} className="text-white" />
               </div>
               <div>
-                <h1 className="text-4xl font-black text-white mb-2 flex items-center gap-3">
-                  Global Rankings
-                  <span className="text-xs font-bold bg-gradient-to-r from-emerald-500 to-teal-500 text-white px-3 py-1 rounded-full animate-pulse">NEW</span>
-                </h1>
-                <p className="text-slate-300 text-lg">Compete with learners worldwide. Track your progress. Build verifiable competency records. From students to researchers—see where you rank.</p>
+                <h1 className="text-4xl font-black text-white mb-2">Global Rankings</h1>
+                <p className="text-slate-300 text-lg">Compete with students worldwide. Track your ranking. Share your achievements.</p>
               </div>
             </div>
             <div>
