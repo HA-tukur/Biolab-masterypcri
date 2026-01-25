@@ -11,10 +11,18 @@ interface ClassCreatedState {
   className: string;
 }
 
+const AVAILABLE_MISSIONS = [
+  { id: 'DNA_EXT_A', name: 'DNA Extraction - Clinical Diagnostic' },
+  { id: 'DNA_EXT_B', name: 'DNA Extraction - Agricultural Research' },
+  { id: 'PCR_A', name: 'PCR - Diagnostic Amplification' },
+  { id: 'PCR_B', name: 'PCR - Mutation Screening' }
+];
+
 export default function InstructorSetup() {
   const [instructorName, setInstructorName] = useState('');
   const [instructorEmail, setInstructorEmail] = useState('');
   const [className, setClassName] = useState('');
+  const [selectedMission, setSelectedMission] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [classCreated, setClassCreated] = useState<ClassCreatedState | null>(null);
@@ -42,7 +50,8 @@ export default function InstructorSetup() {
           instructor_name: instructorName,
           instructor_email: instructorEmail,
           class_name: className,
-          class_code: classCode
+          class_code: classCode,
+          mission_id: selectedMission
         });
 
       if (insertError) throw insertError;
@@ -118,6 +127,7 @@ export default function InstructorSetup() {
                 setInstructorName('');
                 setInstructorEmail('');
                 setClassName('');
+                setSelectedMission('');
               }}
               className="mt-3 text-sm text-gray-600 hover:text-gray-800"
             >
@@ -185,6 +195,29 @@ export default function InstructorSetup() {
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               placeholder="Molecular Biology 301"
             />
+          </div>
+
+          <div>
+            <label htmlFor="mission" className="block text-sm font-medium text-gray-700 mb-1">
+              Select Lab Module
+            </label>
+            <select
+              id="mission"
+              value={selectedMission}
+              onChange={(e) => setSelectedMission(e.target.value)}
+              required
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
+            >
+              <option value="">Choose a lab module...</option>
+              {AVAILABLE_MISSIONS.map((mission) => (
+                <option key={mission.id} value={mission.id}>
+                  {mission.name}
+                </option>
+              ))}
+            </select>
+            <p className="mt-1 text-xs text-gray-500">
+              Students will be directed to this lab when they join your session
+            </p>
           </div>
 
           {error && (

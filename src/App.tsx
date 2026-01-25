@@ -1690,7 +1690,14 @@ export default function App() {
   return (
     <div className="min-h-screen text-slate-100 font-sans bg-[#0f172a]">
 
-      {showClassCodePrompt && <ClassCodePrompt onComplete={() => setShowClassCodePrompt(false)} />}
+      {showClassCodePrompt && (
+        <ClassCodePrompt
+          onComplete={() => setShowClassCodePrompt(false)}
+          onJoinMission={(techniqueId, missionId) => {
+            startMission(techniqueId, missionId);
+          }}
+        />
+      )}
       {showManual && <LabManualOverlay onClose={() => setShowManual(false)} />}
       {showProtocol && <ProtocolBookOverlay onClose={() => setShowProtocol(false)} />}
       {showReadinessModal && <ReadinessOverlay onClose={() => setShowReadinessModal(false)} />}

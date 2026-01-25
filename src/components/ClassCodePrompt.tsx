@@ -9,9 +9,10 @@ const supabase = createClient(
 
 interface ClassCodePromptProps {
   onComplete: () => void;
+  onJoinMission?: (techniqueId: string, missionId: string) => void;
 }
 
-export default function ClassCodePrompt({ onComplete }: ClassCodePromptProps) {
+export default function ClassCodePrompt({ onComplete, onJoinMission }: ClassCodePromptProps) {
   const [step, setStep] = useState<'initial' | 'enterCode'>('initial');
   const [classCode, setClassCode] = useState('');
   const [loading, setLoading] = useState(false);
@@ -33,7 +34,7 @@ export default function ClassCodePrompt({ onComplete }: ClassCodePromptProps) {
     try {
       const { data, error: fetchError } = await supabase
         .from('classes')
-        .select('id, class_name, instructor_name')
+        .select('id, class_name, instructor_name, mission_id')
         .eq('class_code', classCode.trim().toUpperCase())
         .maybeSingle();
 
@@ -60,6 +61,17 @@ export default function ClassCodePrompt({ onComplete }: ClassCodePromptProps) {
       if (sessionError) throw sessionError;
 
       onComplete();
+
+      if (data.mission_id && onJoinMission) {
+        const parts = data.mission_id.split('_');
+        if (parts.length >= 3) {
+          const techniqueId = `${parts[0]}_${parts[1]}`;
+          const missionId = parts[2];
+          setTimeout(() => {
+            onJoinMission(techniqueId, missionId);
+          }, 100);
+        }
+      }
     } catch (err) {
       setError('Failed to validate code. Please try again.');
       console.error(err);
@@ -85,7 +97,7 @@ export default function ClassCodePrompt({ onComplete }: ClassCodePromptProps) {
               value={classCode}
               onChange={(e) => setClassCode(e.target.value.toUpperCase())}
               placeholder="ABC123"
-              className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg text-center text-lg font-semibold uppercase focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg text-center text-lg font-semibold uppercase focus:ring-2 focus:ring-blue-500 focus:border-transparent text-[#111827] placeholder:text-gray-400"
               maxLength={6}
             />
           </div>
