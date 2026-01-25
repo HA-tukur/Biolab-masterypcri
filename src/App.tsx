@@ -1171,6 +1171,26 @@ export default function App() {
 
   const [screen, setScreen] = useState("welcome");
   const [selectedCategory, setSelectedCategory] = useState(null);
+
+  useEffect(() => {
+    const handleHeaderTabClick = (e: CustomEvent) => {
+      const tab = e.detail.tab;
+      if (tab === 'home') {
+        setScreen('welcome');
+      } else if (tab === 'manual') {
+        setShowManual(true);
+      }
+    };
+    window.addEventListener('headerTabClick' as any, handleHeaderTabClick);
+    return () => window.removeEventListener('headerTabClick' as any, handleHeaderTabClick);
+  }, []);
+
+  useEffect(() => {
+    const currentTab = screen === 'welcome' ? 'home' : null;
+    if (currentTab) {
+      window.dispatchEvent(new CustomEvent('labTabChange', { detail: { tab: currentTab } }));
+    }
+  }, [screen]);
   const [techniqueId, setTechniqueId] = useState(null);
   const [selectedMissionId, setSelectedMissionId] = useState(null);
   const [missionId, setMissionId] = useState(null);
@@ -1677,39 +1697,7 @@ export default function App() {
       {showPCRModal && <PCRModule onClose={() => setShowPCRModal(false)} onComplete={() => setShowPCRModal(false)} onBackToLibrary={() => { setShowPCRModal(false); setScreen("welcome"); }} missionId={selectedMissionId} />}
       {showBioPopup && <BiologicalPopup type={showBioPopup} onClose={() => setShowBioPopup(null)} />}
 
-      <nav className="bg-[#f9fafb] h-12 border-b border-gray-200 sticky top-[56px] z-40 overflow-x-auto">
-        <div className="flex items-center h-full px-4 gap-6">
-          <button
-            onClick={() => setScreen("welcome")}
-            className={`h-full px-1 text-sm transition-colors border-b-3 whitespace-nowrap ${
-              screen === "welcome"
-                ? "border-[#3b82f6] text-[#111827] font-semibold"
-                : "border-transparent text-[#6b7280] hover:text-[#374151] font-medium"
-            }`}
-            style={screen === "welcome" ? { borderBottomWidth: '3px' } : { borderBottomWidth: '3px' }}
-          >
-            Home
-          </button>
-          <button
-            onClick={() => setShowManual(true)}
-            className="h-full px-1 text-sm font-medium transition-colors text-[#6b7280] hover:text-[#374151] whitespace-nowrap"
-            style={{ borderBottom: '3px solid transparent' }}
-          >
-            Manual
-          </button>
-          {techniqueId === "DNA_EXT" && (
-            <button
-              onClick={() => setShowProtocol(true)}
-              className="h-full px-1 text-sm font-medium transition-colors text-[#6b7280] hover:text-[#374151] whitespace-nowrap"
-              style={{ borderBottom: '3px solid transparent' }}
-            >
-              Protocol
-            </button>
-          )}
-        </div>
-      </nav>
-
-      <div className="px-4 border-t border-gray-100">
+      <div className="px-4 pt-4">
         <main>
           {screen === "welcome" && (
             <div className="space-y-12 animate-in fade-in py-8">
