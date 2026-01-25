@@ -1032,7 +1032,7 @@ const LabManualOverlay = ({ onClose }) => (
           </section>
           <section className="space-y-2 font-sans text-white">
             <h4 className="text-indigo-300 font-bold uppercase text-xs font-mono flex items-center gap-2"><Database size={14} />3. Lab IDs</h4>
-            <p className="text-slate-300">Your progress is saved to your Lab ID. You can view history in the Ledger without disrupting your current experiment.</p>
+            <p className="text-slate-300">Your progress is saved to your Lab ID and tracked automatically for your learning journey.</p>
           </section>
         </div>
         <div className="p-6 bg-slate-900/50 border-t border-slate-700 font-mono"><button onClick={onClose} className="w-full bg-indigo-600 py-4 rounded-2xl font-black uppercase text-white shadow-lg border-0 cursor-pointer text-xs font-mono font-bold tracking-widest uppercase">Return to Bench</button></div>
@@ -1040,31 +1040,6 @@ const LabManualOverlay = ({ onClose }) => (
     </div>
 );
 
-const LabLedgerOverlay = ({ onClose, historyRecords, user }) => (
-    <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-slate-950/90 backdrop-blur-sm font-sans text-white">
-      <div className="bg-slate-800 border border-indigo-500/50 w-full max-w-2xl rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col max-h-[85vh]">
-        <div className="p-6 border-b border-slate-700 bg-slate-900/50 font-mono text-white font-bold space-y-2">
-          <div className="flex justify-between items-center">
-            <div className="flex items-center gap-3 text-indigo-400"><History size={24} /><h3>Cloud Lab Ledger</h3></div>
-            <button onClick={onClose} className="text-slate-500 border-0 bg-transparent cursor-pointer"><X size={24}/></button>
-          </div>
-          {user && (
-            <div className="text-xs text-slate-400 font-mono">
-              <span className="text-slate-500">Lab ID:</span> <span className="text-indigo-400">{user.email}</span>
-            </div>
-          )}
-        </div>
-        <div className="p-8 overflow-y-auto space-y-4 font-mono text-sm text-white text-left">
-          {historyRecords.length === 0 ? <div className="text-center py-20 text-slate-500 italic font-sans"><p>No laboratory records found for this ID.</p></div> : historyRecords.map((rec, i) => (
-            <div key={`rec-${i}`} className="bg-slate-900/50 p-4 rounded-2xl border border-slate-700 flex justify-between items-center animate-in slide-in-from-bottom-2">
-              <div><p className="text-[10px] font-black text-indigo-400 uppercase leading-none mb-1 font-mono">{String(rec.mission)}</p><p className="text-xs text-slate-300 font-mono">{String(rec.concentration)} ng/µL | Purity: {String(rec.purity)}</p></div>
-              <span className={`text-[9px] font-black px-3 py-1 rounded-full border font-mono ${rec.status === 'MASTERY' ? 'bg-emerald-900/40 text-emerald-400 border-emerald-500/30' : 'bg-rose-900/40 text-rose-400 border-rose-500/30'}`}>{String(rec.status)}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-);
 
 const MasteryBadge = () => (
     <div className="flex flex-col items-center p-6 bg-emerald-500/10 border border-emerald-500/30 rounded-3xl shadow-2xl animate-in zoom-in font-sans">
@@ -1202,7 +1177,6 @@ export default function App() {
   const [procureTab, setProcureTab] = useState("kits");
   const [showManual, setShowManual] = useState(false);
   const [showProtocol, setShowProtocol] = useState(false);
-  const [showLedger, setShowLedger] = useState(false);
   const [showReadinessModal, setShowReadinessModal] = useState(false);
   const [showPCRModal, setShowPCRModal] = useState(false);
   const [ndStep, setNdStep] = useState("idle");
@@ -1699,37 +1673,77 @@ export default function App() {
       {showClassCodePrompt && <ClassCodePrompt onComplete={() => setShowClassCodePrompt(false)} />}
       {showManual && <LabManualOverlay onClose={() => setShowManual(false)} />}
       {showProtocol && <ProtocolBookOverlay onClose={() => setShowProtocol(false)} />}
-      {showLedger && <LabLedgerOverlay onClose={() => setShowLedger(false)} historyRecords={historyRecords} user={user} />}
       {showReadinessModal && <ReadinessOverlay onClose={() => setShowReadinessModal(false)} />}
       {showPCRModal && <PCRModule onClose={() => setShowPCRModal(false)} onComplete={() => setShowPCRModal(false)} onBackToLibrary={() => { setShowPCRModal(false); setScreen("welcome"); }} missionId={selectedMissionId} />}
       {showBioPopup && <BiologicalPopup type={showBioPopup} onClose={() => setShowBioPopup(null)} />}
 
       <div className="max-w-6xl mx-auto p-4 md:p-8">
-        <header className="flex flex-col sm:flex-row justify-between items-center gap-4 mb-12 bg-slate-800 p-5 rounded-2xl border border-slate-700 shadow-2xl">
-          <div
-            onClick={() => setScreen("welcome")}
-            className="flex items-center gap-4 text-white cursor-pointer group hover:opacity-80 transition-all"
-          >
-            <div className="bg-indigo-600 p-2.5 rounded-xl group-hover:scale-105 transition-transform"><Microscope size={22} className="text-white"/></div>
-            <div>
-              <h1 className="text-lg font-black uppercase tracking-tight font-sans">BioSim Lab <span className="text-indigo-400 font-mono ml-1 text-[10px]">v1.7.1</span></h1>
-            </div>
+        <header className="flex flex-wrap justify-between items-center gap-4 mb-8 bg-slate-800 p-5 rounded-2xl border border-slate-700 shadow-2xl">
+          <div className="flex-1 text-center order-2 md:order-1">
+            {techniqueId && missionId && MISSIONS_DATA[techniqueId]?.[missionId] && (
+              <h2 className="text-base md:text-lg font-bold text-white">
+                {MISSIONS_DATA[techniqueId][missionId].title}
+              </h2>
+            )}
           </div>
-          <div className="flex gap-2">
-             <button onClick={() => setScreen("welcome")} className="flex items-center gap-2 bg-slate-900 border border-slate-700 px-4 py-2 rounded-xl text-[10px] font-black uppercase text-slate-400 hover:bg-slate-700 transition-all border-0 cursor-pointer shadow-lg"><Home size={14}/> Home</button>
-             <button onClick={() => setShowProtocol(true)} className="flex items-center gap-2 bg-slate-900 border border-emerald-500/30 px-4 py-2 rounded-xl text-[10px] font-black uppercase text-emerald-400 hover:bg-emerald-900/20 transition-all border-0 cursor-pointer shadow-lg"><ScrollText size={14}/> Protocol</button>
-             <button onClick={() => setShowLedger(true)} className="flex items-center gap-2 bg-slate-900 border border-indigo-500/30 px-4 py-2 rounded-xl text-[10px] font-black uppercase text-indigo-300 hover:bg-indigo-900/20 transition-all border-0 cursor-pointer"><History size={14}/> Ledger</button>
-             <button onClick={() => setShowManual(true)} className="flex items-center gap-2 bg-slate-900 border border-indigo-500/30 px-4 py-2 rounded-xl text-[10px] font-black uppercase text-indigo-300 hover:bg-indigo-900/20 transition-all border-0 cursor-pointer font-sans"><BookOpen size={14}/> Manual</button>
+
+          <div className="flex gap-2 flex-wrap justify-center md:justify-end order-1 md:order-2">
+            <button
+              onClick={() => window.location.href = '/'}
+              className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 px-4 py-2.5 md:px-6 md:py-3 rounded-xl text-xs md:text-sm font-bold uppercase text-white transition-colors border-0 cursor-pointer touch-manipulation min-h-[44px]"
+            >
+              Lab Bench
+            </button>
+            <button
+              onClick={() => window.location.href = '/instructor/setup'}
+              className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 px-4 py-2.5 md:px-6 md:py-3 rounded-xl text-xs md:text-sm font-bold uppercase text-white transition-colors border-0 cursor-pointer touch-manipulation min-h-[44px]"
+            >
+              Instructor Portal
+            </button>
           </div>
         </header>
+
+        <div className="flex justify-center mb-8">
+          <div className="flex gap-2 flex-wrap justify-center bg-slate-800/50 p-3 rounded-xl border border-slate-700">
+            <button
+              onClick={() => setScreen("welcome")}
+              className={`flex items-center gap-2 px-4 py-2.5 md:px-5 md:py-3 rounded-lg text-xs md:text-sm font-bold uppercase transition-colors border-0 cursor-pointer touch-manipulation min-h-[44px] ${screen === "welcome" ? "bg-slate-700 text-white" : "bg-transparent text-slate-400 hover:text-white hover:bg-slate-700/50"}`}
+            >
+              <Home size={16}/> Home
+            </button>
+            {techniqueId === "DNA_EXT" && (
+              <button
+                onClick={() => setShowProtocol(true)}
+                className="flex items-center gap-2 px-4 py-2.5 md:px-5 md:py-3 rounded-lg text-xs md:text-sm font-bold uppercase bg-transparent text-emerald-400 hover:bg-emerald-900/20 transition-colors border-0 cursor-pointer touch-manipulation min-h-[44px]"
+              >
+                <ScrollText size={16}/> Protocol
+              </button>
+            )}
+            <button
+              onClick={() => setShowManual(true)}
+              className="flex items-center gap-2 px-4 py-2.5 md:px-5 md:py-3 rounded-lg text-xs md:text-sm font-bold uppercase bg-transparent text-slate-400 hover:text-white hover:bg-slate-700/50 transition-colors border-0 cursor-pointer touch-manipulation min-h-[44px]"
+            >
+              <BookOpen size={16}/> Manual
+            </button>
+          </div>
+        </div>
 
         <main>
           {screen === "welcome" && (
             <div className="space-y-12 animate-in fade-in">
               <section className="text-center space-y-6 max-w-4xl mx-auto">
-                <h1 className="text-5xl font-black text-slate-50 uppercase tracking-tighter">
+                <div className="flex items-center justify-center gap-4 mb-8">
+                  <div className="bg-indigo-600 p-3 rounded-xl">
+                    <Microscope size={32} className="text-white"/>
+                  </div>
+                  <h1 className="text-3xl md:text-4xl font-black uppercase tracking-tight text-white">
+                    BioSim Lab
+                  </h1>
+                </div>
+
+                <h2 className="text-3xl md:text-5xl font-black text-slate-50 uppercase tracking-tighter">
                   Practice Lab Protocols Before Your First Real Experiment
-                </h1>
+                </h2>
 
                 <p className="text-lg text-slate-300 leading-relaxed max-w-3xl mx-auto">
                   Built for students who lack equipment access—fail safely,
