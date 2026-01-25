@@ -176,8 +176,8 @@ Keep responses conversational and helpful, like a friendly lab instructor.`;
                       : "bg-gray-100 text-gray-900"
                   }`}
                 >
-                  <p className="text-sm whitespace-pre-wrap">{message.content}</p>
-                  <span className="text-xs opacity-70 mt-1 block">
+                  <p className="text-sm whitespace-pre-wrap text-gray-900">{message.content}</p>
+                  <span className="text-xs opacity-70 mt-1 block text-gray-700">
                     {message.timestamp.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                   </span>
                 </div>
@@ -194,7 +194,7 @@ Keep responses conversational and helpful, like a friendly lab instructor.`;
                 <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-2 rounded-full h-8 w-8 flex items-center justify-center flex-shrink-0">
                   <Bot className="h-4 w-4" />
                 </div>
-                <div className="bg-white border border-gray-200 text-gray-800 rounded-2xl px-4 py-3">
+                <div className="bg-gray-100 text-gray-900 rounded-2xl px-4 py-3">
                   <Loader2 className="h-5 w-5 animate-spin text-blue-600" />
                 </div>
               </div>
@@ -205,8 +205,11 @@ Keep responses conversational and helpful, like a friendly lab instructor.`;
 
           {apiKeyMissing && (
             <div className="px-4 py-2 bg-yellow-50 border-t border-yellow-200">
-              <p className="text-xs text-yellow-800">
-                Please add your Gemini API key to the Secrets menu to use the AI Assistant.
+              <p className="text-sm text-yellow-900 font-medium">
+                Please add your Gemini API key to use the AI Assistant.
+              </p>
+              <p className="text-xs text-yellow-800 mt-1">
+                Set VITE_GEMINI_API_KEY in your .env file and restart the dev server.
               </p>
             </div>
           )}
