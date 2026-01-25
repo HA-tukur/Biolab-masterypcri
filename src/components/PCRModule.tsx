@@ -4,7 +4,6 @@ import { validatePrimerPair } from "../utils/primerValidation";
 import { PrimerValidatedPage } from "./PrimerValidatedPage";
 import { PrimerNotValidatedPage } from "./PrimerNotValidatedPage";
 import { createClient } from "@supabase/supabase-js";
-import { getOrCreateStudentId } from "../utils/studentId";
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -105,32 +104,10 @@ export const PCRModule = ({ onClose, onComplete, onBackToLibrary, missionId = "l
 
     if (result.isValid) {
       try {
-        const studentId = getOrCreateStudentId();
-
-        let classId = null;
-        try {
-          const { data: sessionData } = await supabase
-            .from('lab_sessions')
-            .select('class_id')
-            .eq('student_id', studentId)
-            .order('last_active', { ascending: false })
-            .limit(1)
-            .maybeSingle();
-
-          if (sessionData) {
-            classId = sessionData.class_id;
-          }
-        } catch (sessionError) {
-          console.error('Error fetching session:', sessionError);
-        }
-
         await supabase.from('lab_results').insert({
-          student_id: studentId,
           mission: `PCR - ${mission.targetGene}`,
           purity_score: 100,
-          status: 'Primer Validated',
-          class_id: classId || null,
-          event_log: result.errors.length > 0 ? result.errors.map(e => ({ message: e, type: 'error' })) : []
+          status: 'Primer Validated'
         });
       } catch (error) {
         console.error('Failed to save result:', error);

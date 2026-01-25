@@ -56,8 +56,7 @@ import {
   Scissors,
   Shirt,
   Glasses,
-  Computer,
-  Trophy
+  Computer
 } from "lucide-react";
 import { SupabaseHistoryStore, HistoryStore } from "./services/historyStore";
 import { PCRModule } from "./components/PCRModule";
@@ -66,10 +65,7 @@ import { TechniqueCategories } from "./components/TechniqueCategories";
 import { CategoryTechniques } from "./components/CategoryTechniques";
 import { PCRMissions } from "./components/PCRMissions";
 import { AntibodyIcon } from "./components/AntibodyIcon";
-import ClassCodePrompt from "./components/ClassCodePrompt";
-import { AILabAssistant } from "./components/AILabAssistant";
 import { config } from "./config";
-import { getOrCreateStudentId } from "./utils/studentId";
 
 const supabase = createClient(config.supabase.url, config.supabase.anonKey);
 
@@ -1032,7 +1028,7 @@ const LabManualOverlay = ({ onClose }) => (
           </section>
           <section className="space-y-2 font-sans text-white">
             <h4 className="text-indigo-300 font-bold uppercase text-xs font-mono flex items-center gap-2"><Database size={14} />3. Lab IDs</h4>
-            <p className="text-slate-300">Your progress is saved to your Lab ID and tracked automatically for your learning journey.</p>
+            <p className="text-slate-300">Your progress is saved to your Lab ID. You can view history in the Ledger without disrupting your current experiment.</p>
           </section>
         </div>
         <div className="p-6 bg-slate-900/50 border-t border-slate-700 font-mono"><button onClick={onClose} className="w-full bg-indigo-600 py-4 rounded-2xl font-black uppercase text-white shadow-lg border-0 cursor-pointer text-xs font-mono font-bold tracking-widest uppercase">Return to Bench</button></div>
@@ -1040,6 +1036,31 @@ const LabManualOverlay = ({ onClose }) => (
     </div>
 );
 
+const LabLedgerOverlay = ({ onClose, historyRecords, user }) => (
+    <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-slate-950/90 backdrop-blur-sm font-sans text-white">
+      <div className="bg-slate-800 border border-indigo-500/50 w-full max-w-2xl rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col max-h-[85vh]">
+        <div className="p-6 border-b border-slate-700 bg-slate-900/50 font-mono text-white font-bold space-y-2">
+          <div className="flex justify-between items-center">
+            <div className="flex items-center gap-3 text-indigo-400"><History size={24} /><h3>Cloud Lab Ledger</h3></div>
+            <button onClick={onClose} className="text-slate-500 border-0 bg-transparent cursor-pointer"><X size={24}/></button>
+          </div>
+          {user && (
+            <div className="text-xs text-slate-400 font-mono">
+              <span className="text-slate-500">Lab ID:</span> <span className="text-indigo-400">{user.email}</span>
+            </div>
+          )}
+        </div>
+        <div className="p-8 overflow-y-auto space-y-4 font-mono text-sm text-white text-left">
+          {historyRecords.length === 0 ? <div className="text-center py-20 text-slate-500 italic font-sans"><p>No laboratory records found for this ID.</p></div> : historyRecords.map((rec, i) => (
+            <div key={`rec-${i}`} className="bg-slate-900/50 p-4 rounded-2xl border border-slate-700 flex justify-between items-center animate-in slide-in-from-bottom-2">
+              <div><p className="text-[10px] font-black text-indigo-400 uppercase leading-none mb-1 font-mono">{String(rec.mission)}</p><p className="text-xs text-slate-300 font-mono">{String(rec.concentration)} ng/µL | Purity: {String(rec.purity)}</p></div>
+              <span className={`text-[9px] font-black px-3 py-1 rounded-full border font-mono ${rec.status === 'MASTERY' ? 'bg-emerald-900/40 text-emerald-400 border-emerald-500/30' : 'bg-rose-900/40 text-rose-400 border-rose-500/30'}`}>{String(rec.status)}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+);
 
 const MasteryBadge = () => (
     <div className="flex flex-col items-center p-6 bg-emerald-500/10 border border-emerald-500/30 rounded-3xl shadow-2xl animate-in zoom-in font-sans">
@@ -1135,7 +1156,6 @@ export default function App() {
   const [historyRecords, setHistoryRecords] = useState([]);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [savedRecordId, setSavedRecordId] = useState(null);
-  const [showClassCodePrompt, setShowClassCodePrompt] = useState(false);
 
   useEffect(() => {
     const setupAuth = async () => {
@@ -1162,41 +1182,15 @@ export default function App() {
     fetchHistory();
   }, [user]);
 
-  useEffect(() => {
-    const hasSeenPrompt = localStorage.getItem('biosim_class_prompt_shown');
-    if (!hasSeenPrompt) {
-      setShowClassCodePrompt(true);
-    }
-  }, []);
-
   const [screen, setScreen] = useState("welcome");
   const [selectedCategory, setSelectedCategory] = useState(null);
-
-  useEffect(() => {
-    const handleHeaderTabClick = (e: CustomEvent) => {
-      const tab = e.detail.tab;
-      if (tab === 'home') {
-        setScreen('welcome');
-      } else if (tab === 'manual') {
-        setShowManual(true);
-      }
-    };
-    window.addEventListener('headerTabClick' as any, handleHeaderTabClick);
-    return () => window.removeEventListener('headerTabClick' as any, handleHeaderTabClick);
-  }, []);
-
-  useEffect(() => {
-    const currentTab = screen === 'welcome' ? 'home' : null;
-    if (currentTab) {
-      window.dispatchEvent(new CustomEvent('labTabChange', { detail: { tab: currentTab } }));
-    }
-  }, [screen]);
   const [techniqueId, setTechniqueId] = useState(null);
   const [selectedMissionId, setSelectedMissionId] = useState(null);
   const [missionId, setMissionId] = useState(null);
   const [procureTab, setProcureTab] = useState("kits");
   const [showManual, setShowManual] = useState(false);
   const [showProtocol, setShowProtocol] = useState(false);
+  const [showLedger, setShowLedger] = useState(false);
   const [showReadinessModal, setShowReadinessModal] = useState(false);
   const [showPCRModal, setShowPCRModal] = useState(false);
   const [ndStep, setNdStep] = useState("idle");
@@ -1596,38 +1590,13 @@ export default function App() {
     const missionTitle = MISSIONS_DATA[techniqueId][missionId]?.title || 'DNA Extraction';
     const statusText = localStatus === 'mastery' ? 'Verified Mastery' : 'Mission Failed';
 
-    let classId = null;
-    try {
-      const { data: sessionData } = await supabase
-        .from('lab_sessions')
-        .select('class_id')
-        .eq('student_id', studentId)
-        .order('last_active', { ascending: false })
-        .limit(1)
-        .maybeSingle();
-
-      if (sessionData) {
-        classId = sessionData.class_id;
-      }
-    } catch (sessionError) {
-      console.error('Error fetching session:', sessionError);
-    }
-
-    const errorLogs = logs.filter(log => log.type === 'error').map(log => ({
-      message: log.msg,
-      type: log.type
-    }));
-
     try {
       const { data, error } = await supabase
         .from('lab_results')
         .insert([{
-          student_id: studentId,
           mission: missionTitle,
           purity_score: parseFloat(localPurity),
-          status: statusText,
-          class_id: classId || null,
-          event_log: errorLogs
+          status: statusText
         }])
         .select()
         .single();
@@ -1690,26 +1659,38 @@ export default function App() {
   return (
     <div className="min-h-screen text-slate-100 font-sans bg-[#0f172a]">
 
-      {showClassCodePrompt && (
-        <ClassCodePrompt
-          onComplete={() => setShowClassCodePrompt(false)}
-          onJoinMission={(techniqueId, missionId) => {
-            startMission(techniqueId, missionId);
-          }}
-        />
-      )}
       {showManual && <LabManualOverlay onClose={() => setShowManual(false)} />}
       {showProtocol && <ProtocolBookOverlay onClose={() => setShowProtocol(false)} />}
+      {showLedger && <LabLedgerOverlay onClose={() => setShowLedger(false)} historyRecords={historyRecords} user={user} />}
       {showReadinessModal && <ReadinessOverlay onClose={() => setShowReadinessModal(false)} />}
       {showPCRModal && <PCRModule onClose={() => setShowPCRModal(false)} onComplete={() => setShowPCRModal(false)} onBackToLibrary={() => { setShowPCRModal(false); setScreen("welcome"); }} missionId={selectedMissionId} />}
       {showBioPopup && <BiologicalPopup type={showBioPopup} onClose={() => setShowBioPopup(null)} />}
 
-      <div className="px-4">
+      <div className="max-w-6xl mx-auto p-4 md:p-8">
+        <header className="flex flex-col sm:flex-row justify-between items-center gap-4 mb-12 bg-slate-800 p-5 rounded-2xl border border-slate-700 shadow-2xl">
+          <div
+            onClick={() => setScreen("welcome")}
+            className="flex items-center gap-4 text-white cursor-pointer group hover:opacity-80 transition-all"
+          >
+            <div className="bg-indigo-600 p-2.5 rounded-xl group-hover:scale-105 transition-transform"><Microscope size={22} className="text-white"/></div>
+            <div>
+              <h1 className="text-lg font-black uppercase tracking-tight font-sans">BioSim Lab <span className="text-indigo-400 font-mono ml-1 text-[10px]">v1.7.1</span></h1>
+              <p className="text-[9px] text-slate-500 uppercase font-bold tracking-[0.15em] mt-1.5 font-mono italic leading-none">OSV Readiness Build</p>
+            </div>
+          </div>
+          <div className="flex gap-2">
+             <button onClick={() => setScreen("welcome")} className="flex items-center gap-2 bg-slate-900 border border-slate-700 px-4 py-2 rounded-xl text-[10px] font-black uppercase text-slate-400 hover:bg-slate-700 transition-all border-0 cursor-pointer shadow-lg"><Home size={14}/> Home</button>
+             <button onClick={() => setShowProtocol(true)} className="flex items-center gap-2 bg-slate-900 border border-emerald-500/30 px-4 py-2 rounded-xl text-[10px] font-black uppercase text-emerald-400 hover:bg-emerald-900/20 transition-all border-0 cursor-pointer shadow-lg"><ScrollText size={14}/> Protocol</button>
+             <button onClick={() => setShowLedger(true)} className="flex items-center gap-2 bg-slate-900 border border-indigo-500/30 px-4 py-2 rounded-xl text-[10px] font-black uppercase text-indigo-300 hover:bg-indigo-900/20 transition-all border-0 cursor-pointer"><History size={14}/> Ledger</button>
+             <button onClick={() => setShowManual(true)} className="flex items-center gap-2 bg-slate-900 border border-indigo-500/30 px-4 py-2 rounded-xl text-[10px] font-black uppercase text-indigo-300 hover:bg-indigo-900/20 transition-all border-0 cursor-pointer font-sans"><BookOpen size={14}/> Manual</button>
+          </div>
+        </header>
+
         <main>
           {screen === "welcome" && (
-            <div className="space-y-12 animate-in fade-in py-8">
+            <div className="space-y-12 animate-in fade-in">
               <section className="text-center space-y-6 max-w-4xl mx-auto">
-                <h1 className="text-3xl md:text-5xl font-black text-slate-50 uppercase tracking-tighter">
+                <h1 className="text-5xl font-black text-slate-50 uppercase tracking-tighter">
                   Practice Lab Protocols Before Your First Real Experiment
                 </h1>
 
@@ -1752,100 +1733,61 @@ export default function App() {
                 
                 <section className="max-w-4xl mx-auto space-y-6">
                   <h3 className="text-2xl font-black text-slate-50 uppercase text-center mb-8">
-                    Choose Your Learning Path
+                    Who Can Use BioSim Lab?
                   </h3>
 
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div
-                      onClick={() => setShowClassCodePrompt(true)}
-                      className="bg-gradient-to-br from-emerald-900/40 to-emerald-800/20 border-2 border-emerald-500/50 p-6 rounded-2xl cursor-pointer hover:scale-105 transition-transform hover:border-emerald-400"
-                    >
-                      <div className="bg-emerald-600 w-14 h-14 rounded-xl flex items-center justify-center mb-4 shadow-lg">
-                        <GraduationCap size={28} className="text-white" />
+                    <div className="bg-slate-800 border border-slate-700 p-6 rounded-2xl">
+                      <div className="bg-emerald-600 w-12 h-12 rounded-xl flex items-center justify-center mb-4">
+                        <GraduationCap size={24} className="text-white" />
                       </div>
-                      <h4 className="text-white font-black text-xl mb-2">University Student</h4>
-                      <p className="text-slate-300 text-sm mb-3 leading-relaxed">
-                        Join your instructor's class. Enter code to sync with your faculty dashboard.
+                      <h4 className="text-white font-bold mb-2">University Students</h4>
+                      <p className="text-slate-400 text-sm">
+                        BSc/MSc students preparing for lab practicals or entering PhD programs.
                       </p>
-                      <div className="flex items-center gap-2 text-emerald-400 font-bold text-sm mt-4">
-                        <span>Enter Class Code</span>
-                        <ChevronRight size={16} />
-                      </div>
+                      <p className="text-emerald-400 text-xs font-bold mt-3 uppercase">
+                        Primary Users
+                      </p>
                     </div>
 
-                    <div
-                      onClick={() => {
-                        window.history.pushState({}, '', '/profile');
-                        window.dispatchEvent(new PopStateEvent('popstate'));
-                      }}
-                      className="bg-gradient-to-br from-indigo-900/40 to-indigo-800/20 border-2 border-indigo-500/50 p-6 rounded-2xl cursor-pointer hover:scale-105 transition-transform hover:border-indigo-400"
-                    >
-                      <div className="bg-indigo-600 w-14 h-14 rounded-xl flex items-center justify-center mb-4 shadow-lg">
-                        <Target size={28} className="text-white" />
+                    <div className="bg-slate-800 border border-slate-700 p-6 rounded-2xl">
+                      <div className="bg-amber-600 w-12 h-12 rounded-xl flex items-center justify-center mb-4">
+                        <BookOpen size={24} className="text-white" />
                       </div>
-                      <h4 className="text-white font-black text-xl mb-2">Independent Learner</h4>
-                      <p className="text-slate-300 text-sm mb-3 leading-relaxed">
-                        Master lab techniques at your own pace. Build your digital lab resume.
+                      <h4 className="text-white font-bold mb-2">Secondary Students (O/A Level)</h4>
+                      <p className="text-slate-400 text-sm">
+                        Ambitious students preparing for university molecular biology/biotech programs.
                       </p>
-                      <div className="flex items-center gap-2 text-indigo-400 font-bold text-sm mt-4">
-                        <span>View My Profile</span>
-                        <ChevronRight size={16} />
-                      </div>
+                      <p className="text-amber-400 text-xs font-bold mt-3 uppercase">
+                        Advanced Preview
+                      </p>
                     </div>
 
-                    <div
-                      onClick={() => setScreen("categories")}
-                      className="bg-gradient-to-br from-amber-900/40 to-amber-800/20 border-2 border-amber-500/50 p-6 rounded-2xl cursor-pointer hover:scale-105 transition-transform hover:border-amber-400"
-                    >
-                      <div className="bg-amber-600 w-14 h-14 rounded-xl flex items-center justify-center mb-4 shadow-lg">
-                        <Sparkles size={28} className="text-white" />
+                    <div className="bg-slate-800 border border-slate-700 p-6 rounded-2xl">
+                      <div className="bg-indigo-600 w-12 h-12 rounded-xl flex items-center justify-center mb-4">
+                        <Users size={24} className="text-white" />
                       </div>
-                      <h4 className="text-white font-black text-xl mb-2">Advanced High School</h4>
-                      <p className="text-slate-300 text-sm mb-3 leading-relaxed">
-                        Get a head start on college science. Explore molecular biology basics.
+                      <h4 className="text-white font-bold mb-2">Self-Taught Learners</h4>
+                      <p className="text-slate-400 text-sm">
+                        Anyone curious about lab work without access to physical equipment.
                       </p>
-                      <div className="flex items-center gap-2 text-amber-400 font-bold text-sm mt-4">
-                        <span>Start Learning</span>
-                        <ChevronRight size={16} />
-                      </div>
+                      <p className="text-indigo-400 text-xs font-bold mt-3 uppercase">
+                        Open to All
+                      </p>
                     </div>
                   </div>
 
-                  <div className="bg-slate-800/50 border border-slate-700 p-5 rounded-2xl">
-                    <p className="text-slate-400 text-sm text-center leading-relaxed">
-                      All paths access the same high-quality simulations. Choose based on whether you need instructor tracking or prefer independent progress monitoring.
+                  <div className="bg-slate-800 border border-slate-700 p-6 rounded-2xl">
+                    <h4 className="text-white font-bold mb-3 flex items-center gap-2">
+                      <Info size={18} className="text-indigo-400" />
+                      For O Level / Secondary Students:
+                    </h4>
+                    <p className="text-slate-400 text-sm leading-relaxed">
+                      BioSim Lab teaches university-level techniques, but ambitious secondary students
+                      can absolutely use it to preview what lab work looks like. Think of it as exploring
+                      what you'll learn in university. Some concepts (like DNA purity ratios, stoichiometry)
+                      assume basic chemistry knowledge.
                     </p>
-                  </div>
-                </section>
-
-                <section className="max-w-4xl mx-auto py-3">
-                  <div
-                    onClick={() => {
-                      window.history.pushState({}, '', '/leaderboard');
-                      window.dispatchEvent(new PopStateEvent('popstate'));
-                    }}
-                    className="bg-gradient-to-r from-amber-900/40 via-yellow-900/30 to-amber-900/40 border-2 border-amber-400/60 rounded-2xl p-5 cursor-pointer hover:scale-[1.02] transition-transform hover:border-amber-300 hover:shadow-2xl hover:shadow-amber-500/20"
-                  >
-                    <div className="flex items-center justify-between flex-wrap gap-4">
-                      <div className="flex items-center gap-4">
-                        <div className="bg-gradient-to-br from-amber-500 to-yellow-600 p-3 rounded-2xl shadow-xl">
-                          <Trophy size={28} className="text-white" />
-                        </div>
-                        <div>
-                          <h3 className="text-xl font-black text-white mb-1.5 flex items-center gap-3">
-                            Global Rankings
-                            <span className="text-xs bg-amber-500 px-2.5 py-0.5 rounded-full font-bold animate-pulse">NEW</span>
-                          </h3>
-                          <p className="text-slate-300 text-sm leading-snug">
-                            Compete with learners worldwide. Track your progress. Build verifiable competency records. From students to researchers—see where you rank.
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2 text-amber-400 font-black text-base">
-                        <span>View Rankings</span>
-                        <ChevronRight size={20} />
-                      </div>
-                    </div>
                   </div>
                 </section>
               </section>
@@ -2841,8 +2783,6 @@ export default function App() {
           </div>
         </div>
       )}
-
-      <AILabAssistant />
     </div>
   );
 }

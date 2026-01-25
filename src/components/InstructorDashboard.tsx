@@ -1,373 +1,323 @@
-import { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import { createClient } from '@supabase/supabase-js';
-import ReadinessMeter from './ReadinessMeter';
-import ErrorAnalyticsChart from './ErrorAnalyticsChart';
+import { config } from '../config';
+import {
+  GraduationCap,
+  Medal,
+  Trophy,
+  Home,
+  Copy,
+  CheckCircle2,
+  AlertCircle,
+  Users,
+  TrendingUp
+} from 'lucide-react';
 
-const supabase = createClient(
-  import.meta.env.VITE_SUPABASE_URL,
-  import.meta.env.VITE_SUPABASE_ANON_KEY
-);
+const supabase = createClient(config.supabase.url, config.supabase.anonKey);
 
-interface ClassInfo {
+interface ClassData {
   id: string;
-  instructor_name: string;
-  instructor_email: string;
   class_name: string;
+  instructor_name: string;
   class_code: string;
   created_at: string;
 }
 
 interface StudentResult {
-  studentId: string;
-  bestScore: number;
-  attempts: number;
-  hasMastery: boolean;
-  hasHighMastery: boolean;
+  id: string;
+  student_id: string;
+  mission: string;
+  purity_score: number;
+  status: string;
+  created_at: string;
 }
 
-interface DashboardStats {
-  totalStudents: number;
-  avgScore: number;
-  masteryRate: number;
-  highMasteryRate: number;
-  readyStudents: number;
+interface LeaderboardEntry {
+  student_id: string;
+  total_score: number;
+  missions_completed: number;
+  best_purity: number;
+  average_score: number;
+  rank?: number;
 }
 
-interface ErrorData {
-  error: string;
-  count: number;
-}
+export function InstructorDashboard() {
+  const { code } = useParams<{ code: string }>();
+  const navigate = useNavigate();
 
-interface InstructorDashboardProps {
-  classCode: string;
-}
-
-export default function InstructorDashboard({ classCode }: InstructorDashboardProps) {
-  const [classInfo, setClassInfo] = useState<ClassInfo | null>(null);
-  const [students, setStudents] = useState<StudentResult[]>([]);
-  const [stats, setStats] = useState<DashboardStats | null>(null);
-  const [errorData, setErrorData] = useState<ErrorData[]>([]);
+  const [classData, setClassData] = useState<ClassData | null>(null);
+  const [results, setResults] = useState<StudentResult[]>([]);
+  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
-    fetchDashboardData();
-  }, [classCode]);
+    if (code) {
+      loadClassData();
+    }
+  }, [code]);
 
-  const fetchDashboardData = async () => {
+  const loadClassData = async () => {
     setLoading(true);
     setError('');
 
     try {
-      const { data: classData, error: classError } = await supabase
+      const { data: classInfo, error: classError } = await supabase
         .from('classes')
         .select('*')
-        .eq('class_code', classCode.toUpperCase())
+        .eq('class_code', code)
         .maybeSingle();
 
       if (classError) throw classError;
 
-      if (!classData) {
-        setError('Class not found. Please check the class code.');
+      if (!classInfo) {
+        setError('Class not found. Please check the code and try again.');
         setLoading(false);
         return;
       }
 
-      setClassInfo(classData);
+      setClassData(classInfo);
 
-      const { data: results, error: resultsError } = await supabase
+      const { data: resultsData, error: resultsError } = await supabase
         .from('lab_results')
         .select('*')
-        .eq('class_id', classData.id)
+        .eq('class_id', classInfo.id)
         .order('created_at', { ascending: false });
 
       if (resultsError) throw resultsError;
 
-      if (!results || results.length === 0) {
-        setStudents([]);
-        setStats({ totalStudents: 0, avgScore: 0, masteryRate: 0, highMasteryRate: 0, readyStudents: 0 });
-        setErrorData([]);
-        setLoading(false);
-        return;
-      }
-
-      const studentMap: Record<string, { scores: number[]; attempts: number }> = {};
-      const errorCounts: Record<string, number> = {};
-
-      results.forEach((result) => {
-        if (!studentMap[result.student_id]) {
-          studentMap[result.student_id] = { scores: [], attempts: 0 };
-        }
-        studentMap[result.student_id].scores.push(result.purity_score || 0);
-        studentMap[result.student_id].attempts++;
-
-        if (result.event_log && Array.isArray(result.event_log)) {
-          result.event_log.forEach((log: { message?: string; type?: string }) => {
-            if (log.message && log.type === 'error') {
-              const normalizedMessage = log.message.trim();
-              errorCounts[normalizedMessage] = (errorCounts[normalizedMessage] || 0) + 1;
-            }
-          });
-        }
-      });
-
-      const studentList: StudentResult[] = Object.entries(studentMap).map(([studentId, data]) => {
-        const bestScore = Math.max(...data.scores);
-        return {
-          studentId,
-          bestScore,
-          attempts: data.attempts,
-          hasMastery: bestScore >= 1.7,
-          hasHighMastery: bestScore >= 1.8
-        };
-      }).sort((a, b) => b.bestScore - a.bestScore);
-
-      setStudents(studentList);
-
-      const totalStudents = studentList.length;
-      const avgScore = studentList.reduce((sum, s) => sum + s.bestScore, 0) / totalStudents;
-      const masteryCount = studentList.filter(s => s.hasMastery).length;
-      const highMasteryCount = studentList.filter(s => s.hasHighMastery).length;
-      const masteryRate = (masteryCount / totalStudents) * 100;
-      const highMasteryRate = (highMasteryCount / totalStudents) * 100;
-
-      setStats({
-        totalStudents,
-        avgScore,
-        masteryRate,
-        highMasteryRate,
-        readyStudents: highMasteryCount
-      });
-
-      const errorList: ErrorData[] = Object.entries(errorCounts)
-        .map(([err, count]) => ({ error: err, count }))
-        .sort((a, b) => b.count - a.count);
-
-      setErrorData(errorList);
-    } catch (err) {
-      setError('Failed to load dashboard data. Please try again.');
-      console.error(err);
+      setResults(resultsData || []);
+      calculateLeaderboard(resultsData || []);
+    } catch (err: any) {
+      console.error('Error loading class data:', err);
+      setError('Failed to load class data. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
-  const exportCSV = () => {
-    if (!classInfo || students.length === 0) return;
+  const calculateLeaderboard = (resultsData: StudentResult[]) => {
+    const studentMap = new Map<string, LeaderboardEntry>();
 
-    const headers = ['Student ID', 'Best Score', 'Attempts', 'Status'];
-    const rows = students.map(s => [
-      s.studentId,
-      s.bestScore.toFixed(2),
-      s.attempts.toString(),
-      s.hasHighMastery ? 'Ready (>0.90)' : s.hasMastery ? 'Mastery' : 'In Progress'
-    ]);
+    resultsData.forEach(result => {
+      const studentId = result.student_id;
+      if (!studentId) return;
 
-    const csv = [
-      headers.join(','),
-      ...rows.map(row => row.join(','))
-    ].join('\n');
+      if (!studentMap.has(studentId)) {
+        studentMap.set(studentId, {
+          student_id: studentId,
+          total_score: 0,
+          missions_completed: 0,
+          best_purity: 0,
+          average_score: 0
+        });
+      }
 
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${classInfo.class_name.replace(/\s+/g, '_')}_results.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
+      const entry = studentMap.get(studentId)!;
+      const score = result.purity_score || 0;
+
+      entry.total_score += score;
+      entry.missions_completed += 1;
+      entry.best_purity = Math.max(entry.best_purity, score);
+      entry.average_score = entry.total_score / entry.missions_completed;
+    });
+
+    const sortedLeaderboard = Array.from(studentMap.values())
+      .sort((a, b) => b.total_score - a.total_score)
+      .map((entry, index) => ({ ...entry, rank: index + 1 }));
+
+    setLeaderboard(sortedLeaderboard);
+  };
+
+  const handleCopyCode = () => {
+    if (code) {
+      navigator.clipboard.writeText(code);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
+  const getRankIcon = (rank: number) => {
+    if (rank === 1) return <Trophy className="text-yellow-500" size={24} />;
+    if (rank === 2) return <Medal className="text-slate-400" size={24} />;
+    if (rank === 3) return <Medal className="text-amber-600" size={24} />;
+    return <span className="text-slate-400 font-bold">#{rank}</span>;
+  };
+
+  const getRankBadge = (rank: number) => {
+    if (rank === 1) return 'bg-gradient-to-br from-amber-400 via-yellow-500 to-amber-500 border-amber-400';
+    if (rank === 2) return 'bg-gradient-to-br from-slate-300 via-gray-200 to-slate-300 border-slate-300';
+    if (rank === 3) return 'bg-gradient-to-br from-orange-400 via-amber-500 to-orange-500 border-orange-400';
+    if (rank <= 10) return 'bg-gradient-to-r from-indigo-900/40 to-purple-900/40 border-indigo-500/30';
+    return 'bg-slate-800 border-slate-700';
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-slate-900 flex items-center justify-center">
         <div className="text-center">
-          <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading dashboard...</p>
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-indigo-500 border-t-transparent mb-4"></div>
+          <p className="text-slate-300">Loading class data...</p>
         </div>
       </div>
     );
   }
 
-  if (error) {
+  if (error || !classData) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-lg shadow-lg p-8 max-w-md w-full text-center">
-          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg className="w-8 h-8 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </div>
-          <h2 className="text-xl font-bold text-gray-900 mb-2">Error</h2>
-          <p className="text-gray-600 mb-6">{error}</p>
-          <a
-            href="/instructor/setup"
-            className="inline-block bg-blue-600 text-white rounded-lg py-2 px-6 font-medium hover:bg-blue-700 transition-colors"
+      <div className="min-h-screen bg-slate-900 flex items-center justify-center px-4">
+        <div className="max-w-md w-full bg-slate-800 border border-slate-700 rounded-2xl p-8 text-center">
+          <AlertCircle className="text-rose-400 mx-auto mb-4" size={48} />
+          <h2 className="text-2xl font-bold text-white mb-2">Class Not Found</h2>
+          <p className="text-slate-400 mb-6">{error || 'The class code you entered does not exist.'}</p>
+          <button
+            onClick={() => navigate('/instructor/setup')}
+            className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3 rounded-lg transition-all"
           >
             Back to Setup
-          </a>
+          </button>
         </div>
       </div>
     );
   }
 
+  const isTopThree = (rank: number) => rank <= 3;
+  const textColorMain = (rank: number) => isTopThree(rank) ? 'text-slate-900' : 'text-white';
+  const textColorSub = (rank: number) => isTopThree(rank) ? 'text-slate-800' : 'text-slate-300';
+  const statColor = (rank: number) => isTopThree(rank) ? 'text-slate-900' : 'text-white';
+  const labelColor = (rank: number) => isTopThree(rank) ? 'text-slate-700' : 'text-slate-400';
+
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-slate-900 text-white">
       <div className="max-w-7xl mx-auto px-4 py-8">
-        <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-          <div className="mb-6">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">
-              Instructor Dashboard
-            </h1>
-            <div className="space-y-1">
-              <p className="text-gray-600">
-                <strong>Class:</strong> {classInfo?.class_name}
-              </p>
-              <p className="text-gray-600">
-                <strong>Instructor:</strong> {classInfo?.instructor_name} ({classInfo?.instructor_email})
-              </p>
-            </div>
-          </div>
+        <div className="mb-8">
+          <button
+            onClick={() => navigate('/')}
+            className="inline-flex items-center gap-2 text-slate-400 hover:text-white transition-colors mb-6"
+          >
+            <Home size={20} />
+            <span>Back to Home</span>
+          </button>
 
-          <div className="bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl shadow-xl p-8 text-center border-4 border-blue-800">
-            <div className="mb-2">
-              <span className="text-blue-100 text-sm font-semibold uppercase tracking-wider">
-                Student Join Code
-              </span>
+          <div className="bg-gradient-to-r from-indigo-900/40 to-purple-900/40 border border-indigo-500/30 rounded-2xl p-8">
+            <div className="flex items-start justify-between flex-wrap gap-4">
+              <div className="flex items-center gap-4">
+                <div className="w-16 h-16 rounded-full bg-indigo-500/20 border-2 border-indigo-400/50 flex items-center justify-center">
+                  <GraduationCap size={32} className="text-indigo-400" />
+                </div>
+                <div>
+                  <h1 className="text-3xl font-black text-white mb-1">{classData.class_name}</h1>
+                  <p className="text-slate-300 text-lg">{classData.instructor_name}</p>
+                </div>
+              </div>
+
+              <div className="bg-slate-900/50 border border-slate-700 rounded-xl p-4">
+                <p className="text-slate-400 text-xs uppercase tracking-wider mb-2">Class Code</p>
+                <div className="flex items-center gap-2">
+                  <span className="text-2xl font-black text-white tracking-wider">{classData.class_code}</span>
+                  <button
+                    onClick={handleCopyCode}
+                    className="p-2 hover:bg-slate-800 rounded-lg transition-colors"
+                    title="Copy code"
+                  >
+                    {copied ? (
+                      <CheckCircle2 size={20} className="text-emerald-400" />
+                    ) : (
+                      <Copy size={20} className="text-slate-400" />
+                    )}
+                  </button>
+                </div>
+              </div>
             </div>
-            <div className="text-7xl font-black text-white tracking-widest mb-2 font-mono">
-              {classInfo?.class_code}
-            </div>
-            <div className="text-blue-100 text-sm">
-              Share this code with your students to join the lab session
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+              <div className="bg-slate-900/30 rounded-lg p-4 border border-slate-700/50">
+                <Users className="text-indigo-400 mb-2" size={24} />
+                <div className="text-2xl font-black text-white">{leaderboard.length}</div>
+                <div className="text-slate-400 text-sm">Students</div>
+              </div>
+              <div className="bg-slate-900/30 rounded-lg p-4 border border-slate-700/50">
+                <TrendingUp className="text-emerald-400 mb-2" size={24} />
+                <div className="text-2xl font-black text-white">{results.length}</div>
+                <div className="text-slate-400 text-sm">Total Submissions</div>
+              </div>
+              <div className="bg-slate-900/30 rounded-lg p-4 border border-slate-700/50">
+                <Trophy className="text-amber-400 mb-2" size={24} />
+                <div className="text-2xl font-black text-white">
+                  {leaderboard[0]?.best_purity.toFixed(2) || '0.00'}
+                </div>
+                <div className="text-slate-400 text-sm">Top Purity Score</div>
+              </div>
             </div>
           </div>
         </div>
 
-        <div className="mb-6">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-1 h-8 bg-blue-600 rounded-full"></div>
-            <h2 className="text-2xl font-bold text-gray-900">Live Lab Monitor</h2>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="bg-white rounded-lg shadow p-6">
-              <div className="text-3xl font-bold text-blue-600 mb-1">
-                {stats?.totalStudents || 0}
-              </div>
-              <div className="text-gray-600">Students</div>
-            </div>
-            <div className="bg-white rounded-lg shadow p-6">
-              <div className="text-3xl font-bold text-blue-600 mb-1">
-                {stats ? stats.avgScore.toFixed(2) : '0.00'}
-              </div>
-              <div className="text-gray-600">Average Score</div>
-            </div>
-            <div className="bg-white rounded-lg shadow p-6">
-              <div className="text-3xl font-bold text-green-600 mb-1">
-                {stats ? Math.round(stats.masteryRate) : 0}%
-              </div>
-              <div className="text-gray-600">Mastery Rate (&ge;1.7)</div>
-            </div>
-            <div className="bg-white rounded-lg shadow p-6">
-              <div className="text-3xl font-bold text-emerald-600 mb-1">
-                {stats ? Math.round(stats.highMasteryRate) : 0}%
-              </div>
-              <div className="text-gray-600">Ready (&ge;1.8)</div>
-            </div>
-          </div>
-        </div>
+        <div className="space-y-4">
+          <h2 className="text-2xl font-black text-white mb-4">Student Leaderboard</h2>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-          <ReadinessMeter
-            percentage={stats?.highMasteryRate || 0}
-            totalStudents={stats?.totalStudents || 0}
-            readyStudents={stats?.readyStudents || 0}
-          />
-          <ErrorAnalyticsChart errors={errorData} />
-        </div>
-
-        <div className="bg-white rounded-lg shadow-lg p-6">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-lg font-semibold text-gray-900">Student Results</h2>
-            {students.length > 0 && (
-              <button
-                onClick={exportCSV}
-                className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-                Download CSV
-              </button>
-            )}
-          </div>
-
-          {students.length === 0 ? (
-            <div className="text-center py-12">
-              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-                </svg>
-              </div>
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No students yet</h3>
-              <p className="text-gray-600 mb-4">
-                No students have joined this class yet.
-              </p>
-              <p className="text-sm text-gray-500">
-                Share the code: <strong className="text-gray-700">{classInfo?.class_code}</strong>
-              </p>
+          {leaderboard.length === 0 ? (
+            <div className="bg-slate-800 border border-slate-700 rounded-xl p-12 text-center">
+              <Users className="text-slate-600 mx-auto mb-4" size={48} />
+              <p className="text-slate-400 text-lg">No student submissions yet</p>
+              <p className="text-slate-500 text-sm mt-2">Students will appear here once they complete missions</p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-gray-200">
-                    <th className="text-left py-3 px-4 font-semibold text-gray-700">Student ID</th>
-                    <th className="text-left py-3 px-4 font-semibold text-gray-700">Best Score</th>
-                    <th className="text-left py-3 px-4 font-semibold text-gray-700">Attempts</th>
-                    <th className="text-left py-3 px-4 font-semibold text-gray-700">Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {students.map((student) => (
-                    <tr key={student.studentId} className="border-b border-gray-100 hover:bg-gray-50">
-                      <td className="py-3 px-4 text-gray-900">{student.studentId}</td>
-                      <td className="py-3 px-4">
-                        <span className={`font-semibold ${
-                          student.hasHighMastery ? 'text-emerald-600' :
-                          student.hasMastery ? 'text-green-600' : 'text-orange-600'
-                        }`}>
-                          {student.bestScore.toFixed(2)}
-                        </span>
-                      </td>
-                      <td className="py-3 px-4 text-gray-600">{student.attempts}</td>
-                      <td className="py-3 px-4">
-                        {student.hasHighMastery ? (
-                          <span className="inline-flex items-center gap-1 bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full text-sm font-medium">
-                            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                            </svg>
-                            Ready
-                          </span>
-                        ) : student.hasMastery ? (
-                          <span className="inline-flex items-center gap-1 bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm font-medium">
-                            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                            </svg>
-                            Mastery
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1 bg-orange-100 text-orange-700 px-3 py-1 rounded-full text-sm font-medium">
-                            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
-                            </svg>
-                            Practice
-                          </span>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            <div className="space-y-3">
+              {leaderboard.map((entry) => (
+                <div
+                  key={entry.student_id}
+                  className={`border-2 rounded-xl p-5 transition-all hover:scale-[1.01] ${getRankBadge(entry.rank!)}`}
+                >
+                  <div className="flex items-center justify-between flex-wrap gap-4">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 text-center">
+                        {getRankIcon(entry.rank!)}
+                      </div>
+                      <div>
+                        <h3 className={`font-black ${textColorMain(entry.rank!)} text-xl`}>
+                          {entry.student_id}
+                        </h3>
+                      </div>
+                    </div>
+                    <div className="flex gap-8">
+                      <div className="text-center">
+                        <div className={`text-2xl font-black ${statColor(entry.rank!)} mb-1`}>
+                          {entry.total_score.toFixed(1)}
+                        </div>
+                        <div className={`text-xs ${labelColor(entry.rank!)} font-bold uppercase tracking-wide`}>
+                          Total Score
+                        </div>
+                      </div>
+                      <div className="text-center">
+                        <div className={`text-2xl font-black ${statColor(entry.rank!)} mb-1`}>
+                          {entry.missions_completed}
+                        </div>
+                        <div className={`text-xs ${labelColor(entry.rank!)} font-bold uppercase tracking-wide`}>
+                          Missions
+                        </div>
+                      </div>
+                      <div className="text-center">
+                        <div className={`text-2xl font-black ${statColor(entry.rank!)} mb-1`}>
+                          {entry.best_purity.toFixed(2)}
+                        </div>
+                        <div className={`text-xs ${labelColor(entry.rank!)} font-bold uppercase tracking-wide`}>
+                          Best Purity
+                        </div>
+                      </div>
+                      <div className="text-center">
+                        <div className={`text-2xl font-black ${statColor(entry.rank!)} mb-1`}>
+                          {entry.average_score.toFixed(2)}
+                        </div>
+                        <div className={`text-xs ${labelColor(entry.rank!)} font-bold uppercase tracking-wide`}>
+                          Average
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
           )}
         </div>
