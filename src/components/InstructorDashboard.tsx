@@ -214,34 +214,40 @@ export default function InstructorDashboard({ classCode }: InstructorDashboardPr
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 py-8">
         <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-          <div className="flex items-start justify-between mb-4">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">
-                BioSim Lab - Instructor Dashboard
-              </h1>
-              <div className="space-y-1">
-                <p className="text-gray-600">
-                  <strong>Class:</strong> {classInfo?.class_name}
-                </p>
-                <p className="text-gray-600">
-                  <strong>Code:</strong> {classInfo?.class_code}
-                </p>
-                <p className="text-gray-600">
-                  <strong>Instructor:</strong> {classInfo?.instructor_name} ({classInfo?.instructor_email})
-                </p>
-              </div>
+          <div className="mb-6">
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">
+              Instructor Dashboard
+            </h1>
+            <div className="space-y-1">
+              <p className="text-gray-600">
+                <strong>Class:</strong> {classInfo?.class_name}
+              </p>
+              <p className="text-gray-600">
+                <strong>Instructor:</strong> {classInfo?.instructor_name} ({classInfo?.instructor_email})
+              </p>
             </div>
-            <a
-              href="/"
-              className="text-blue-600 hover:text-blue-700 font-medium text-sm"
-            >
-              Back to Lab
-            </a>
+          </div>
+
+          <div className="bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl shadow-xl p-8 text-center border-4 border-blue-800">
+            <div className="mb-2">
+              <span className="text-blue-100 text-sm font-semibold uppercase tracking-wider">
+                Student Join Code
+              </span>
+            </div>
+            <div className="text-7xl font-black text-white tracking-widest mb-2 font-mono">
+              {classInfo?.class_code}
+            </div>
+            <div className="text-blue-100 text-sm">
+              Share this code with your students to join the lab session
+            </div>
           </div>
         </div>
 
         <div className="mb-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Quick Stats</h2>
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-1 h-8 bg-blue-600 rounded-full"></div>
+            <h2 className="text-2xl font-bold text-gray-900">Live Lab Monitor</h2>
+          </div>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="bg-white rounded-lg shadow p-6">
               <div className="text-3xl font-bold text-blue-600 mb-1">

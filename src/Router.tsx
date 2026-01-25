@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import App from './App';
+import Header from './components/Header';
 import InstructorSetup from './components/InstructorSetup';
 import InstructorDashboard from './components/InstructorDashboard';
 import StudentProfile from './components/StudentProfile';
@@ -17,24 +18,29 @@ export default function Router() {
     return () => window.removeEventListener('popstate', handleLocationChange);
   }, []);
 
+  let content;
+
   if (currentPath === '/leaderboard') {
-    return <Leaderboard />;
-  }
-
-  if (currentPath === '/profile') {
-    return <StudentProfile />;
-  }
-
-  if (currentPath === '/instructor/setup') {
-    return <InstructorSetup />;
-  }
-
-  if (currentPath.startsWith('/instructor/')) {
+    content = <Leaderboard />;
+  } else if (currentPath === '/profile') {
+    content = <StudentProfile />;
+  } else if (currentPath === '/instructor/setup') {
+    content = <InstructorSetup />;
+  } else if (currentPath.startsWith('/instructor/')) {
     const classCode = currentPath.split('/instructor/')[1];
     if (classCode && classCode !== 'setup') {
-      return <InstructorDashboard classCode={classCode} />;
+      content = <InstructorDashboard classCode={classCode} />;
+    } else {
+      content = <App />;
     }
+  } else {
+    content = <App />;
   }
 
-  return <App />;
+  return (
+    <>
+      <Header />
+      {content}
+    </>
+  );
 }
