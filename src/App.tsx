@@ -1833,11 +1833,12 @@ export default function App() {
                         </div>
                         <div>
                           <h3 className="text-3xl font-black text-white mb-2 flex items-center gap-3">
-                            National Biotech Leaderboard
+                            Global Rankings
                             <span className="text-sm bg-amber-500 px-3 py-1 rounded-full font-bold animate-pulse">NEW</span>
                           </h3>
                           <p className="text-slate-300 text-lg mb-1">
-                            Compete with students nationwide. Track your ranking. Share your achievements.
+                            'Compete with learners worldwide. Track your progress. Build verifiable competency records.
+                            From students to researchers—see where you rank
                           </p>
                           <p className="text-amber-400 text-sm font-semibold">
                             Perfect for high school students looking to stand out
