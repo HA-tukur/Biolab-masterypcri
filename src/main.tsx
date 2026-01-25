@@ -1,9 +1,6 @@
 import { StrictMode, Component, ErrorInfo, ReactNode } from 'react';
 import { createRoot } from 'react-dom/client';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import App from './App.tsx';
-import { InstructorSetup } from './components/InstructorSetup.tsx';
-import { InstructorDashboard } from './components/InstructorDashboard.tsx';
+import Router from './Router.tsx';
 import './index.css';
 
 class ErrorBoundary extends Component<
@@ -59,13 +56,7 @@ class ErrorBoundary extends Component<
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <ErrorBoundary>
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<App />} />
-          <Route path="/instructor/setup" element={<InstructorSetup />} />
-          <Route path="/instructor/:code" element={<InstructorDashboard />} />
-        </Routes>
-      </BrowserRouter>
+      <Router />
     </ErrorBoundary>
   </StrictMode>
 );
