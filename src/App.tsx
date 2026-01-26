@@ -30,7 +30,8 @@ import {
   Shirt,
   Glasses,
   Computer,
-  Trophy
+  Trophy,
+  X
 } from "lucide-react";
 import { SupabaseHistoryStore, HistoryStore } from "./services/historyStore";
 import { PCRModule } from "./components/PCRModule";
