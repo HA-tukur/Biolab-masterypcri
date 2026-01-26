@@ -41,7 +41,6 @@ import { CategoryTechniques } from "./components/CategoryTechniques";
 import { PCRMissions } from "./components/PCRMissions";
 import { AntibodyIcon } from "./components/AntibodyIcon";
 import ClassCodePrompt from "./components/ClassCodePrompt";
-import { AILabAssistant } from "./components/AILabAssistant";
 import { config } from "./config";
 import { getOrCreateStudentId } from "./utils/studentId";
 import { VERIFICATION, MISSIONS_DATA } from "./data/missions";
@@ -2701,7 +2700,7 @@ export default function App() {
         </div>
       )}
 
-      <AILabAssistant />
+      {/* <AILabAssistant /> */}
     </div>
   );
 }
