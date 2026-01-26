@@ -3,14 +3,23 @@ import { useNavigate } from 'react-router-dom';
 import { GraduationCap, ChevronRight, Sparkles, Key, LogIn, AlertTriangle, Copy, CheckCircle2 } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 import { config } from '../config';
+import { MISSIONS_DATA } from '../data/missions';
 
 const supabase = createClient(config.supabase.url, config.supabase.anonKey);
+
+const AVAILABLE_MISSIONS = [
+  { id: 'DNA_EXT_A', name: 'DNA Extraction A - Superbug Clinical Diagnostic', category: 'DNA Extraction' },
+  { id: 'DNA_EXT_B', name: 'DNA Extraction B - Cassava Pathogen Sequencing', category: 'DNA Extraction' },
+  { id: 'PCR_A', name: 'PCR A - Diagnostic Amplification', category: 'PCR', locked: true },
+  { id: 'PCR_B', name: 'PCR B - Mutation Screening', category: 'PCR', locked: true },
+];
 
 export function InstructorSetup() {
   const navigate = useNavigate();
   const [view, setView] = useState<'create' | 'login' | 'success'>('create');
   const [className, setClassName] = useState('');
   const [instructorName, setInstructorName] = useState('');
+  const [selectedMission, setSelectedMission] = useState('');
   const [adminKeyInput, setAdminKeyInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -51,6 +60,11 @@ export function InstructorSetup() {
       return;
     }
 
+    if (!selectedMission) {
+      setError('Please select a target module');
+      return;
+    }
+
     setLoading(true);
     setError('');
 
@@ -64,7 +78,8 @@ export function InstructorSetup() {
           class_code: classCode,
           class_name: className.trim(),
           instructor_name: instructorName.trim(),
-          admin_key: adminKey
+          admin_key: adminKey,
+          mission_id: selectedMission
         })
         .select();
 
@@ -279,6 +294,31 @@ export function InstructorSetup() {
                 />
               </div>
 
+              <div>
+                <label htmlFor="targetModule" className="block text-sm font-bold text-slate-300 mb-2 uppercase tracking-wide">
+                  Select Target Module
+                </label>
+                <select
+                  id="targetModule"
+                  value={selectedMission}
+                  onChange={(e) => setSelectedMission(e.target.value)}
+                  className="w-full bg-slate-900/50 border border-slate-600 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20"
+                >
+                  <option value="" className="bg-slate-900">Select a module...</option>
+                  {AVAILABLE_MISSIONS.map((mission) => (
+                    <option
+                      key={mission.id}
+                      value={mission.id}
+                      disabled={mission.locked}
+                      className="bg-slate-900"
+                    >
+                      {mission.name} {mission.locked ? '(Coming Soon)' : ''}
+                    </option>
+                  ))}
+                </select>
+                <p className="text-slate-400 text-xs mt-2">Students will be directed to this module when they join</p>
+              </div>
+
               {error && (
                 <div className="bg-rose-900/20 border border-rose-500/30 rounded-lg p-4">
                   <p className="text-rose-300 text-sm">{error}</p>
@@ -314,6 +354,10 @@ export function InstructorSetup() {
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="text-indigo-400 font-bold mt-0.5">3.</span>
+                    <span>Students will be automatically directed to your selected module</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-indigo-400 font-bold mt-0.5">4.</span>
                     <span>Save your admin key to resume your session anytime</span>
                   </li>
                 </ul>

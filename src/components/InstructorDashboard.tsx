@@ -22,7 +22,15 @@ interface ClassData {
   instructor_name: string;
   class_code: string;
   created_at: string;
+  mission_id?: string;
 }
+
+const MISSION_NAMES: Record<string, string> = {
+  'DNA_EXT_A': 'DNA Extraction A - Superbug Clinical Diagnostic',
+  'DNA_EXT_B': 'DNA Extraction B - Cassava Pathogen Sequencing',
+  'PCR_A': 'PCR A - Diagnostic Amplification',
+  'PCR_B': 'PCR B - Mutation Screening',
+};
 
 interface StudentResult {
   id: string;
@@ -210,6 +218,14 @@ export function InstructorDashboard() {
                 <div>
                   <h1 className="text-3xl font-black text-white mb-1">{classData.class_name}</h1>
                   <p className="text-slate-300 text-lg">{classData.instructor_name}</p>
+                  {classData.mission_id && (
+                    <div className="mt-2 inline-flex items-center gap-2 bg-emerald-500/20 border border-emerald-400/30 rounded-lg px-3 py-1">
+                      <Target size={14} className="text-emerald-400" />
+                      <span className="text-emerald-300 text-sm font-bold">
+                        {MISSION_NAMES[classData.mission_id] || classData.mission_id}
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
 
