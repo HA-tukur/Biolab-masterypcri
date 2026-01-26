@@ -4,56 +4,28 @@ import {
   FlaskConical,
   AlertCircle,
   BookOpen,
-  Microscope,
   Target,
   Pipette,
   Box,
   Activity,
-  Trash2,
   ChevronRight,
   RefreshCw,
   Star,
   Thermometer,
   Award,
-  X,
   ScrollText,
   Lightbulb,
-  History,
-  Fingerprint,
   ShieldCheck,
   ShieldAlert,
   Leaf,
-  Info,
-  ClipboardList,
   ShoppingCart,
   Undo2,
   Medal,
   Database,
-  Eraser,
-  Waves,
-  FileCheck2,
   Dna,
   Terminal,
-  Calculator,
-  Zap,
-  TrendingUp,
-  Lock,
-  Beaker,
-  TestTube2,
-  Binary,
-  Cpu,
-  Grip,
-  SearchCode,
-  Home,
   GraduationCap,
-  Users,
-  Eye,
-  Droplet,
   Sparkles,
-  ScanEye,
-  Camera,
-  Circle,
-  Scissors,
   Shirt,
   Glasses,
   Computer,
@@ -70,6 +42,9 @@ import ClassCodePrompt from "./components/ClassCodePrompt";
 import { AILabAssistant } from "./components/AILabAssistant";
 import { config } from "./config";
 import { getOrCreateStudentId } from "./utils/studentId";
+import { VERIFICATION, MISSIONS_DATA } from "./data/missions";
+import { kits_list, tools_list, consumables_ppe_list, design_tools_list } from "./data/equipment";
+import { TECHNIQUE_LIBRARY } from "./data/techniqueLibrary";
 
 const supabase = createClient(config.supabase.url, config.supabase.anonKey);
 
@@ -84,136 +59,6 @@ const trackEvent = (action, category, label, value) => {
   }
 };
 
-const VERIFICATION = { NANODROP: "nanodrop", GEL: "gel" };
-
-const MISSIONS_DATA = {
-  DNA_EXT: {
-    A: {
-      id: "A",
-      title: "Superbug Clinical Diagnostic",
-      brief: "Clinical Alert: A suspected multi-drug resistant pathogen has been detected. Your mission is to isolate high-purity genomic DNA for PCR verification.",
-      summary: "Biopsy DNA Extraction. Target: 200 – 1000 ng/µL.",
-      budget: 2000,
-      verification: { mode: "REQUIRED_ALL", options: [VERIFICATION.NANODROP, VERIFICATION.GEL], label: "Use BOTH Nanodrop AND Gel (both required)." }
-    },
-    B: {
-      id: "B",
-      title: "Cassava Pathogen Sequencing",
-      brief: "Agricultural Crisis: A new blight is threatening crop yields. Your mission is to isolate high-molecular-weight DNA for Next-Gen Sequencing.",
-      summary: "Plant gDNA Extraction. Target: 200 – 350 ng/µL.",
-      budget: 3000,
-      verification: { mode: "REQUIRED_ALL", options: [VERIFICATION.NANODROP, VERIFICATION.GEL], label: "NGS prep requires BOTH Nanodrop + Gel verification." }
-    }
-  },
-  PCR: {
-    A: { id: "PCR_A", title: "Diagnostic Amplification", brief: "Targeting the 16S rRNA gene for pathogen identification.", summary: "Standard PCR Setup.", budget: 1500, locked: true },
-    B: { id: "PCR_B", title: "Mutation Screening", brief: "Identifying SNPs in drug-resistance genes.", summary: "Advanced PCR Setup.", budget: 2500, locked: true }
-  }
-};
-
-const TECHNIQUE_LIBRARY = [
-  {
-    category: "Core Lab Skills",
-    items: [
-      { id: "DNA_EXT", title: "DNA Extraction", level: "Foundation", status: "ACTIVE", icon: <Dna size={22}/> },
-      { id: "PIPETTE", title: "Pipetting & Measurements", level: "Foundation", status: "LOCKED", icon: <Pipette size={22}/> },
-      { id: "SOL_PREP", title: "Solution Preparation & Dilutions", level: "Foundation", status: "LOCKED", icon: <Beaker size={22}/> },
-      { id: "SAFETY", title: "Lab Safety & Equipment", level: "Foundation", status: "LOCKED", icon: <ShieldCheck size={22}/> },
-      { id: "MICROSCOPY_BASICS", title: "Microscopy Basics", level: "Foundation", status: "LOCKED", icon: <Eye size={22}/> }
-    ]
-  },
-  {
-    category: "Nucleic Acid Techniques",
-    items: [
-      { id: "PCR", title: "PCR", level: "Applied", status: "ACTIVE", icon: <Binary size={22}/> },
-      { id: "GEL", title: "Agarose Gel Electrophoresis", level: "Foundation", status: "LOCKED", icon: <Grip size={22}/> },
-      { id: "QPCR", title: "qPCR / RT-PCR", level: "Advanced", status: "LOCKED", icon: <Activity size={22}/> },
-      { id: "SEQ", title: "Sequencing", level: "Advanced", status: "LOCKED", icon: <SearchCode size={22}/> }
-    ]
-  },
-  {
-    category: "Genetic Engineering",
-    items: [
-      { id: "TRANS", title: "E. coli Transformation", level: "Applied", status: "LOCKED", icon: <Circle size={22}/> },
-      { id: "CLONE", title: "Molecular Cloning", level: "Applied", status: "LOCKED", icon: <Dna size={22}/> },
-      { id: "CRISPR", title: "CRISPR / Gene Editing", level: "Advanced", status: "LOCKED", icon: <Scissors size={22}/> }
-    ]
-  },
-  {
-    category: "Protein Techniques",
-    items: [
-      { id: "SDS", title: "SDS-PAGE", level: "Applied", status: "LOCKED", icon: <FlaskConical size={22}/> },
-      { id: "WESTERN", title: "Western Blotting", level: "Advanced", status: "LOCKED", icon: <AntibodyIcon size={22}/> },
-      { id: "ELISA", title: "ELISA", level: "Applied", status: "LOCKED", icon: <AntibodyIcon size={22}/> },
-      { id: "PURIFY", title: "Protein Purification", level: "Advanced", status: "LOCKED", icon: <RefreshCw size={22}/> }
-    ]
-  },
-  {
-    category: "Imaging and Microscopy",
-    items: [
-      { id: "CELL_FIX", title: "Cell Fixation and Staining", level: "Applied", status: "LOCKED", icon: <Droplet size={22}/> },
-      { id: "IF", title: "Immunofluorescence (IF)", level: "Applied", status: "LOCKED", icon: <AntibodyIcon size={22}/> },
-      { id: "CONFOCAL", title: "Confocal Microscopy", level: "Advanced", status: "LOCKED", icon: <ScanEye size={22}/> },
-      { id: "WIDEFIELD", title: "Widefield Microscopy", level: "Applied", status: "LOCKED", icon: <Microscope size={22}/> },
-      { id: "LIVE_CELL", title: "Live Cell Imaging", level: "Advanced", status: "LOCKED", icon: <Camera size={22}/> }
-    ]
-  }
-];
-
-const kits_list = [
-  { id: "kit_qiagen", name: "Qiagen DNeasy Kit", cost: 1450, desc: "Highest purity yield for complex biopsies.", type: "extraction" },
-  { id: "kit_zymo", name: "Zymo Research Quick-DNA", cost: 1100, desc: "Optimized for plant tissue lysis.", type: "extraction" },
-  { id: "kit_thermo", name: "Thermo Fisher PureLink", cost: 1300, desc: "Standard genomic DNA kit.", type: "extraction" },
-  { id: "kit_pcr_neb", name: "NEB OneTaq PCR Kit", cost: 1200, desc: "Complete PCR kit with all reagents for reliable amplification.", type: "pcr" },
-  { id: "kit_pcr_bio", name: "Bio-Rad iQ PCR Kit", cost: 1350, desc: "High-fidelity PCR system for demanding applications.", type: "pcr" }
-];
-
-const tools_list = [
-  { id: "centrifuge", name: "Centrifuge (Communal)", cost: 0, desc: "Mandatory hardware for phase separation.", category: "general" },
-  { id: "nanodrop", name: "Nanodrop (Communal)", cost: 0, desc: "Quantifies DNA yield and purity using UV light.", category: "general" },
-  { id: "incubator", name: "Incubator (Communal)", cost: 0, desc: "Provides controlled temperature for enzymatic reactions.", category: "general" },
-  { id: "freezer", name: "Freezer (Communal)", cost: 0, desc: "Stores samples and reagents at low temperature.", category: "general" },
-  { id: "mortar_pestle", name: "Mortar and Pestle", cost: 0, desc: "Mechanical grinding tool for tough plant tissues.", category: "extraction" },
-  { id: "liquid_nitrogen", name: "Liquid Nitrogen", cost: 0, desc: "Ultra-cold reagent for flash-freezing tissues before grinding.", category: "extraction" },
-  { id: "proteinase_k", name: "Proteinase K Enzyme", cost: 350, desc: "Digests proteins to improve DNA purity.", category: "extraction" },
-  { id: "lysis_clean", name: "Manual Lysis Buffer", cost: 400, desc: "Buffer required for cell lysis.", category: "extraction" },
-  { id: "wash_buffer", name: "Wash Buffer (Salt/EtOH)", cost: 300, desc: "Removes residual proteins from the matrix.", category: "extraction" },
-  { id: "elute_buffer", name: "Elution Buffer (Tris-EDTA)", cost: 300, desc: "Releases DNA from the silica membrane.", category: "extraction" },
-  { id: "column", name: "Silica Spin Columns", cost: 450, desc: "Matrix for DNA purification.", category: "extraction" },
-  { id: "thermal_cycler", name: "Thermal Cycler", cost: 0, desc: "Automatically cycles temperatures for DNA amplification.", category: "pcr" },
-  { id: "micropipettes", name: "Micropipettes (P10, P20, P200)", cost: 0, desc: "Used to accurately measure microliter volumes.", category: "pcr" },
-  { id: "master_mix", name: "Master Mix", cost: 600, desc: "Pre-mixed solution of DNA polymerase (Taq/KOD), dNTPs, and buffer with MgCl₂.", category: "pcr" },
-  { id: "nuclease_free_water", name: "Nuclease-free Water", cost: 200, desc: "Used to adjust final reaction volume without contaminants.", category: "pcr" },
-  { id: "primers_fw_rv", name: "Forward/Reverse Primers", cost: 450, desc: "Specifically synthesized DNA sequences flanking your target gene.", category: "pcr" }
-];
-
-const consumables_ppe_list = [
-  { id: "safety_goggles", name: "Safety Goggles", cost: 0, desc: "Eye protection against chemical splashes and biological hazards.", category: "general" },
-  { id: "lab_coat", name: "Lab Coat", cost: 0, desc: "Personal protective clothing to shield from spills and contamination.", category: "general" },
-  { id: "petri_dishes", name: "Petri Dishes", cost: 0, desc: "Sterile culture dishes for sample preparation.", category: "general" },
-  { id: "pipette_tips", name: "Pipette Tips", cost: 0, desc: "Sterile disposable tips for accurate liquid transfer.", category: "general" },
-  { id: "tubes", name: "Tubes", cost: 0, desc: "Single-use 1.5mL or 2mL tubes for sample handling.", category: "general" },
-  { id: "gloves", name: "Gloves", cost: 0, desc: "Disposable nitrile or latex gloves for hand protection.", category: "general" },
-  { id: "filter_tips", name: "Filter Pipette Tips", cost: 0, desc: "Prevents aerosol contamination between samples.", category: "pcr" },
-  { id: "pcr_tubes", name: "0.2 mL PCR Tubes", cost: 0, desc: "Thin-walled tubes for efficient heat transfer in the cycler.", category: "pcr" }
-];
-
-const design_tools_list = [
-  {
-    id: "ncbi_primer_blast",
-    name: "NCBI Primer-BLAST",
-    desc: "Design Forward/Reverse primers with specificity checking against databases.",
-    url: "https://www.ncbi.nlm.nih.gov/tools/primer-blast/",
-    note: "Primers labeled as Forward and Reverse"
-  },
-  {
-    id: "primer3plus",
-    name: "Primer3Plus",
-    desc: "Design Left/Right primers with advanced parameter control.",
-    url: "https://www.primer3plus.com/",
-    note: "Primers labeled as Left and Right"
-  }
-];
 
 const TubeVisual = ({ volume, solidMass, hasPellet, showSeparation, onSupernatantClick, onPelletClick }) => {
   const fillPercent = Math.min((volume / 2000) * 100, 85);
