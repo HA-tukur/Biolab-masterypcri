@@ -1,8 +1,11 @@
 import { Microscope } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 export default function Header() {
-  const currentPath = window.location.pathname;
+  const navigate = useNavigate();
+  const location = useLocation();
+  const currentPath = location.pathname;
   const isLabBench = currentPath === '/' || (!currentPath.startsWith('/instructor'));
   const isInstructor = currentPath.startsWith('/instructor');
   const [activeTab, setActiveTab] = useState('home');
@@ -16,8 +19,7 @@ export default function Header() {
   }, []);
 
   const handleNavigation = (path: string) => {
-    window.history.pushState({}, '', path);
-    window.dispatchEvent(new PopStateEvent('popstate'));
+    navigate(path);
   };
 
   const handleTabClick = (tab: string) => {

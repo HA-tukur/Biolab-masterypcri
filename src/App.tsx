@@ -1,4 +1,5 @@
 import React, { useMemo, useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { createClient } from "@supabase/supabase-js";
 import {
   FlaskConical,
@@ -978,6 +979,7 @@ const NanodropVisualComp = ({ step, measured, hasDNA = true }) => {
 export default function App() {
   console.log('App component rendering');
 
+  const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [historyRecords, setHistoryRecords] = useState([]);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
@@ -1631,10 +1633,7 @@ export default function App() {
                     </div>
 
                     <div
-                      onClick={() => {
-                        window.history.pushState({}, '', '/profile');
-                        window.dispatchEvent(new PopStateEvent('popstate'));
-                      }}
+                      onClick={() => navigate('/profile')}
                       className="bg-gradient-to-br from-indigo-900/40 to-indigo-800/20 border-2 border-indigo-500/50 p-6 rounded-2xl cursor-pointer hover:scale-105 transition-transform hover:border-indigo-400"
                     >
                       <div className="bg-indigo-600 w-14 h-14 rounded-xl flex items-center justify-center mb-4 shadow-lg">
@@ -1677,10 +1676,7 @@ export default function App() {
 
                 <section className="max-w-4xl mx-auto py-3">
                   <div
-                    onClick={() => {
-                      window.history.pushState({}, '', '/leaderboard');
-                      window.dispatchEvent(new PopStateEvent('popstate'));
-                    }}
+                    onClick={() => navigate('/leaderboard')}
                     className="bg-gradient-to-r from-amber-900/40 via-yellow-900/30 to-amber-900/40 border-2 border-amber-400/60 rounded-2xl p-5 cursor-pointer hover:scale-[1.02] transition-transform hover:border-amber-300 hover:shadow-2xl hover:shadow-amber-500/20"
                   >
                     <div className="flex items-center justify-between flex-wrap gap-4">

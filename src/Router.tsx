@@ -1,4 +1,5 @@
-import { useEffect, useState, lazy, Suspense } from 'react';
+import { lazy, Suspense } from 'react';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Header from './components/Header';
 
 const App = lazy(() => import('./App'));
@@ -7,34 +8,8 @@ const StudentProfile = lazy(() => import('./components/StudentProfile'));
 const Leaderboard = lazy(() => import('./components/Leaderboard'));
 
 export default function Router() {
-  const [currentPath, setCurrentPath] = useState(window.location.pathname);
-
-  useEffect(() => {
-    const handleLocationChange = () => {
-      setCurrentPath(window.location.pathname);
-    };
-
-    window.addEventListener('popstate', handleLocationChange);
-    return () => window.removeEventListener('popstate', handleLocationChange);
-  }, []);
-
-  let content;
-
-  if (currentPath === '/leaderboard') {
-    content = <Leaderboard />;
-  } else if (currentPath === '/profile') {
-    content = <StudentProfile />;
-  } else if (currentPath === '/instructor/setup') {
-    content = <InstructorSetup />;
-  } else if (currentPath.startsWith('/instructor/')) {
-    // Temporarily redirect instructor dashboards to setup
-    content = <InstructorSetup />;
-  } else {
-    content = <App />;
-  }
-
   return (
-    <>
+    <BrowserRouter>
       <Header />
       <Suspense fallback={
         <div className="flex items-center justify-center h-screen">
@@ -44,8 +19,14 @@ export default function Router() {
           </div>
         </div>
       }>
-        {content}
+        <Routes>
+          <Route path="/" element={<App />} />
+          <Route path="/leaderboard" element={<Leaderboard />} />
+          <Route path="/profile" element={<StudentProfile />} />
+          <Route path="/instructor/setup" element={<InstructorSetup />} />
+          <Route path="/instructor/:classCode" element={<InstructorSetup />} />
+        </Routes>
       </Suspense>
-    </>
+    </BrowserRouter>
   );
 }
