@@ -29,8 +29,8 @@ interface ClassData {
 const MISSION_NAMES: Record<string, string> = {
   'DNA_EXT_A': 'DNA Extraction A - Superbug Clinical Diagnostic',
   'DNA_EXT_B': 'DNA Extraction B - Cassava Pathogen Sequencing',
-  'PCR_A': 'PCR A - Diagnostic Amplification',
-  'PCR_B': 'PCR B - Mutation Screening',
+  'PCR_lagos-diagnostic': 'PCR - Lagos Diagnostic Hub (Sickle Cell)',
+  'PCR_great-green-wall': 'PCR - Great Green Wall Rescue (Drought Tolerance)',
 };
 
 interface StudentResult {

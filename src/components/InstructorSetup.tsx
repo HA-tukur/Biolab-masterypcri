@@ -10,8 +10,8 @@ const supabase = createClient(config.supabase.url, config.supabase.anonKey);
 const AVAILABLE_MISSIONS = [
   { id: 'DNA_EXT_A', name: 'DNA Extraction A - Superbug Clinical Diagnostic', category: 'DNA Extraction' },
   { id: 'DNA_EXT_B', name: 'DNA Extraction B - Cassava Pathogen Sequencing', category: 'DNA Extraction' },
-  { id: 'PCR_A', name: 'PCR A - Diagnostic Amplification', category: 'PCR', locked: true },
-  { id: 'PCR_B', name: 'PCR B - Mutation Screening', category: 'PCR', locked: true },
+  { id: 'PCR_lagos-diagnostic', name: 'PCR - Lagos Diagnostic Hub (Sickle Cell)', category: 'PCR' },
+  { id: 'PCR_great-green-wall', name: 'PCR - Great Green Wall Rescue (Drought Tolerance)', category: 'PCR' },
 ];
 
 export function InstructorSetup() {

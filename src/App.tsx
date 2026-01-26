@@ -1553,7 +1553,12 @@ export default function App() {
         <ClassCodePrompt
           onComplete={() => setShowClassCodePrompt(false)}
           onJoinMission={(techniqueId, missionId) => {
-            startMission(techniqueId, missionId);
+            if (techniqueId === 'PCR') {
+              setSelectedMissionId(missionId);
+              setShowPCRModal(true);
+            } else {
+              startMission(techniqueId, missionId);
+            }
           }}
         />
       )}

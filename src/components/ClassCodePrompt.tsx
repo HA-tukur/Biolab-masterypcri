@@ -64,7 +64,13 @@ export default function ClassCodePrompt({ onComplete, onJoinMission }: ClassCode
 
       if (data.mission_id && onJoinMission) {
         const parts = data.mission_id.split('_');
-        if (parts.length >= 3) {
+        if (parts[0] === 'PCR' && parts.length >= 2) {
+          const techniqueId = 'PCR';
+          const missionId = parts.slice(1).join('_');
+          setTimeout(() => {
+            onJoinMission(techniqueId, missionId);
+          }, 100);
+        } else if (parts.length >= 3) {
           const techniqueId = `${parts[0]}_${parts[1]}`;
           const missionId = parts[2];
           setTimeout(() => {
