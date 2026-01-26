@@ -34,20 +34,26 @@ export function InstructorSetup() {
     try {
       const classCode = generateClassCode();
 
-      const { error: insertError } = await supabase
+      const { data, error: insertError } = await supabase
         .from('classes')
         .insert({
           class_code: classCode,
           class_name: className.trim(),
           instructor_name: instructorName.trim()
-        });
+        })
+        .select();
 
-      if (insertError) throw insertError;
+      if (insertError) {
+        console.error('Supabase error:', insertError);
+        throw insertError;
+      }
 
+      console.log('Class created successfully:', data);
       navigate(`/instructor/${classCode}`);
     } catch (err: any) {
       console.error('Error creating class:', err);
-      setError('Failed to create class. Please try again.');
+      const errorMessage = err?.message || 'Failed to create class. Please try again.';
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
