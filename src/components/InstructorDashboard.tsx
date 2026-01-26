@@ -11,7 +11,8 @@ import {
   CheckCircle2,
   AlertCircle,
   Users,
-  TrendingUp
+  TrendingUp,
+  Target
 } from 'lucide-react';
 
 const supabase = createClient(config.supabase.url, config.supabase.anonKey);
