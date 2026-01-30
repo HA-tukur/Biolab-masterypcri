@@ -862,6 +862,99 @@ const ProtocolBookOverlay = ({ onClose }) => (
     </div>
 );
 
+const ProtocolGuideOverlay = ({ onClose, missionId }) => {
+  const protocolContent = {
+    A: {
+      title: "Clinical Tissue Biopsy Protocol",
+      subtitle: "Human/Animal DNA Extraction - Tailored for soft tissues (e.g., 3-25mg biopsies). Volumes: 2/500/500/20 µl.",
+      steps: [
+        {
+          title: "Tissue Disruption (Enzymatic Digestion)",
+          content: "Add Proteinase K (2µl concentrated stock). Mix and incubate at 56°C (shortened for simulation; real: 1-3 hours). Targets proteins in animal matrices; no grinding needed unlike plants."
+        },
+        {
+          title: "Lysis",
+          content: "Add lysis buffer (500µl). Mix and spin (~12,000g) to pellet debris. Skips RNase for simplicity, assuming minor RNA is tolerable."
+        },
+        {
+          title: "Binding/Wash/Elute",
+          content: "Add binding buffer (500µl) and spin to bind DNA to column. Wash (500µl, repeat) and spin. Elute in 20µl, then NanoDrop. Column skips phenol-chloroform (common for phase separation) for safety, speed, and non-toxicity."
+        },
+        {
+          title: "Equipment",
+          content: "Microcentrifuge, pipettes/tips, incubator, NanoDrop, safety kit."
+        }
+      ]
+    },
+    B: {
+      title: "Cassava Extraction Protocol",
+      subtitle: "Plant DNA Extraction - For tough plant tissues (e.g., 20-100mg cassava). Volumes: 500/500/20 µl.",
+      steps: [
+        {
+          title: "Tissue Disruption (Manual Grinding + Liquid N₂)",
+          content: "Grind in mortar/pestle with LN₂ (no Proteinase K). Flash-freezes to brittle tissue, preventing phenolic oxidation—key for plants but not animals."
+        },
+        {
+          title: "Lysis & Binding",
+          content: "Add lysis buffer (500µl). Mix and spin. Add binding buffer (500µl) to column and spin. Skips chloroform:isoamyl alcohol (for phenolic removal in CTAB methods) for safety and speed via column binding."
+        },
+        {
+          title: "Wash & Elute",
+          content: "Wash (500µl, repeat) and spin. Elute in 20µl, spin, NanoDrop. No β-mercaptoethanol (BME; reduces oxidation) as small samples/low phenolics rely on buffer additives like PVP."
+        },
+        {
+          title: "Equipment",
+          content: "Mortar/pestle, LN₂ (safety kit for cryogenics), microcentrifuge, NanoDrop, pipettes/tips."
+        }
+      ]
+    }
+  };
+
+  const protocol = protocolContent[missionId] || protocolContent.A;
+
+  return (
+    <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md font-sans text-white">
+      <div className="bg-slate-800 border border-indigo-500/50 w-full max-w-3xl rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col max-h-[85vh]">
+        <div className="p-6 border-b border-slate-700 flex justify-between items-center bg-slate-900/50">
+          <div className="flex items-center gap-3 text-indigo-400 font-mono font-bold uppercase tracking-widest">
+            <BookOpen size={24} />
+            <h3>Extraction Protocol</h3>
+          </div>
+          <button onClick={onClose} className="text-slate-500 hover:text-white border-0 bg-transparent cursor-pointer">
+            <X size={24}/>
+          </button>
+        </div>
+        <div className="p-8 overflow-y-auto space-y-6 text-sm leading-relaxed text-slate-300 text-left">
+          <div className="bg-indigo-900/20 border border-indigo-500/30 p-5 rounded-2xl space-y-2">
+            <h4 className="text-indigo-300 font-black uppercase text-lg font-sans">{protocol.title}</h4>
+            <p className="text-slate-300 text-xs italic">{protocol.subtitle}</p>
+          </div>
+
+          {protocol.steps.map((step, index) => (
+            <section key={index} className="space-y-3 border-b border-slate-700 pb-5 last:border-b-0">
+              <h5 className="text-white font-bold uppercase text-sm font-mono flex items-center gap-2">
+                <span className="bg-indigo-600 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs font-black">
+                  {index + 1}
+                </span>
+                {step.title}
+              </h5>
+              <p className="text-slate-300 text-sm leading-relaxed ml-8">{step.content}</p>
+            </section>
+          ))}
+        </div>
+        <div className="p-6 bg-slate-900/50 border-t border-slate-700">
+          <button
+            onClick={onClose}
+            className="w-full bg-indigo-600 hover:bg-indigo-500 py-4 rounded-2xl font-black text-white border-0 cursor-pointer uppercase tracking-widest transition-all"
+          >
+            Close Protocol
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const LabManualOverlay = ({ onClose }) => (
     <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md font-sans text-white">
       <div className="bg-slate-800 border border-indigo-500/50 w-full max-w-2xl rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col max-h-[85vh]">
@@ -908,7 +1001,7 @@ const FeedbackModule = ({ userRating, setUserRating, feedbackSent, setFeedbackSe
         <div className="flex justify-center gap-3 font-sans text-white py-2">{[1, 2, 3, 4, 5].map((s) => (<button key={s} onClick={() => { setUserRating(s); trackEvent('StarRating', 'Feedback', `Rating_${s}`, s); if (s > 3) setFeedbackSent(true); }} className="transition-all hover:scale-125 active:scale-95 cursor-pointer border-0 bg-transparent p-1 hover:drop-shadow-[0_0_8px_rgba(251,191,36,0.8)]">
           <Star size={48} className={userRating >= s ? "fill-amber-400 text-amber-400 drop-shadow-[0_0_6px_rgba(251,191,36,0.6)]" : "text-slate-600 hover:text-slate-500"} strokeWidth={2.5} />
         </button>))}</div>
-        {userRating > 0 && userRating <= 3 && !feedbackSent && (<div className="space-y-3 animate-in slide-in-from-top-2 font-sans text-slate-400 text-center"><p className="text-xs text-center font-bold text-slate-300 uppercase tracking-wide">What was the primary issue?</p><div className="grid grid-cols-2 gap-2">{["Confusing Path", "Too Difficult", "Technical Bug", "Lack of Guide"].map((tag, i) => (<button key={`tag-${i}`} onClick={() => { setFeedbackSent(true); trackEvent('LowRatingReason', 'Feedback', tag, userRating); }} className="bg-slate-800 p-3 rounded-lg text-xs font-bold uppercase text-slate-300 border border-slate-700 hover:bg-indigo-900/20 transition-all cursor-pointer">{String(tag)}</button>))}</div></div>)}{feedbackSent && <div className=\"flex items-center justify-center gap-2 text-base font-bold text-emerald-400 animate-in fade-in"><span>✓</span><span>Thank you for your feedback!</span></div>}
+        {userRating > 0 && userRating <= 3 && !feedbackSent && (<div className="space-y-3 animate-in slide-in-from-top-2 font-sans text-slate-400 text-center"><p className="text-xs text-center font-bold text-slate-300 uppercase tracking-wide">What was the primary issue?</p><div className="grid grid-cols-2 gap-2">{["Confusing Path", "Too Difficult", "Technical Bug", "Lack of Guide"].map((tag, i) => (<button key={`tag-${i}`} onClick={() => { setFeedbackSent(true); trackEvent('LowRatingReason', 'Feedback', tag, userRating); }} className="bg-slate-800 p-3 rounded-lg text-xs font-bold uppercase text-slate-300 border border-slate-700 hover:bg-indigo-900/20 transition-all cursor-pointer">{String(tag)}</button>))}</div></div>)}{feedbackSent && <div className="flex items-center justify-center gap-2 text-base font-bold text-emerald-400 animate-in fade-in"><span>✓</span><span>Thank you for your feedback!</span></div>}
     </div>
 );
 
@@ -1190,6 +1283,7 @@ export default function App() {
   const [showGrindingSetup, setShowGrindingSetup] = useState(false);
   const [difficultyMode, setDifficultyMode] = useState("learning");
   const [challengeModeErrors, setChallengeModeErrors] = useState([]);
+  const [showProtocolGuide, setShowProtocolGuide] = useState(false);
 
   const has = (itemId) => inventory.includes(itemId);
 
@@ -1644,6 +1738,7 @@ export default function App() {
       )}
       {showManual && <LabManualOverlay onClose={() => setShowManual(false)} />}
       {showProtocol && <ProtocolBookOverlay onClose={() => setShowProtocol(false)} />}
+      {showProtocolGuide && <ProtocolGuideOverlay onClose={() => setShowProtocolGuide(false)} missionId={missionId} />}
       {showReadinessModal && <ReadinessOverlay onClose={() => setShowReadinessModal(false)} />}
       {showPCRModal && <PCRModule onClose={() => setShowPCRModal(false)} onComplete={() => setShowPCRModal(false)} onBackToLibrary={() => { setShowPCRModal(false); setScreen("welcome"); }} missionId={selectedMissionId} />}
       {showBioPopup && <BiologicalPopup type={showBioPopup} onClose={() => setShowBioPopup(null)} />}
@@ -2132,6 +2227,13 @@ export default function App() {
                         <span className="text-[10px] text-amber-400 font-bold uppercase">🏆 Challenge</span>
                       </div>
                     )}
+                    <button
+                      onClick={() => setShowProtocolGuide(true)}
+                      className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-bold uppercase transition-all cursor-pointer border-0 flex items-center gap-2"
+                    >
+                      <BookOpen size={14} />
+                      Protocol
+                    </button>
                     <button onClick={() => { setScreen("procurement"); addLog("Returned to procurement. Biological state preserved.", "info"); }} className="px-4 py-2 bg-amber-600 hover:bg-amber-500 text-white rounded-lg text-xs font-bold uppercase transition-all cursor-pointer border-0">
                       Add Equipment
                     </button>
@@ -2519,6 +2621,15 @@ export default function App() {
 
           {screen === "lab" && status === "verification" && !showQuant && (
             <div className="space-y-8 animate-in fade-in">
+              <div className="flex justify-end mb-4">
+                <button
+                  onClick={() => setShowProtocolGuide(true)}
+                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-bold uppercase transition-all cursor-pointer border-0 flex items-center gap-2"
+                >
+                  <BookOpen size={14} />
+                  Protocol
+                </button>
+              </div>
               <div className="bg-gradient-to-br from-amber-900/20 to-slate-800 border border-amber-500/30 p-8 rounded-3xl text-center">
                 <Award size={48} className="mx-auto text-amber-400 mb-4" />
                 <h2 className="text-2xl font-black text-slate-50 uppercase tracking-tight mb-2">DNA Extraction Complete</h2>
