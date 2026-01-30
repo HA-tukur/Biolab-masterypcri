@@ -899,12 +899,15 @@ const MasteryBadge = () => (
 );
 
 const FeedbackModule = ({ userRating, setUserRating, feedbackSent, setFeedbackSent }) => (
-    <div className="bg-slate-900/80 border border-indigo-500/30 p-6 rounded-3xl text-center font-sans space-y-4 shadow-xl animate-in fade-in duration-1000">
-        <div className="space-y-1 font-sans text-white text-center"><h4 className="text-xs font-black uppercase text-indigo-400 tracking-widest leading-none mb-1 text-white font-sans font-bold">Rate the Simulation</h4><p className="text-[10px] text-slate-500 italic font-sans text-slate-400 font-sans text-slate-400">Help us calibrate the scientific logic.</p></div>
-        <div className="flex justify-center gap-2 font-sans text-white">{[1, 2, 3, 4, 5].map((s) => (<button key={s} onClick={() => { setUserRating(s); trackEvent('StarRating', 'Feedback', `Rating_${s}`, s); if (s > 3) setFeedbackSent(true); }} className="transition-all hover:scale-110 active:scale-95 cursor-pointer border-0 bg-transparent p-0">
-          <Star size={28} className={userRating >= s ? "fill-amber-400 text-amber-400" : "text-slate-700"} />
+    <div className="bg-gradient-to-br from-amber-500/10 to-indigo-500/10 border-2 border-amber-500/40 p-8 rounded-3xl text-center font-sans space-y-5 shadow-2xl animate-in zoom-in duration-500">
+        <div className="space-y-2 font-sans text-white text-center">
+          <h3 className="text-2xl font-black uppercase text-white tracking-tight leading-none">How was your experience?</h3>
+          <p className="text-sm text-slate-300 font-medium">Rate this simulation to help us improve</p>
+        </div>
+        <div className="flex justify-center gap-3 font-sans text-white py-2">{[1, 2, 3, 4, 5].map((s) => (<button key={s} onClick={() => { setUserRating(s); trackEvent('StarRating', 'Feedback', `Rating_${s}`, s); if (s > 3) setFeedbackSent(true); }} className="transition-all hover:scale-125 active:scale-95 cursor-pointer border-0 bg-transparent p-1 hover:drop-shadow-[0_0_8px_rgba(251,191,36,0.8)]">
+          <Star size={48} className={userRating >= s ? "fill-amber-400 text-amber-400 drop-shadow-[0_0_6px_rgba(251,191,36,0.6)]" : "text-slate-600 hover:text-slate-500"} strokeWidth={2.5} />
         </button>))}</div>
-        {userRating > 0 && userRating <= 3 && !feedbackSent && (<div className="space-y-3 animate-in slide-in-from-top-2 font-sans text-slate-400 text-center"><p className="text-[9px] text-center font-bold text-slate-400 uppercase tracking-tighter font-mono font-sans text-slate-400">What was the primary issue?</p><div className="grid grid-cols-2 gap-2 font-mono font-sans text-slate-400">{["Confusing Path", "Too Difficult", "Technical Bug", "Lack of Guide"].map((tag, i) => (<button key={`tag-${i}`} onClick={() => { setFeedbackSent(true); trackEvent('LowRatingReason', 'Feedback', tag, userRating); }} className="bg-slate-800 p-2 rounded-lg text-[8px] font-black uppercase text-slate-400 border border-slate-700 hover:bg-indigo-900/20 transition-all cursor-pointer font-bold font-mono font-bold font-sans font-sans text-slate-400">{String(tag)}</button>))}</div></div>)}{feedbackSent && <p className="text-[10px] text-emerald-400 font-bold text-center animate-pulse uppercase tracking-widest font-mono font-sans text-emerald-400">Feedback Logged. Thank you.</p>}
+        {userRating > 0 && userRating <= 3 && !feedbackSent && (<div className="space-y-3 animate-in slide-in-from-top-2 font-sans text-slate-400 text-center"><p className="text-xs text-center font-bold text-slate-300 uppercase tracking-wide">What was the primary issue?</p><div className="grid grid-cols-2 gap-2">{["Confusing Path", "Too Difficult", "Technical Bug", "Lack of Guide"].map((tag, i) => (<button key={`tag-${i}`} onClick={() => { setFeedbackSent(true); trackEvent('LowRatingReason', 'Feedback', tag, userRating); }} className="bg-slate-800 p-3 rounded-lg text-xs font-bold uppercase text-slate-300 border border-slate-700 hover:bg-indigo-900/20 transition-all cursor-pointer">{String(tag)}</button>))}</div></div>)}{feedbackSent && <div className="flex items-center justify-center gap-2 text-base font-bold text-emerald-400 animate-in fade-in"><span>✓</span><span>Thank you for your feedback!</span></div>}
     </div>
 );
 
@@ -2568,8 +2571,8 @@ export default function App() {
           )}
 
           {screen === "lab" && showQuant && (
-            <div className="space-y-8 animate-in fade-in">
-              <div className={`bg-gradient-to-br ${status === "mastery" ? "from-emerald-900/20 to-slate-800 border-emerald-500/30" : "from-rose-900/20 to-slate-800 border-rose-500/30"} border p-8 rounded-3xl text-center space-y-6`}>
+            <div className="space-y-6 animate-in fade-in max-w-5xl mx-auto">
+              <div className={`bg-gradient-to-br ${status === "mastery" ? "from-emerald-900/20 to-slate-800 border-emerald-500/30" : "from-rose-900/20 to-slate-800 border-rose-500/30"} border p-6 rounded-3xl text-center space-y-5`}>
                 {status === "mastery" && <MasteryBadge />}
                 {status !== "mastery" && (
                   <div className="flex flex-col items-center">
@@ -2579,27 +2582,27 @@ export default function App() {
                   </div>
                 )}
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-8">
-                  <div className="bg-slate-900/50 p-6 rounded-2xl border border-slate-700">
-                    <p className="text-[9px] text-slate-500 uppercase font-bold tracking-wider mb-2">Concentration</p>
-                    <p className="text-3xl font-black text-white font-mono">{finalConc}</p>
-                    <p className="text-xs text-slate-400 mt-1">ng/µL</p>
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-700">
+                    <p className="text-[8px] text-slate-500 uppercase font-bold tracking-wider mb-1">Concentration</p>
+                    <p className="text-2xl font-black text-white font-mono">{finalConc}</p>
+                    <p className="text-[10px] text-slate-400 mt-0.5">ng/µL</p>
                   </div>
-                  <div className="bg-slate-900/50 p-6 rounded-2xl border border-slate-700">
-                    <p className="text-[9px] text-slate-500 uppercase font-bold tracking-wider mb-2">Purity (260/280)</p>
-                    <p className="text-3xl font-black text-white font-mono">{a260_280}</p>
-                    <p className="text-xs text-slate-400 mt-1">{parseFloat(a260_280) >= 1.7 ? "Acceptable" : "Contaminated"}</p>
+                  <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-700">
+                    <p className="text-[8px] text-slate-500 uppercase font-bold tracking-wider mb-1">Purity (260/280)</p>
+                    <p className="text-2xl font-black text-white font-mono">{a260_280}</p>
+                    <p className="text-[10px] text-slate-400 mt-0.5">{parseFloat(a260_280) >= 1.7 ? "Acceptable" : "Contaminated"}</p>
                   </div>
-                  <div className="bg-slate-900/50 p-6 rounded-2xl border border-slate-700">
-                    <p className="text-[9px] text-slate-500 uppercase font-bold tracking-wider mb-2">Total Yield</p>
-                    <p className="text-3xl font-black text-white font-mono">{yieldUg}</p>
-                    <p className="text-xs text-slate-400 mt-1">µg</p>
+                  <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-700">
+                    <p className="text-[8px] text-slate-500 uppercase font-bold tracking-wider mb-1">Total Yield</p>
+                    <p className="text-2xl font-black text-white font-mono">{yieldUg}</p>
+                    <p className="text-[10px] text-slate-400 mt-0.5">µg</p>
                   </div>
                 </div>
 
-                <div className="bg-slate-900/50 p-6 rounded-2xl border border-slate-700 text-left">
-                  <h4 className="text-sm font-bold text-white uppercase mb-3">Protocol Summary</h4>
-                  <div className="grid grid-cols-2 gap-3 text-xs font-mono">
+                <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-700 text-left">
+                  <h4 className="text-xs font-bold text-white uppercase mb-2">Protocol Summary</h4>
+                  <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-[11px] font-mono">
                     <div><span className="text-slate-500">Elution Volume:</span> <span className="text-white">{elutionVolume}µL</span></div>
                     <div><span className="text-slate-500">Missed Spins:</span> <span className={missedSpins > 0 ? "text-rose-400" : "text-emerald-400"}>{missedSpins}</span></div>
                     <div><span className="text-slate-500">Missed Reagents:</span> <span className={missedReagents > 0 ? "text-rose-400" : "text-emerald-400"}>{missedReagents}</span></div>
@@ -2608,16 +2611,16 @@ export default function App() {
                 </div>
 
                 {difficultyMode === "challenge" && challengeModeErrors.length > 0 && (
-                  <div className="bg-amber-900/20 border border-amber-500/30 p-6 rounded-2xl text-left">
-                    <div className="flex items-center gap-2 mb-4">
-                      <div className="text-2xl">🏆</div>
-                      <h4 className="text-sm font-bold text-amber-400 uppercase">Challenge Mode Feedback</h4>
+                  <div className="bg-amber-900/20 border border-amber-500/30 p-4 rounded-xl text-left">
+                    <div className="flex items-center gap-2 mb-3">
+                      <div className="text-xl">🏆</div>
+                      <h4 className="text-xs font-bold text-amber-400 uppercase">Challenge Mode Feedback</h4>
                     </div>
-                    <p className="text-xs text-slate-400 mb-4">Here are all the protocol events that occurred during your challenge:</p>
-                    <div className="space-y-2 max-h-60 overflow-y-auto">
+                    <p className="text-[10px] text-slate-400 mb-3">Protocol events during your challenge:</p>
+                    <div className="space-y-1.5 max-h-48 overflow-y-auto">
                       {challengeModeErrors.map((log, i) => (
-                        <div key={i} className={`p-3 rounded-lg border ${log.type === "error" ? "bg-rose-900/20 border-rose-500/30" : "bg-emerald-900/20 border-emerald-500/30"}`}>
-                          <p className={`text-xs font-mono ${log.type === "error" ? "text-rose-300" : "text-emerald-300"}`}>
+                        <div key={i} className={`p-2 rounded-lg border ${log.type === "error" ? "bg-rose-900/20 border-rose-500/30" : "bg-emerald-900/20 border-emerald-500/30"}`}>
+                          <p className={`text-[10px] font-mono ${log.type === "error" ? "text-rose-300" : "text-emerald-300"}`}>
                             {log.msg}
                           </p>
                         </div>
@@ -2629,20 +2632,51 @@ export default function App() {
 
               <FeedbackModule userRating={userRating} setUserRating={setUserRating} feedbackSent={feedbackSent} setFeedbackSent={setFeedbackSent} />
 
-              {/* Google Form CTA */}
-              <div className="bg-indigo-600/20 border border-indigo-400/30 p-8 rounded-3xl text-center shadow-2xl">
-                <a
-                  href="https://forms.gle/CdyH4KoC8Lz8Kr8L8"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-block w-full bg-white text-indigo-600 font-black py-5 rounded-2xl text-sm hover:bg-slate-100 transition-all capitalize tracking-[0.1em] no-underline shadow-lg hover:scale-[1.02] shadow-black/30"
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <button
+                  onClick={() => {
+                    setScreen("welcome");
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  }}
+                  className="w-full bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-indigo-400 text-white py-4 rounded-xl font-black uppercase tracking-wide cursor-pointer border-0 shadow-lg transition-all hover:scale-[1.02] hover:shadow-indigo-500/50"
                 >
-                  🔔 Get Notified: PCR Technique Coming Soon
-                </a>
+                  <div className="flex items-center justify-center gap-2">
+                    <RefreshCw size={20} />
+                    <span>Try Again</span>
+                  </div>
+                </button>
+
+                <button
+                  onClick={() => navigate('/leaderboard')}
+                  className="w-full bg-slate-700 hover:bg-slate-600 text-white py-4 rounded-xl font-black uppercase tracking-wide cursor-pointer border-0 shadow-lg transition-all hover:scale-[1.02]"
+                >
+                  <div className="flex items-center justify-center gap-2">
+                    <Trophy size={20} />
+                    <span>Leaderboard</span>
+                  </div>
+                </button>
+
+                <button
+                  onClick={() => {
+                    const shareText = `I just ${status === "mastery" ? "achieved mastery" : "completed"} DNA Extraction on BioSim! 🧬\n\nPurity: ${a260_280} | Concentration: ${finalConc} ng/µL`;
+                    if (navigator.share) {
+                      navigator.share({ text: shareText }).catch(() => {});
+                    } else {
+                      navigator.clipboard.writeText(shareText);
+                      alert('Achievement copied to clipboard!');
+                    }
+                  }}
+                  className="w-full bg-slate-700 hover:bg-slate-600 text-white py-4 rounded-xl font-black uppercase tracking-wide cursor-pointer border-0 shadow-lg transition-all hover:scale-[1.02]"
+                >
+                  <div className="flex items-center justify-center gap-2">
+                    <Star size={20} />
+                    <span>Share</span>
+                  </div>
+                </button>
               </div>
 
-              <button onClick={() => setScreen("welcome")} className="w-full bg-indigo-900/20 py-6 rounded-2xl font-black uppercase text-indigo-400 border border-indigo-500/20 cursor-pointer shadow-lg text-xs tracking-widest transition-all hover:bg-indigo-900/30">
-                Reboot Workspace
+              <button onClick={() => setScreen("welcome")} className="w-full bg-slate-900/50 py-3 rounded-xl font-bold uppercase text-slate-400 border border-slate-700 cursor-pointer text-xs tracking-wide transition-all hover:bg-slate-900/70">
+                Return to Bench
               </button>
             </div>
           )}
