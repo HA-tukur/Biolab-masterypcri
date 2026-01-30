@@ -1642,7 +1642,7 @@ export default function App() {
                     </div>
 
                     <div
-                      onClick={() => navigate('/')}
+                      onClick={() => setScreen("categories")}
                       className="bg-gradient-to-br from-indigo-900/40 to-indigo-800/20 border-2 border-indigo-500/50 p-6 rounded-2xl cursor-pointer hover:scale-105 transition-transform hover:border-indigo-400"
                     >
                       <div className="bg-indigo-600 w-14 h-14 rounded-xl flex items-center justify-center mb-4 shadow-lg">
