@@ -219,7 +219,23 @@ export default function StudentProfile() {
     }
   };
 
-  const downloadCertificate = (cert: Certificate) => {
+  const downloadCertificate = async (cert: Certificate) => {
+    let missionDisplayName = cert.mission;
+
+    try {
+      const { data: missionData } = await supabase
+        .from('missions')
+        .select('display_name')
+        .eq('slug', cert.mission)
+        .maybeSingle();
+
+      if (missionData) {
+        missionDisplayName = missionData.display_name;
+      }
+    } catch (err) {
+      console.error('Failed to fetch mission display name:', err);
+    }
+
     const canvas = document.createElement('canvas');
     canvas.width = 800;
     canvas.height = 600;
@@ -245,25 +261,31 @@ export default function StudentProfile() {
 
     ctx.font = 'bold 36px sans-serif';
     ctx.fillStyle = '#ffffff';
-    ctx.fillText(studentId, 400, 220);
+    ctx.fillText(studentId, 400, 210);
+
+    if (leaderboardProfile.display_name && leaderboardProfile.display_name !== studentId) {
+      ctx.font = '18px sans-serif';
+      ctx.fillStyle = '#94a3b8';
+      ctx.fillText(leaderboardProfile.display_name, 400, 235);
+    }
 
     ctx.font = '24px sans-serif';
     ctx.fillStyle = '#cbd5e1';
-    ctx.fillText('has demonstrated mastery in', 400, 270);
+    ctx.fillText('has demonstrated mastery in', 400, 280);
 
     ctx.font = 'bold 28px sans-serif';
     ctx.fillStyle = '#6366f1';
-    const missionName = cert.mission.length > 50 ? cert.mission.substring(0, 47) + '...' : cert.mission;
-    ctx.fillText(missionName, 400, 320);
+    const finalMissionName = missionDisplayName.length > 50 ? missionDisplayName.substring(0, 47) + '...' : missionDisplayName;
+    ctx.fillText(finalMissionName, 400, 330);
 
     const successRate = Math.round((cert.success_count / cert.attempt_count) * 100);
 
     ctx.font = '20px sans-serif';
     ctx.fillStyle = '#94a3b8';
-    ctx.fillText(`Best Score: ${Math.round(cert.best_score)}%`, 400, 380);
-    ctx.fillText(`Total Attempts: ${cert.attempt_count}`, 400, 410);
-    ctx.fillText(`Success Rate: ${cert.success_count}/${cert.attempt_count} (${successRate}%)`, 400, 440);
-    ctx.fillText(`Date Earned: ${new Date(cert.date_earned).toLocaleDateString()}`, 400, 470);
+    ctx.fillText(`Best Score: ${Math.round(cert.best_score)}%`, 400, 390);
+    ctx.fillText(`Total Attempts: ${cert.attempt_count}`, 400, 420);
+    ctx.fillText(`Success Rate: ${cert.success_count}/${cert.attempt_count} (${successRate}%)`, 400, 450);
+    ctx.fillText(`Date Earned: ${new Date(cert.date_earned).toLocaleDateString()}`, 400, 480);
 
     ctx.font = 'italic 16px sans-serif';
     ctx.fillStyle = '#64748b';
@@ -272,7 +294,7 @@ export default function StudentProfile() {
     const url = canvas.toDataURL('image/png');
     const a = document.createElement('a');
     a.href = url;
-    a.download = `${cert.mission.replace(/\s+/g, '_')}_Certificate.png`;
+    a.download = `${missionDisplayName.replace(/\s+/g, '_')}_Certificate.png`;
     a.click();
   };
 
