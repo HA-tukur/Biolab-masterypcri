@@ -1558,7 +1558,11 @@ export default function App() {
 
       {showClassCodePrompt && (
         <ClassCodePrompt
-          onComplete={() => setShowClassCodePrompt(false)}
+          onComplete={() => {
+            localStorage.setItem('biosim_class_prompt_shown', 'true');
+            setShowClassCodePrompt(false);
+            setScreen("categories");
+          }}
           onJoinMission={(techniqueId, missionId) => {
             if (techniqueId === 'PCR') {
               setSelectedMissionId(missionId);
