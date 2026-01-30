@@ -5,6 +5,7 @@ import { PrimerValidatedPage } from "./PrimerValidatedPage";
 import { PrimerNotValidatedPage } from "./PrimerNotValidatedPage";
 import { createClient } from "@supabase/supabase-js";
 import { getOrCreateStudentId } from "../utils/studentId";
+import { upsertCertificate } from "../utils/certificateManager";
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -124,14 +125,17 @@ export const PCRModule = ({ onClose, onComplete, onBackToLibrary, missionId = "l
           console.error('Error fetching session:', sessionError);
         }
 
+        const missionName = `PCR - ${mission.targetGene}`;
         await supabase.from('lab_results').insert({
           student_id: studentId,
-          mission: `PCR - ${mission.targetGene}`,
+          mission: missionName,
           purity_score: 100,
           status: 'Primer Validated',
           class_id: classId || null,
           event_log: result.errors.length > 0 ? result.errors.map(e => ({ message: e, type: 'error' })) : []
         });
+
+        await upsertCertificate(studentId, missionName, 100);
       } catch (error) {
         console.error('Failed to save result:', error);
       }

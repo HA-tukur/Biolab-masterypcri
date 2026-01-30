@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import { RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, ResponsiveContainer, Tooltip } from 'recharts';
-import { Award, TrendingUp, Calendar, Download, Home, Zap, Target, Eye, EyeOff, Trash2, LogOut, School, Edit, Save, X } from 'lucide-react';
+import { Award, TrendingUp, Calendar, Download, Home, Zap, Target, Eye, EyeOff, Trash2, LogOut, School, Edit, Save, X, Star } from 'lucide-react';
 import { getOrCreateStudentId } from '../utils/studentId';
 
 const supabase = createClient(
@@ -36,9 +36,12 @@ interface CategoryProgress {
 
 interface Certificate {
   id: string;
-  category: string;
-  date: string;
-  score: number;
+  mission: string;
+  best_score: number;
+  attempt_count: number;
+  success_count: number;
+  date_earned: string;
+  date_updated: string;
 }
 
 interface LeaderboardProfile {
@@ -188,16 +191,13 @@ export default function StudentProfile() {
 
       setCategoryProgress(progressData);
 
-      const certs: Certificate[] = Object.entries(categoryMap)
-        .filter(([_, data]) => data.best >= 85)
-        .map(([category, data], index) => ({
-          id: `cert-${index}`,
-          category,
-          date: new Date().toLocaleDateString(),
-          score: Math.round(data.best)
-        }));
+      const { data: certsData } = await supabase
+        .from('certificates')
+        .select('*')
+        .eq('student_id', id)
+        .order('date_earned', { ascending: false });
 
-      setCertificates(certs);
+      setCertificates(certsData || []);
 
       const totalAttempts = data.length;
       const successfulMissions = data.filter(r => r.purity_score >= 1.7).length;
@@ -241,24 +241,29 @@ export default function StudentProfile() {
 
     ctx.font = '24px sans-serif';
     ctx.fillStyle = '#cbd5e1';
-    ctx.fillText('This certifies that', 400, 180);
+    ctx.fillText('This certifies that', 400, 170);
 
     ctx.font = 'bold 36px sans-serif';
     ctx.fillStyle = '#ffffff';
-    ctx.fillText(studentId, 400, 240);
+    ctx.fillText(studentId, 400, 220);
 
     ctx.font = '24px sans-serif';
     ctx.fillStyle = '#cbd5e1';
-    ctx.fillText('has demonstrated mastery in', 400, 300);
+    ctx.fillText('has demonstrated mastery in', 400, 270);
 
-    ctx.font = 'bold 32px sans-serif';
+    ctx.font = 'bold 28px sans-serif';
     ctx.fillStyle = '#6366f1';
-    ctx.fillText(cert.category, 400, 360);
+    const missionName = cert.mission.length > 50 ? cert.mission.substring(0, 47) + '...' : cert.mission;
+    ctx.fillText(missionName, 400, 320);
+
+    const successRate = Math.round((cert.success_count / cert.attempt_count) * 100);
 
     ctx.font = '20px sans-serif';
     ctx.fillStyle = '#94a3b8';
-    ctx.fillText(`Score: ${cert.score}%`, 400, 420);
-    ctx.fillText(`Date: ${cert.date}`, 400, 460);
+    ctx.fillText(`Best Score: ${Math.round(cert.best_score)}%`, 400, 380);
+    ctx.fillText(`Total Attempts: ${cert.attempt_count}`, 400, 410);
+    ctx.fillText(`Success Rate: ${cert.success_count}/${cert.attempt_count} (${successRate}%)`, 400, 440);
+    ctx.fillText(`Date Earned: ${new Date(cert.date_earned).toLocaleDateString()}`, 400, 470);
 
     ctx.font = 'italic 16px sans-serif';
     ctx.fillStyle = '#64748b';
@@ -267,7 +272,7 @@ export default function StudentProfile() {
     const url = canvas.toDataURL('image/png');
     const a = document.createElement('a');
     a.href = url;
-    a.download = `${cert.category.replace(/\s+/g, '_')}_Certificate.png`;
+    a.download = `${cert.mission.replace(/\s+/g, '_')}_Certificate.png`;
     a.click();
   };
 
@@ -743,38 +748,49 @@ export default function StudentProfile() {
               </div>
             ) : (
               <div className="space-y-4 max-h-80 overflow-y-auto">
-                {certificates.map((cert) => (
-                  <div
-                    key={cert.id}
-                    className="bg-gradient-to-r from-indigo-900/40 to-purple-900/40 border border-indigo-500/30 rounded-xl p-4"
-                  >
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-2">
-                          <Award className="text-amber-400" size={20} />
-                          <h3 className="font-bold text-white">{cert.category}</h3>
+                {certificates.map((cert) => {
+                  const successRate = Math.round((cert.success_count / cert.attempt_count) * 100);
+                  return (
+                    <div
+                      key={cert.id}
+                      className="bg-gradient-to-r from-indigo-900/40 to-purple-900/40 border border-indigo-500/30 rounded-xl p-4"
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-2">
+                            <Award className="text-amber-400" size={20} />
+                            <h3 className="font-bold text-white">{cert.mission}</h3>
+                          </div>
+                          <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm text-slate-400">
+                            <span className="flex items-center gap-1">
+                              <TrendingUp size={14} />
+                              Best: {Math.round(cert.best_score)}%
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <Target size={14} />
+                              {cert.attempt_count} attempt{cert.attempt_count > 1 ? 's' : ''}
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <Star size={14} />
+                              {successRate}% success rate
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <Calendar size={14} />
+                              {new Date(cert.date_earned).toLocaleDateString()}
+                            </span>
+                          </div>
                         </div>
-                        <div className="flex items-center gap-4 text-sm text-slate-400">
-                          <span className="flex items-center gap-1">
-                            <TrendingUp size={14} />
-                            Score: {cert.score}%
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <Calendar size={14} />
-                            {cert.date}
-                          </span>
-                        </div>
+                        <button
+                          onClick={() => downloadCertificate(cert)}
+                          className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 px-3 py-2 rounded-lg transition-colors text-sm font-medium"
+                        >
+                          <Download size={16} />
+                          Download
+                        </button>
                       </div>
-                      <button
-                        onClick={() => downloadCertificate(cert)}
-                        className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 px-3 py-2 rounded-lg transition-colors text-sm font-medium"
-                      >
-                        <Download size={16} />
-                        Download
-                      </button>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>

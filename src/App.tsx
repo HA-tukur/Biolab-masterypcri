@@ -44,6 +44,7 @@ import ClassCodePrompt from "./components/ClassCodePrompt";
 import { AILabAssistant } from "./components/AILabAssistant";
 import { config } from "./config";
 import { getOrCreateStudentId } from "./utils/studentId";
+import { upsertCertificate } from "./utils/certificateManager";
 import { VERIFICATION, MISSIONS_DATA } from "./data/missions";
 import { kits_list, tools_list, consumables_ppe_list, design_tools_list } from "./data/equipment";
 import { TECHNIQUE_LIBRARY } from "./data/techniqueLibrary";
@@ -1500,6 +1501,8 @@ export default function App() {
         setSavedRecordId(data.id);
         setShowSuccessModal(true);
       }
+
+      await upsertCertificate(studentId, missionTitle, parseFloat(localPurity));
     } catch (error) {
       console.error("Database save error:", error);
     }
