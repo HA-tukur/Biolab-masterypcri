@@ -1665,7 +1665,7 @@ export default function App() {
                       <div className="bg-amber-600 w-14 h-14 rounded-xl flex items-center justify-center mb-4 shadow-lg">
                         <Sparkles size={28} className="text-white" />
                       </div>
-                      <h4 className="text-white font-black text-xl mb-2">Advanced High School</h4>
+                      <h4 className="text-white font-black text-xl mb-2">Pre-university</h4>
                       <p className="text-slate-300 text-sm mb-3 leading-relaxed">
                         Get a head start on college science. Explore molecular biology basics.
                       </p>
