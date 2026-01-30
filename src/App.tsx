@@ -1,62 +1,37 @@
 import React, { useMemo, useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { createClient } from "@supabase/supabase-js";
 import {
   FlaskConical,
   AlertCircle,
   BookOpen,
-  Microscope,
   Target,
   Pipette,
   Box,
   Activity,
-  Trash2,
   ChevronRight,
   RefreshCw,
   Star,
   Thermometer,
   Award,
-  X,
   ScrollText,
   Lightbulb,
-  History,
-  Fingerprint,
   ShieldCheck,
   ShieldAlert,
   Leaf,
-  Info,
-  ClipboardList,
   ShoppingCart,
   Undo2,
   Medal,
   Database,
-  Eraser,
-  Waves,
-  FileCheck2,
   Dna,
   Terminal,
-  Calculator,
-  Zap,
-  TrendingUp,
-  Lock,
-  Beaker,
-  TestTube2,
-  Binary,
-  Cpu,
-  Grip,
-  SearchCode,
-  Home,
   GraduationCap,
-  Users,
-  Eye,
-  Droplet,
   Sparkles,
-  ScanEye,
-  Camera,
-  Circle,
-  Scissors,
   Shirt,
   Glasses,
-  Computer
+  Computer,
+  Trophy,
+  X
 } from "lucide-react";
 import { SupabaseHistoryStore, HistoryStore } from "./services/historyStore";
 import { PCRModule } from "./components/PCRModule";
@@ -65,7 +40,14 @@ import { TechniqueCategories } from "./components/TechniqueCategories";
 import { CategoryTechniques } from "./components/CategoryTechniques";
 import { PCRMissions } from "./components/PCRMissions";
 import { AntibodyIcon } from "./components/AntibodyIcon";
+import ClassCodePrompt from "./components/ClassCodePrompt";
+import { AILabAssistant } from "./components/AILabAssistant";
 import { config } from "./config";
+import { getOrCreateStudentId } from "./utils/studentId";
+import { upsertCertificate } from "./utils/certificateManager";
+import { VERIFICATION, MISSIONS_DATA } from "./data/missions";
+import { kits_list, tools_list, consumables_ppe_list, design_tools_list } from "./data/equipment";
+import { TECHNIQUE_LIBRARY } from "./data/techniqueLibrary";
 
 const supabase = createClient(config.supabase.url, config.supabase.anonKey);
 
@@ -80,136 +62,6 @@ const trackEvent = (action, category, label, value) => {
   }
 };
 
-const VERIFICATION = { NANODROP: "nanodrop", GEL: "gel" };
-
-const MISSIONS_DATA = {
-  DNA_EXT: {
-    A: {
-      id: "A",
-      title: "Superbug Clinical Diagnostic",
-      brief: "Clinical Alert: A suspected multi-drug resistant pathogen has been detected. Your mission is to isolate high-purity genomic DNA for PCR verification.",
-      summary: "Biopsy DNA Extraction. Target: 200 – 1000 ng/µL.",
-      budget: 2000,
-      verification: { mode: "REQUIRED_ALL", options: [VERIFICATION.NANODROP, VERIFICATION.GEL], label: "Use BOTH Nanodrop AND Gel (both required)." }
-    },
-    B: {
-      id: "B",
-      title: "Cassava Pathogen Sequencing",
-      brief: "Agricultural Crisis: A new blight is threatening crop yields. Your mission is to isolate high-molecular-weight DNA for Next-Gen Sequencing.",
-      summary: "Plant gDNA Extraction. Target: 200 – 350 ng/µL.",
-      budget: 3000,
-      verification: { mode: "REQUIRED_ALL", options: [VERIFICATION.NANODROP, VERIFICATION.GEL], label: "NGS prep requires BOTH Nanodrop + Gel verification." }
-    }
-  },
-  PCR: {
-    A: { id: "PCR_A", title: "Diagnostic Amplification", brief: "Targeting the 16S rRNA gene for pathogen identification.", summary: "Standard PCR Setup.", budget: 1500, locked: true },
-    B: { id: "PCR_B", title: "Mutation Screening", brief: "Identifying SNPs in drug-resistance genes.", summary: "Advanced PCR Setup.", budget: 2500, locked: true }
-  }
-};
-
-const TECHNIQUE_LIBRARY = [
-  {
-    category: "Core Lab Skills",
-    items: [
-      { id: "DNA_EXT", title: "DNA Extraction", level: "Foundation", status: "ACTIVE", icon: <Dna size={22}/> },
-      { id: "PIPETTE", title: "Pipetting & Measurements", level: "Foundation", status: "LOCKED", icon: <Pipette size={22}/> },
-      { id: "SOL_PREP", title: "Solution Preparation & Dilutions", level: "Foundation", status: "LOCKED", icon: <Beaker size={22}/> },
-      { id: "SAFETY", title: "Lab Safety & Equipment", level: "Foundation", status: "LOCKED", icon: <ShieldCheck size={22}/> },
-      { id: "MICROSCOPY_BASICS", title: "Microscopy Basics", level: "Foundation", status: "LOCKED", icon: <Eye size={22}/> }
-    ]
-  },
-  {
-    category: "Nucleic Acid Techniques",
-    items: [
-      { id: "PCR", title: "PCR", level: "Applied", status: "ACTIVE", icon: <Binary size={22}/> },
-      { id: "GEL", title: "Agarose Gel Electrophoresis", level: "Foundation", status: "LOCKED", icon: <Grip size={22}/> },
-      { id: "QPCR", title: "qPCR / RT-PCR", level: "Advanced", status: "LOCKED", icon: <Activity size={22}/> },
-      { id: "SEQ", title: "Sequencing", level: "Advanced", status: "LOCKED", icon: <SearchCode size={22}/> }
-    ]
-  },
-  {
-    category: "Genetic Engineering",
-    items: [
-      { id: "TRANS", title: "E. coli Transformation", level: "Applied", status: "LOCKED", icon: <Circle size={22}/> },
-      { id: "CLONE", title: "Molecular Cloning", level: "Applied", status: "LOCKED", icon: <Dna size={22}/> },
-      { id: "CRISPR", title: "CRISPR / Gene Editing", level: "Advanced", status: "LOCKED", icon: <Scissors size={22}/> }
-    ]
-  },
-  {
-    category: "Protein Techniques",
-    items: [
-      { id: "SDS", title: "SDS-PAGE", level: "Applied", status: "LOCKED", icon: <FlaskConical size={22}/> },
-      { id: "WESTERN", title: "Western Blotting", level: "Advanced", status: "LOCKED", icon: <AntibodyIcon size={22}/> },
-      { id: "ELISA", title: "ELISA", level: "Applied", status: "LOCKED", icon: <AntibodyIcon size={22}/> },
-      { id: "PURIFY", title: "Protein Purification", level: "Advanced", status: "LOCKED", icon: <RefreshCw size={22}/> }
-    ]
-  },
-  {
-    category: "Imaging and Microscopy",
-    items: [
-      { id: "CELL_FIX", title: "Cell Fixation and Staining", level: "Applied", status: "LOCKED", icon: <Droplet size={22}/> },
-      { id: "IF", title: "Immunofluorescence (IF)", level: "Applied", status: "LOCKED", icon: <AntibodyIcon size={22}/> },
-      { id: "CONFOCAL", title: "Confocal Microscopy", level: "Advanced", status: "LOCKED", icon: <ScanEye size={22}/> },
-      { id: "WIDEFIELD", title: "Widefield Microscopy", level: "Applied", status: "LOCKED", icon: <Microscope size={22}/> },
-      { id: "LIVE_CELL", title: "Live Cell Imaging", level: "Advanced", status: "LOCKED", icon: <Camera size={22}/> }
-    ]
-  }
-];
-
-const kits_list = [
-  { id: "kit_qiagen", name: "Qiagen DNeasy Kit", cost: 1450, desc: "Highest purity yield for complex biopsies.", type: "extraction" },
-  { id: "kit_zymo", name: "Zymo Research Quick-DNA", cost: 1100, desc: "Optimized for plant tissue lysis.", type: "extraction" },
-  { id: "kit_thermo", name: "Thermo Fisher PureLink", cost: 1300, desc: "Standard genomic DNA kit.", type: "extraction" },
-  { id: "kit_pcr_neb", name: "NEB OneTaq PCR Kit", cost: 1200, desc: "Complete PCR kit with all reagents for reliable amplification.", type: "pcr" },
-  { id: "kit_pcr_bio", name: "Bio-Rad iQ PCR Kit", cost: 1350, desc: "High-fidelity PCR system for demanding applications.", type: "pcr" }
-];
-
-const tools_list = [
-  { id: "centrifuge", name: "Centrifuge (Communal)", cost: 0, desc: "Mandatory hardware for phase separation.", category: "general" },
-  { id: "nanodrop", name: "Nanodrop (Communal)", cost: 0, desc: "Quantifies DNA yield and purity using UV light.", category: "general" },
-  { id: "incubator", name: "Incubator (Communal)", cost: 0, desc: "Provides controlled temperature for enzymatic reactions.", category: "general" },
-  { id: "freezer", name: "Freezer (Communal)", cost: 0, desc: "Stores samples and reagents at low temperature.", category: "general" },
-  { id: "mortar_pestle", name: "Mortar and Pestle", cost: 0, desc: "Mechanical grinding tool for tough plant tissues.", category: "extraction" },
-  { id: "liquid_nitrogen", name: "Liquid Nitrogen", cost: 0, desc: "Ultra-cold reagent for flash-freezing tissues before grinding.", category: "extraction" },
-  { id: "proteinase_k", name: "Proteinase K Enzyme", cost: 350, desc: "Digests proteins to improve DNA purity.", category: "extraction" },
-  { id: "lysis_clean", name: "Manual Lysis Buffer", cost: 400, desc: "Buffer required for cell lysis.", category: "extraction" },
-  { id: "wash_buffer", name: "Wash Buffer (Salt/EtOH)", cost: 300, desc: "Removes residual proteins from the matrix.", category: "extraction" },
-  { id: "elute_buffer", name: "Elution Buffer (Tris-EDTA)", cost: 300, desc: "Releases DNA from the silica membrane.", category: "extraction" },
-  { id: "column", name: "Silica Spin Columns", cost: 450, desc: "Matrix for DNA purification.", category: "extraction" },
-  { id: "thermal_cycler", name: "Thermal Cycler", cost: 0, desc: "Automatically cycles temperatures for DNA amplification.", category: "pcr" },
-  { id: "micropipettes", name: "Micropipettes (P10, P20, P200)", cost: 0, desc: "Used to accurately measure microliter volumes.", category: "pcr" },
-  { id: "master_mix", name: "Master Mix", cost: 600, desc: "Pre-mixed solution of DNA polymerase (Taq/KOD), dNTPs, and buffer with MgCl₂.", category: "pcr" },
-  { id: "nuclease_free_water", name: "Nuclease-free Water", cost: 200, desc: "Used to adjust final reaction volume without contaminants.", category: "pcr" },
-  { id: "primers_fw_rv", name: "Forward/Reverse Primers", cost: 450, desc: "Specifically synthesized DNA sequences flanking your target gene.", category: "pcr" }
-];
-
-const consumables_ppe_list = [
-  { id: "safety_goggles", name: "Safety Goggles", cost: 0, desc: "Eye protection against chemical splashes and biological hazards.", category: "general" },
-  { id: "lab_coat", name: "Lab Coat", cost: 0, desc: "Personal protective clothing to shield from spills and contamination.", category: "general" },
-  { id: "petri_dishes", name: "Petri Dishes", cost: 0, desc: "Sterile culture dishes for sample preparation.", category: "general" },
-  { id: "pipette_tips", name: "Pipette Tips", cost: 0, desc: "Sterile disposable tips for accurate liquid transfer.", category: "general" },
-  { id: "tubes", name: "Tubes", cost: 0, desc: "Single-use 1.5mL or 2mL tubes for sample handling.", category: "general" },
-  { id: "gloves", name: "Gloves", cost: 0, desc: "Disposable nitrile or latex gloves for hand protection.", category: "general" },
-  { id: "filter_tips", name: "Filter Pipette Tips", cost: 0, desc: "Prevents aerosol contamination between samples.", category: "pcr" },
-  { id: "pcr_tubes", name: "0.2 mL PCR Tubes", cost: 0, desc: "Thin-walled tubes for efficient heat transfer in the cycler.", category: "pcr" }
-];
-
-const design_tools_list = [
-  {
-    id: "ncbi_primer_blast",
-    name: "NCBI Primer-BLAST",
-    desc: "Design Forward/Reverse primers with specificity checking against databases.",
-    url: "https://www.ncbi.nlm.nih.gov/tools/primer-blast/",
-    note: "Primers labeled as Forward and Reverse"
-  },
-  {
-    id: "primer3plus",
-    name: "Primer3Plus",
-    desc: "Design Left/Right primers with advanced parameter control.",
-    url: "https://www.primer3plus.com/",
-    note: "Primers labeled as Left and Right"
-  }
-];
 
 const TubeVisual = ({ volume, solidMass, hasPellet, showSeparation, onSupernatantClick, onPelletClick }) => {
   const fillPercent = Math.min((volume / 2000) * 100, 85);
@@ -1010,6 +862,99 @@ const ProtocolBookOverlay = ({ onClose }) => (
     </div>
 );
 
+const ProtocolGuideOverlay = ({ onClose, missionId }) => {
+  const protocolContent = {
+    A: {
+      title: "Clinical Tissue Biopsy Protocol",
+      subtitle: "Human/Animal DNA Extraction - Tailored for soft tissues (e.g., 3-25mg biopsies). Volumes: 2/500/500/20 µl.",
+      steps: [
+        {
+          title: "Tissue Disruption (Enzymatic Digestion)",
+          content: "Add Proteinase K (2µl concentrated stock). Mix and incubate at 56°C (shortened for simulation; real: 1-3 hours). Targets proteins in animal matrices; no grinding needed unlike plants."
+        },
+        {
+          title: "Lysis",
+          content: "Add lysis buffer (500µl). Mix and spin (~12,000g) to pellet debris. Skips RNase for simplicity, assuming minor RNA is tolerable."
+        },
+        {
+          title: "Binding/Wash/Elute",
+          content: "Add binding buffer (500µl) and spin to bind DNA to column. Wash (500µl, repeat) and spin. Elute in 20µl, then NanoDrop. Column skips phenol-chloroform (common for phase separation) for safety, speed, and non-toxicity."
+        },
+        {
+          title: "Equipment",
+          content: "Microcentrifuge, pipettes/tips, incubator, NanoDrop, safety kit."
+        }
+      ]
+    },
+    B: {
+      title: "Cassava Extraction Protocol",
+      subtitle: "Plant DNA Extraction - For tough plant tissues (e.g., 20-100mg cassava). Volumes: 500/500/20 µl.",
+      steps: [
+        {
+          title: "Tissue Disruption (Manual Grinding + Liquid N₂)",
+          content: "Grind in mortar/pestle with LN₂ (no Proteinase K). Flash-freezes to brittle tissue, preventing phenolic oxidation—key for plants but not animals."
+        },
+        {
+          title: "Lysis & Binding",
+          content: "Add lysis buffer (500µl). Mix and spin. Add binding buffer (500µl) to column and spin. Skips chloroform:isoamyl alcohol (for phenolic removal in CTAB methods) for safety and speed via column binding."
+        },
+        {
+          title: "Wash & Elute",
+          content: "Wash (500µl, repeat) and spin. Elute in 20µl, spin, NanoDrop. No β-mercaptoethanol (BME; reduces oxidation) as small samples/low phenolics rely on buffer additives like PVP."
+        },
+        {
+          title: "Equipment",
+          content: "Mortar/pestle, LN₂ (safety kit for cryogenics), microcentrifuge, NanoDrop, pipettes/tips."
+        }
+      ]
+    }
+  };
+
+  const protocol = protocolContent[missionId] || protocolContent.A;
+
+  return (
+    <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md font-sans text-white">
+      <div className="bg-slate-800 border border-indigo-500/50 w-full max-w-3xl rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col max-h-[85vh]">
+        <div className="p-6 border-b border-slate-700 flex justify-between items-center bg-slate-900/50">
+          <div className="flex items-center gap-3 text-indigo-400 font-mono font-bold uppercase tracking-widest">
+            <BookOpen size={24} />
+            <h3>Extraction Protocol</h3>
+          </div>
+          <button onClick={onClose} className="text-slate-500 hover:text-white border-0 bg-transparent cursor-pointer">
+            <X size={24}/>
+          </button>
+        </div>
+        <div className="p-8 overflow-y-auto space-y-6 text-sm leading-relaxed text-slate-300 text-left">
+          <div className="bg-indigo-900/20 border border-indigo-500/30 p-5 rounded-2xl space-y-2">
+            <h4 className="text-indigo-300 font-black uppercase text-lg font-sans">{protocol.title}</h4>
+            <p className="text-slate-300 text-xs italic">{protocol.subtitle}</p>
+          </div>
+
+          {protocol.steps.map((step, index) => (
+            <section key={index} className="space-y-3 border-b border-slate-700 pb-5 last:border-b-0">
+              <h5 className="text-white font-bold uppercase text-sm font-mono flex items-center gap-2">
+                <span className="bg-indigo-600 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs font-black">
+                  {index + 1}
+                </span>
+                {step.title}
+              </h5>
+              <p className="text-slate-300 text-sm leading-relaxed ml-8">{step.content}</p>
+            </section>
+          ))}
+        </div>
+        <div className="p-6 bg-slate-900/50 border-t border-slate-700">
+          <button
+            onClick={onClose}
+            className="w-full bg-indigo-600 hover:bg-indigo-500 py-4 rounded-2xl font-black text-white border-0 cursor-pointer uppercase tracking-widest transition-all"
+          >
+            Close Protocol
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const LabManualOverlay = ({ onClose }) => (
     <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md font-sans text-white">
       <div className="bg-slate-800 border border-indigo-500/50 w-full max-w-2xl rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col max-h-[85vh]">
@@ -1028,7 +973,7 @@ const LabManualOverlay = ({ onClose }) => (
           </section>
           <section className="space-y-2 font-sans text-white">
             <h4 className="text-indigo-300 font-bold uppercase text-xs font-mono flex items-center gap-2"><Database size={14} />3. Lab IDs</h4>
-            <p className="text-slate-300">Your progress is saved to your Lab ID. You can view history in the Ledger without disrupting your current experiment.</p>
+            <p className="text-slate-300">Your progress is saved to your Lab ID and tracked automatically for your learning journey.</p>
           </section>
         </div>
         <div className="p-6 bg-slate-900/50 border-t border-slate-700 font-mono"><button onClick={onClose} className="w-full bg-indigo-600 py-4 rounded-2xl font-black uppercase text-white shadow-lg border-0 cursor-pointer text-xs font-mono font-bold tracking-widest uppercase">Return to Bench</button></div>
@@ -1036,31 +981,6 @@ const LabManualOverlay = ({ onClose }) => (
     </div>
 );
 
-const LabLedgerOverlay = ({ onClose, historyRecords, user }) => (
-    <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-slate-950/90 backdrop-blur-sm font-sans text-white">
-      <div className="bg-slate-800 border border-indigo-500/50 w-full max-w-2xl rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col max-h-[85vh]">
-        <div className="p-6 border-b border-slate-700 bg-slate-900/50 font-mono text-white font-bold space-y-2">
-          <div className="flex justify-between items-center">
-            <div className="flex items-center gap-3 text-indigo-400"><History size={24} /><h3>Cloud Lab Ledger</h3></div>
-            <button onClick={onClose} className="text-slate-500 border-0 bg-transparent cursor-pointer"><X size={24}/></button>
-          </div>
-          {user && (
-            <div className="text-xs text-slate-400 font-mono">
-              <span className="text-slate-500">Lab ID:</span> <span className="text-indigo-400">{user.email}</span>
-            </div>
-          )}
-        </div>
-        <div className="p-8 overflow-y-auto space-y-4 font-mono text-sm text-white text-left">
-          {historyRecords.length === 0 ? <div className="text-center py-20 text-slate-500 italic font-sans"><p>No laboratory records found for this ID.</p></div> : historyRecords.map((rec, i) => (
-            <div key={`rec-${i}`} className="bg-slate-900/50 p-4 rounded-2xl border border-slate-700 flex justify-between items-center animate-in slide-in-from-bottom-2">
-              <div><p className="text-[10px] font-black text-indigo-400 uppercase leading-none mb-1 font-mono">{String(rec.mission)}</p><p className="text-xs text-slate-300 font-mono">{String(rec.concentration)} ng/µL | Purity: {String(rec.purity)}</p></div>
-              <span className={`text-[9px] font-black px-3 py-1 rounded-full border font-mono ${rec.status === 'MASTERY' ? 'bg-emerald-900/40 text-emerald-400 border-emerald-500/30' : 'bg-rose-900/40 text-rose-400 border-rose-500/30'}`}>{String(rec.status)}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-);
 
 const MasteryBadge = () => (
     <div className="flex flex-col items-center p-6 bg-emerald-500/10 border border-emerald-500/30 rounded-3xl shadow-2xl animate-in zoom-in font-sans">
@@ -1073,12 +993,15 @@ const MasteryBadge = () => (
 );
 
 const FeedbackModule = ({ userRating, setUserRating, feedbackSent, setFeedbackSent }) => (
-    <div className="bg-slate-900/80 border border-indigo-500/30 p-6 rounded-3xl text-center font-sans space-y-4 shadow-xl animate-in fade-in duration-1000">
-        <div className="space-y-1 font-sans text-white text-center"><h4 className="text-xs font-black uppercase text-indigo-400 tracking-widest leading-none mb-1 text-white font-sans font-bold">Rate the Simulation</h4><p className="text-[10px] text-slate-500 italic font-sans text-slate-400 font-sans text-slate-400">Help us calibrate the scientific logic.</p></div>
-        <div className="flex justify-center gap-2 font-sans text-white">{[1, 2, 3, 4, 5].map((s) => (<button key={s} onClick={() => { setUserRating(s); trackEvent('StarRating', 'Feedback', `Rating_${s}`, s); if (s > 3) setFeedbackSent(true); }} className="transition-all hover:scale-110 active:scale-95 cursor-pointer border-0 bg-transparent p-0">
-          <Star size={28} className={userRating >= s ? "fill-amber-400 text-amber-400" : "text-slate-700"} />
+    <div className="bg-gradient-to-br from-amber-500/10 to-indigo-500/10 border-2 border-amber-500/40 p-8 rounded-3xl text-center font-sans space-y-5 shadow-2xl animate-in zoom-in duration-500">
+        <div className="space-y-2 font-sans text-white text-center">
+          <h3 className="text-2xl font-black uppercase text-white tracking-tight leading-none">How was your experience?</h3>
+          <p className="text-sm text-slate-300 font-medium">Rate this simulation to help us improve</p>
+        </div>
+        <div className="flex justify-center gap-3 font-sans text-white py-2">{[1, 2, 3, 4, 5].map((s) => (<button key={s} onClick={() => { setUserRating(s); trackEvent('StarRating', 'Feedback', `Rating_${s}`, s); if (s > 3) setFeedbackSent(true); }} className="transition-all hover:scale-125 active:scale-95 cursor-pointer border-0 bg-transparent p-1 hover:drop-shadow-[0_0_8px_rgba(251,191,36,0.8)]">
+          <Star size={48} className={userRating >= s ? "fill-amber-400 text-amber-400 drop-shadow-[0_0_6px_rgba(251,191,36,0.6)]" : "text-slate-600 hover:text-slate-500"} strokeWidth={2.5} />
         </button>))}</div>
-        {userRating > 0 && userRating <= 3 && !feedbackSent && (<div className="space-y-3 animate-in slide-in-from-top-2 font-sans text-slate-400 text-center"><p className="text-[9px] text-center font-bold text-slate-400 uppercase tracking-tighter font-mono font-sans text-slate-400">What was the primary issue?</p><div className="grid grid-cols-2 gap-2 font-mono font-sans text-slate-400">{["Confusing Path", "Too Difficult", "Technical Bug", "Lack of Guide"].map((tag, i) => (<button key={`tag-${i}`} onClick={() => { setFeedbackSent(true); trackEvent('LowRatingReason', 'Feedback', tag, userRating); }} className="bg-slate-800 p-2 rounded-lg text-[8px] font-black uppercase text-slate-400 border border-slate-700 hover:bg-indigo-900/20 transition-all cursor-pointer font-bold font-mono font-bold font-sans font-sans text-slate-400">{String(tag)}</button>))}</div></div>)}{feedbackSent && <p className="text-[10px] text-emerald-400 font-bold text-center animate-pulse uppercase tracking-widest font-mono font-sans text-emerald-400">Feedback Logged. Thank you.</p>}
+        {userRating > 0 && userRating <= 3 && !feedbackSent && (<div className="space-y-3 animate-in slide-in-from-top-2 font-sans text-slate-400 text-center"><p className="text-xs text-center font-bold text-slate-300 uppercase tracking-wide">What was the primary issue?</p><div className="grid grid-cols-2 gap-2">{["Confusing Path", "Too Difficult", "Technical Bug", "Lack of Guide"].map((tag, i) => (<button key={`tag-${i}`} onClick={() => { setFeedbackSent(true); trackEvent('LowRatingReason', 'Feedback', tag, userRating); }} className="bg-slate-800 p-3 rounded-lg text-xs font-bold uppercase text-slate-300 border border-slate-700 hover:bg-indigo-900/20 transition-all cursor-pointer">{String(tag)}</button>))}</div></div>)}{feedbackSent && <div className="flex items-center justify-center gap-2 text-base font-bold text-emerald-400 animate-in fade-in"><span>✓</span><span>Thank you for your feedback!</span></div>}
     </div>
 );
 
@@ -1100,10 +1023,79 @@ const GelLaneComp = ({ bands = [], smear = false, faint = false, blank = false }
     </div>
 );
 
-const NanodropVisualComp = ({ step, measured, hasDNA = true }) => {
+const NanodropVisualComp = ({ step, measured, hasDNA = true, purityScore = 1.8 }) => {
   const armOpen = step === 'open' || step === 'clean' || step === 'blank' || step === 'load';
   const showPipette = step === 'load';
   const showSample = step === 'load' || step === 'measure' || step === 'complete' || measured;
+
+  const generateDNASpectrum = () => {
+    const noise = () => (Math.random() - 0.5) * 0.1;
+    const purity = parseFloat(purityScore) || 1.8;
+    const contaminationFactor = Math.max(0, (1.8 - purity) / 0.4);
+
+    const baseSpectrum = [
+      { wl: 220, abs: 0.8 },
+      { wl: 230, abs: 1.6 },
+      { wl: 240, abs: 2.9 },
+      { wl: 250, abs: 4.0 },
+      { wl: 260, abs: 4.2 },
+      { wl: 270, abs: 3.4 },
+      { wl: 280, abs: 2.3 },
+      { wl: 290, abs: 1.3 },
+      { wl: 300, abs: 0.5 },
+      { wl: 310, abs: 0.3 },
+      { wl: 320, abs: 0.2 },
+      { wl: 330, abs: 0.1 },
+      { wl: 340, abs: 0.05 },
+      { wl: 350, abs: 0.0 }
+    ];
+
+    const wavelengths = baseSpectrum.map(p => {
+      let adjustedAbs = p.abs;
+
+      if (purity < 1.8) {
+        if (p.wl === 230) adjustedAbs += contaminationFactor * 0.6;
+        if (p.wl === 280) adjustedAbs += contaminationFactor * 0.4;
+        if (p.wl === 260) adjustedAbs -= contaminationFactor * 0.3;
+      }
+
+      return {
+        wl: p.wl,
+        x: 10 + ((p.wl - 220) / (350 - 220)) * 90,
+        abs: Math.max(0, adjustedAbs + noise())
+      };
+    });
+
+    const absToY = (abs) => {
+      const maxAbs = 4.5;
+      const clampedAbs = Math.max(0, Math.min(maxAbs, abs));
+      return 60 - (clampedAbs / maxAbs) * 50;
+    };
+
+    const points = wavelengths.map(p => ({
+      x: p.x,
+      y: absToY(p.abs)
+    }));
+
+    let pathData = `M ${points[0].x} ${points[0].y}`;
+
+    for (let i = 0; i < points.length - 1; i++) {
+      const p0 = points[Math.max(0, i - 1)];
+      const p1 = points[i];
+      const p2 = points[i + 1];
+      const p3 = points[Math.min(points.length - 1, i + 2)];
+
+      const tension = 0.3;
+      const cp1x = p1.x + (p2.x - p0.x) * tension;
+      const cp1y = p1.y + (p2.y - p0.y) * tension;
+      const cp2x = p2.x - (p3.x - p1.x) * tension;
+      const cp2y = p2.y - (p3.y - p1.y) * tension;
+
+      pathData += ` C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${p2.x} ${p2.y}`;
+    }
+
+    return pathData;
+  };
 
   return (
     <div className="relative flex flex-col items-center gap-4">
@@ -1134,7 +1126,7 @@ const NanodropVisualComp = ({ step, measured, hasDNA = true }) => {
               <text x="12" y="13" fill="#64748b" fontSize="6">Abs</text>
               <text x="85" y="68" fill="#64748b" fontSize="6">λ (nm)</text>
               {hasDNA ? (
-                <path d="M 10 60 Q 25 58 35 50 Q 45 30 55 20 Q 65 30 75 50 Q 85 58 100 60" stroke="#22c55e" strokeWidth="2" fill="none" className="animate-in fade-in" />
+                <path d={generateDNASpectrum()} stroke="#22c55e" strokeWidth="1.5" fill="none" className="animate-in fade-in" />
               ) : (
                 <line x1="10" y1="60" x2="100" y2="60" stroke="#ef4444" strokeWidth="2" className="animate-in fade-in" />
               )}
@@ -1152,10 +1144,20 @@ const NanodropVisualComp = ({ step, measured, hasDNA = true }) => {
 };
 
 export default function App() {
+  console.log('App component rendering');
+
+  const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [historyRecords, setHistoryRecords] = useState([]);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [savedRecordId, setSavedRecordId] = useState(null);
+  const [showClassCodePrompt, setShowClassCodePrompt] = useState(false);
+  const [screen, setScreen] = useState("welcome");
+  const [selectedCategory, setSelectedCategory] = useState(null);
+
+  useEffect(() => {
+    console.log('App mounted, screen:', screen);
+  }, []);
 
   useEffect(() => {
     const setupAuth = async () => {
@@ -1164,10 +1166,8 @@ export default function App() {
         if (session) {
           setUser(session.user);
         }
-        // App works without authentication - history just won't be saved
       } catch (error) {
         console.error("Auth error:", error);
-        // Continue without auth - app still functions
       }
     };
     setupAuth();
@@ -1176,21 +1176,52 @@ export default function App() {
   useEffect(() => {
     if (!user) return;
     const fetchHistory = async () => {
-      const data = await historyStore.fetchHistory(user.id);
-      setHistoryRecords(data);
+      try {
+        const data = await historyStore.fetchHistory(user.id);
+        setHistoryRecords(data);
+      } catch (error) {
+        console.error("History fetch error:", error);
+      }
     };
     fetchHistory();
   }, [user]);
 
-  const [screen, setScreen] = useState("welcome");
-  const [selectedCategory, setSelectedCategory] = useState(null);
+  useEffect(() => {
+    try {
+      const hasSeenPrompt = localStorage.getItem('biosim_class_prompt_shown');
+      if (!hasSeenPrompt) {
+        setShowClassCodePrompt(true);
+      }
+    } catch (error) {
+      console.error("LocalStorage error:", error);
+    }
+  }, []);
+
+  useEffect(() => {
+    const handleHeaderTabClick = (e: CustomEvent) => {
+      const tab = e.detail.tab;
+      if (tab === 'home') {
+        setScreen('welcome');
+      } else if (tab === 'manual') {
+        setShowManual(true);
+      }
+    };
+    window.addEventListener('headerTabClick' as any, handleHeaderTabClick);
+    return () => window.removeEventListener('headerTabClick' as any, handleHeaderTabClick);
+  }, []);
+
+  useEffect(() => {
+    const currentTab = screen === 'welcome' ? 'home' : null;
+    if (currentTab) {
+      window.dispatchEvent(new CustomEvent('labTabChange', { detail: { tab: currentTab } }));
+    }
+  }, [screen]);
   const [techniqueId, setTechniqueId] = useState(null);
   const [selectedMissionId, setSelectedMissionId] = useState(null);
   const [missionId, setMissionId] = useState(null);
   const [procureTab, setProcureTab] = useState("kits");
   const [showManual, setShowManual] = useState(false);
   const [showProtocol, setShowProtocol] = useState(false);
-  const [showLedger, setShowLedger] = useState(false);
   const [showReadinessModal, setShowReadinessModal] = useState(false);
   const [showPCRModal, setShowPCRModal] = useState(false);
   const [ndStep, setNdStep] = useState("idle");
@@ -1252,6 +1283,7 @@ export default function App() {
   const [showGrindingSetup, setShowGrindingSetup] = useState(false);
   const [difficultyMode, setDifficultyMode] = useState("learning");
   const [challengeModeErrors, setChallengeModeErrors] = useState([]);
+  const [showProtocolGuide, setShowProtocolGuide] = useState(false);
 
   const has = (itemId) => inventory.includes(itemId);
 
@@ -1590,13 +1622,38 @@ export default function App() {
     const missionTitle = MISSIONS_DATA[techniqueId][missionId]?.title || 'DNA Extraction';
     const statusText = localStatus === 'mastery' ? 'Verified Mastery' : 'Mission Failed';
 
+    let classId = null;
+    try {
+      const { data: sessionData } = await supabase
+        .from('lab_sessions')
+        .select('class_id')
+        .eq('student_id', studentId)
+        .order('last_active', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (sessionData) {
+        classId = sessionData.class_id;
+      }
+    } catch (sessionError) {
+      console.error('Error fetching session:', sessionError);
+    }
+
+    const errorLogs = logs.filter(log => log.type === 'error').map(log => ({
+      message: log.msg,
+      type: log.type
+    }));
+
     try {
       const { data, error } = await supabase
         .from('lab_results')
         .insert([{
+          student_id: studentId,
           mission: missionTitle,
           purity_score: parseFloat(localPurity),
-          status: statusText
+          status: statusText,
+          class_id: classId || null,
+          event_log: errorLogs
         }])
         .select()
         .single();
@@ -1607,6 +1664,8 @@ export default function App() {
         setSavedRecordId(data.id);
         setShowSuccessModal(true);
       }
+
+      await upsertCertificate(studentId, missionTitle, parseFloat(localPurity));
     } catch (error) {
       console.error("Database save error:", error);
     }
@@ -1658,39 +1717,38 @@ export default function App() {
 
   return (
     <div className="min-h-screen text-slate-100 font-sans bg-[#0f172a]">
+      {console.log('Rendering App, screen state:', screen)}
 
+      {showClassCodePrompt && (
+        <ClassCodePrompt
+          onComplete={() => {
+            localStorage.setItem('biosim_class_prompt_shown', 'true');
+            setShowClassCodePrompt(false);
+            setScreen("categories");
+          }}
+          onJoinMission={(techniqueId, missionId) => {
+            if (techniqueId === 'PCR') {
+              setSelectedMissionId(missionId);
+              setShowPCRModal(true);
+            } else {
+              startMission(techniqueId, missionId);
+            }
+          }}
+        />
+      )}
       {showManual && <LabManualOverlay onClose={() => setShowManual(false)} />}
       {showProtocol && <ProtocolBookOverlay onClose={() => setShowProtocol(false)} />}
-      {showLedger && <LabLedgerOverlay onClose={() => setShowLedger(false)} historyRecords={historyRecords} user={user} />}
+      {showProtocolGuide && <ProtocolGuideOverlay onClose={() => setShowProtocolGuide(false)} missionId={missionId} />}
       {showReadinessModal && <ReadinessOverlay onClose={() => setShowReadinessModal(false)} />}
       {showPCRModal && <PCRModule onClose={() => setShowPCRModal(false)} onComplete={() => setShowPCRModal(false)} onBackToLibrary={() => { setShowPCRModal(false); setScreen("welcome"); }} missionId={selectedMissionId} />}
       {showBioPopup && <BiologicalPopup type={showBioPopup} onClose={() => setShowBioPopup(null)} />}
 
-      <div className="max-w-6xl mx-auto p-4 md:p-8">
-        <header className="flex flex-col sm:flex-row justify-between items-center gap-4 mb-12 bg-slate-800 p-5 rounded-2xl border border-slate-700 shadow-2xl">
-          <div
-            onClick={() => setScreen("welcome")}
-            className="flex items-center gap-4 text-white cursor-pointer group hover:opacity-80 transition-all"
-          >
-            <div className="bg-indigo-600 p-2.5 rounded-xl group-hover:scale-105 transition-transform"><Microscope size={22} className="text-white"/></div>
-            <div>
-              <h1 className="text-lg font-black uppercase tracking-tight font-sans">BioSim Lab <span className="text-indigo-400 font-mono ml-1 text-[10px]">v1.7.1</span></h1>
-              <p className="text-[9px] text-slate-500 uppercase font-bold tracking-[0.15em] mt-1.5 font-mono italic leading-none">OSV Readiness Build</p>
-            </div>
-          </div>
-          <div className="flex gap-2">
-             <button onClick={() => setScreen("welcome")} className="flex items-center gap-2 bg-slate-900 border border-slate-700 px-4 py-2 rounded-xl text-[10px] font-black uppercase text-slate-400 hover:bg-slate-700 transition-all border-0 cursor-pointer shadow-lg"><Home size={14}/> Home</button>
-             <button onClick={() => setShowProtocol(true)} className="flex items-center gap-2 bg-slate-900 border border-emerald-500/30 px-4 py-2 rounded-xl text-[10px] font-black uppercase text-emerald-400 hover:bg-emerald-900/20 transition-all border-0 cursor-pointer shadow-lg"><ScrollText size={14}/> Protocol</button>
-             <button onClick={() => setShowLedger(true)} className="flex items-center gap-2 bg-slate-900 border border-indigo-500/30 px-4 py-2 rounded-xl text-[10px] font-black uppercase text-indigo-300 hover:bg-indigo-900/20 transition-all border-0 cursor-pointer"><History size={14}/> Ledger</button>
-             <button onClick={() => setShowManual(true)} className="flex items-center gap-2 bg-slate-900 border border-indigo-500/30 px-4 py-2 rounded-xl text-[10px] font-black uppercase text-indigo-300 hover:bg-indigo-900/20 transition-all border-0 cursor-pointer font-sans"><BookOpen size={14}/> Manual</button>
-          </div>
-        </header>
-
+      <div className="px-4">
         <main>
           {screen === "welcome" && (
-            <div className="space-y-12 animate-in fade-in">
+            <div className="space-y-12 animate-in fade-in py-8">
               <section className="text-center space-y-6 max-w-4xl mx-auto">
-                <h1 className="text-5xl font-black text-slate-50 uppercase tracking-tighter">
+                <h1 className="text-3xl md:text-5xl font-black text-slate-50 uppercase tracking-tighter">
                   Practice Lab Protocols Before Your First Real Experiment
                 </h1>
 
@@ -1733,61 +1791,94 @@ export default function App() {
                 
                 <section className="max-w-4xl mx-auto space-y-6">
                   <h3 className="text-2xl font-black text-slate-50 uppercase text-center mb-8">
-                    Who Can Use BioSim Lab?
+                    Choose Your Learning Path
                   </h3>
 
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div className="bg-slate-800 border border-slate-700 p-6 rounded-2xl">
-                      <div className="bg-emerald-600 w-12 h-12 rounded-xl flex items-center justify-center mb-4">
-                        <GraduationCap size={24} className="text-white" />
+                    <div
+                      onClick={() => setShowClassCodePrompt(true)}
+                      className="bg-gradient-to-br from-emerald-900/40 to-emerald-800/20 border-2 border-emerald-500/50 p-6 rounded-2xl cursor-pointer hover:scale-105 transition-transform hover:border-emerald-400"
+                    >
+                      <div className="bg-emerald-600 w-14 h-14 rounded-xl flex items-center justify-center mb-4 shadow-lg">
+                        <GraduationCap size={28} className="text-white" />
                       </div>
-                      <h4 className="text-white font-bold mb-2">University Students</h4>
-                      <p className="text-slate-400 text-sm">
-                        BSc/MSc students preparing for lab practicals or entering PhD programs.
+                      <h4 className="text-white font-black text-xl mb-2">University Student</h4>
+                      <p className="text-slate-300 text-sm mb-3 leading-relaxed">
+                        Join your instructor's class. Enter code to sync with your faculty dashboard.
                       </p>
-                      <p className="text-emerald-400 text-xs font-bold mt-3 uppercase">
-                        Primary Users
-                      </p>
+                      <div className="flex items-center gap-2 text-emerald-400 font-bold text-sm mt-4">
+                        <span>Enter Class Code</span>
+                        <ChevronRight size={16} />
+                      </div>
                     </div>
 
-                    <div className="bg-slate-800 border border-slate-700 p-6 rounded-2xl">
-                      <div className="bg-amber-600 w-12 h-12 rounded-xl flex items-center justify-center mb-4">
-                        <BookOpen size={24} className="text-white" />
+                    <div
+                      onClick={() => setScreen("categories")}
+                      className="bg-gradient-to-br from-indigo-900/40 to-indigo-800/20 border-2 border-indigo-500/50 p-6 rounded-2xl cursor-pointer hover:scale-105 transition-transform hover:border-indigo-400"
+                    >
+                      <div className="bg-indigo-600 w-14 h-14 rounded-xl flex items-center justify-center mb-4 shadow-lg">
+                        <Target size={28} className="text-white" />
                       </div>
-                      <h4 className="text-white font-bold mb-2">Secondary Students (O/A Level)</h4>
-                      <p className="text-slate-400 text-sm">
-                        Ambitious students preparing for university molecular biology/biotech programs.
+                      <h4 className="text-white font-black text-xl mb-2">Independent Learner</h4>
+                      <p className="text-slate-300 text-sm mb-3 leading-relaxed">
+                        Master lab techniques at your own pace. Build your digital lab resume.
                       </p>
-                      <p className="text-amber-400 text-xs font-bold mt-3 uppercase">
-                        Advanced Preview
-                      </p>
+                      <div className="flex items-center gap-2 text-indigo-400 font-bold text-sm mt-4">
+                        <span>Start Learning</span>
+                        <ChevronRight size={16} />
+                      </div>
                     </div>
 
-                    <div className="bg-slate-800 border border-slate-700 p-6 rounded-2xl">
-                      <div className="bg-indigo-600 w-12 h-12 rounded-xl flex items-center justify-center mb-4">
-                        <Users size={24} className="text-white" />
+                    <div
+                      onClick={() => setScreen("categories")}
+                      className="bg-gradient-to-br from-amber-900/40 to-amber-800/20 border-2 border-amber-500/50 p-6 rounded-2xl cursor-pointer hover:scale-105 transition-transform hover:border-amber-400"
+                    >
+                      <div className="bg-amber-600 w-14 h-14 rounded-xl flex items-center justify-center mb-4 shadow-lg">
+                        <Sparkles size={28} className="text-white" />
                       </div>
-                      <h4 className="text-white font-bold mb-2">Self-Taught Learners</h4>
-                      <p className="text-slate-400 text-sm">
-                        Anyone curious about lab work without access to physical equipment.
+                      <h4 className="text-white font-black text-xl mb-2">Pre-university</h4>
+                      <p className="text-slate-300 text-sm mb-3 leading-relaxed">
+                        Get a head start on college science. Explore molecular biology basics.
                       </p>
-                      <p className="text-indigo-400 text-xs font-bold mt-3 uppercase">
-                        Open to All
-                      </p>
+                      <div className="flex items-center gap-2 text-amber-400 font-bold text-sm mt-4">
+                        <span>Start Learning</span>
+                        <ChevronRight size={16} />
+                      </div>
                     </div>
                   </div>
 
-                  <div className="bg-slate-800 border border-slate-700 p-6 rounded-2xl">
-                    <h4 className="text-white font-bold mb-3 flex items-center gap-2">
-                      <Info size={18} className="text-indigo-400" />
-                      For O Level / Secondary Students:
-                    </h4>
-                    <p className="text-slate-400 text-sm leading-relaxed">
-                      BioSim Lab teaches university-level techniques, but ambitious secondary students
-                      can absolutely use it to preview what lab work looks like. Think of it as exploring
-                      what you'll learn in university. Some concepts (like DNA purity ratios, stoichiometry)
-                      assume basic chemistry knowledge.
+                  <div className="bg-slate-800/50 border border-slate-700 p-5 rounded-2xl">
+                    <p className="text-slate-400 text-sm text-center leading-relaxed">
+                      All paths access the same high-quality simulations. Choose based on whether you need instructor tracking or prefer independent progress monitoring.
                     </p>
+                  </div>
+                </section>
+
+                <section className="max-w-4xl mx-auto py-3">
+                  <div
+                    onClick={() => navigate('/leaderboard')}
+                    className="bg-gradient-to-r from-amber-900/40 via-yellow-900/30 to-amber-900/40 border-2 border-amber-400/60 rounded-2xl p-5 cursor-pointer hover:scale-[1.02] transition-transform hover:border-amber-300 hover:shadow-2xl hover:shadow-amber-500/20"
+                  >
+                    <div className="flex items-center justify-between flex-wrap gap-4">
+                      <div className="flex items-center gap-4">
+                        <div className="bg-gradient-to-br from-amber-500 to-yellow-600 p-3 rounded-2xl shadow-xl">
+                          <Trophy size={28} className="text-white" />
+                        </div>
+                        <div>
+                          <h3 className="text-xl font-black text-white mb-1.5 flex items-center gap-3">
+                            Global Rankings
+                            <span className="text-xs bg-amber-500 px-2.5 py-0.5 rounded-full font-bold animate-pulse">NEW</span>
+                          </h3>
+                          <p className="text-slate-300 text-sm leading-snug">
+                            Compete with learners worldwide. Track your progress. Build verifiable competency records. From students to researchers—see where you rank.
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 text-amber-400 font-black text-base">
+                        <span>View Rankings</span>
+                        <ChevronRight size={20} />
+                      </div>
+                    </div>
                   </div>
                 </section>
               </section>
@@ -2136,6 +2227,13 @@ export default function App() {
                         <span className="text-[10px] text-amber-400 font-bold uppercase">🏆 Challenge</span>
                       </div>
                     )}
+                    <button
+                      onClick={() => setShowProtocolGuide(true)}
+                      className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-bold uppercase transition-all cursor-pointer border-0 flex items-center gap-2"
+                    >
+                      <BookOpen size={14} />
+                      Protocol
+                    </button>
                     <button onClick={() => { setScreen("procurement"); addLog("Returned to procurement. Biological state preserved.", "info"); }} className="px-4 py-2 bg-amber-600 hover:bg-amber-500 text-white rounded-lg text-xs font-bold uppercase transition-all cursor-pointer border-0">
                       Add Equipment
                     </button>
@@ -2523,6 +2621,15 @@ export default function App() {
 
           {screen === "lab" && status === "verification" && !showQuant && (
             <div className="space-y-8 animate-in fade-in">
+              <div className="flex justify-end mb-4">
+                <button
+                  onClick={() => setShowProtocolGuide(true)}
+                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-bold uppercase transition-all cursor-pointer border-0 flex items-center gap-2"
+                >
+                  <BookOpen size={14} />
+                  Protocol
+                </button>
+              </div>
               <div className="bg-gradient-to-br from-amber-900/20 to-slate-800 border border-amber-500/30 p-8 rounded-3xl text-center">
                 <Award size={48} className="mx-auto text-amber-400 mb-4" />
                 <h2 className="text-2xl font-black text-slate-50 uppercase tracking-tight mb-2">DNA Extraction Complete</h2>
@@ -2538,7 +2645,7 @@ export default function App() {
                     {missionVerification.options.includes(VERIFICATION.NANODROP) && (
                       <div className={`border ${verificationDone.nanodrop ? "border-emerald-500/50 bg-emerald-900/20" : "border-slate-700 bg-slate-900"} p-6 rounded-2xl`}>
                         <div className="text-center mb-4">
-                          <NanodropVisualComp step={ndStep} measured={verificationDone.nanodrop} hasDNA={finalConc > 0} />
+                          <NanodropVisualComp step={ndStep} measured={verificationDone.nanodrop} hasDNA={finalConc > 0} purityScore={a260_280} />
                         </div>
                         {!verificationDone.nanodrop ? (
                           <div className="space-y-3">
@@ -2651,8 +2758,8 @@ export default function App() {
           )}
 
           {screen === "lab" && showQuant && (
-            <div className="space-y-8 animate-in fade-in">
-              <div className={`bg-gradient-to-br ${status === "mastery" ? "from-emerald-900/20 to-slate-800 border-emerald-500/30" : "from-rose-900/20 to-slate-800 border-rose-500/30"} border p-8 rounded-3xl text-center space-y-6`}>
+            <div className="space-y-6 animate-in fade-in max-w-5xl mx-auto">
+              <div className={`bg-gradient-to-br ${status === "mastery" ? "from-emerald-900/20 to-slate-800 border-emerald-500/30" : "from-rose-900/20 to-slate-800 border-rose-500/30"} border p-6 rounded-3xl text-center space-y-5`}>
                 {status === "mastery" && <MasteryBadge />}
                 {status !== "mastery" && (
                   <div className="flex flex-col items-center">
@@ -2662,27 +2769,27 @@ export default function App() {
                   </div>
                 )}
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-8">
-                  <div className="bg-slate-900/50 p-6 rounded-2xl border border-slate-700">
-                    <p className="text-[9px] text-slate-500 uppercase font-bold tracking-wider mb-2">Concentration</p>
-                    <p className="text-3xl font-black text-white font-mono">{finalConc}</p>
-                    <p className="text-xs text-slate-400 mt-1">ng/µL</p>
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-700">
+                    <p className="text-[8px] text-slate-500 uppercase font-bold tracking-wider mb-1">Concentration</p>
+                    <p className="text-2xl font-black text-white font-mono">{finalConc}</p>
+                    <p className="text-[10px] text-slate-400 mt-0.5">ng/µL</p>
                   </div>
-                  <div className="bg-slate-900/50 p-6 rounded-2xl border border-slate-700">
-                    <p className="text-[9px] text-slate-500 uppercase font-bold tracking-wider mb-2">Purity (260/280)</p>
-                    <p className="text-3xl font-black text-white font-mono">{a260_280}</p>
-                    <p className="text-xs text-slate-400 mt-1">{parseFloat(a260_280) >= 1.7 ? "Acceptable" : "Contaminated"}</p>
+                  <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-700">
+                    <p className="text-[8px] text-slate-500 uppercase font-bold tracking-wider mb-1">Purity (260/280)</p>
+                    <p className="text-2xl font-black text-white font-mono">{a260_280}</p>
+                    <p className="text-[10px] text-slate-400 mt-0.5">{parseFloat(a260_280) >= 1.7 ? "Acceptable" : "Contaminated"}</p>
                   </div>
-                  <div className="bg-slate-900/50 p-6 rounded-2xl border border-slate-700">
-                    <p className="text-[9px] text-slate-500 uppercase font-bold tracking-wider mb-2">Total Yield</p>
-                    <p className="text-3xl font-black text-white font-mono">{yieldUg}</p>
-                    <p className="text-xs text-slate-400 mt-1">µg</p>
+                  <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-700">
+                    <p className="text-[8px] text-slate-500 uppercase font-bold tracking-wider mb-1">Total Yield</p>
+                    <p className="text-2xl font-black text-white font-mono">{yieldUg}</p>
+                    <p className="text-[10px] text-slate-400 mt-0.5">µg</p>
                   </div>
                 </div>
 
-                <div className="bg-slate-900/50 p-6 rounded-2xl border border-slate-700 text-left">
-                  <h4 className="text-sm font-bold text-white uppercase mb-3">Protocol Summary</h4>
-                  <div className="grid grid-cols-2 gap-3 text-xs font-mono">
+                <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-700 text-left">
+                  <h4 className="text-xs font-bold text-white uppercase mb-2">Protocol Summary</h4>
+                  <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-[11px] font-mono">
                     <div><span className="text-slate-500">Elution Volume:</span> <span className="text-white">{elutionVolume}µL</span></div>
                     <div><span className="text-slate-500">Missed Spins:</span> <span className={missedSpins > 0 ? "text-rose-400" : "text-emerald-400"}>{missedSpins}</span></div>
                     <div><span className="text-slate-500">Missed Reagents:</span> <span className={missedReagents > 0 ? "text-rose-400" : "text-emerald-400"}>{missedReagents}</span></div>
@@ -2691,16 +2798,16 @@ export default function App() {
                 </div>
 
                 {difficultyMode === "challenge" && challengeModeErrors.length > 0 && (
-                  <div className="bg-amber-900/20 border border-amber-500/30 p-6 rounded-2xl text-left">
-                    <div className="flex items-center gap-2 mb-4">
-                      <div className="text-2xl">🏆</div>
-                      <h4 className="text-sm font-bold text-amber-400 uppercase">Challenge Mode Feedback</h4>
+                  <div className="bg-amber-900/20 border border-amber-500/30 p-4 rounded-xl text-left">
+                    <div className="flex items-center gap-2 mb-3">
+                      <div className="text-xl">🏆</div>
+                      <h4 className="text-xs font-bold text-amber-400 uppercase">Challenge Mode Feedback</h4>
                     </div>
-                    <p className="text-xs text-slate-400 mb-4">Here are all the protocol events that occurred during your challenge:</p>
-                    <div className="space-y-2 max-h-60 overflow-y-auto">
+                    <p className="text-[10px] text-slate-400 mb-3">Protocol events during your challenge:</p>
+                    <div className="space-y-1.5 max-h-48 overflow-y-auto">
                       {challengeModeErrors.map((log, i) => (
-                        <div key={i} className={`p-3 rounded-lg border ${log.type === "error" ? "bg-rose-900/20 border-rose-500/30" : "bg-emerald-900/20 border-emerald-500/30"}`}>
-                          <p className={`text-xs font-mono ${log.type === "error" ? "text-rose-300" : "text-emerald-300"}`}>
+                        <div key={i} className={`p-2 rounded-lg border ${log.type === "error" ? "bg-rose-900/20 border-rose-500/30" : "bg-emerald-900/20 border-emerald-500/30"}`}>
+                          <p className={`text-[10px] font-mono ${log.type === "error" ? "text-rose-300" : "text-emerald-300"}`}>
                             {log.msg}
                           </p>
                         </div>
@@ -2712,20 +2819,51 @@ export default function App() {
 
               <FeedbackModule userRating={userRating} setUserRating={setUserRating} feedbackSent={feedbackSent} setFeedbackSent={setFeedbackSent} />
 
-              {/* Google Form CTA */}
-              <div className="bg-indigo-600/20 border border-indigo-400/30 p-8 rounded-3xl text-center shadow-2xl">
-                <a
-                  href="https://forms.gle/CdyH4KoC8Lz8Kr8L8"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-block w-full bg-white text-indigo-600 font-black py-5 rounded-2xl text-sm hover:bg-slate-100 transition-all capitalize tracking-[0.1em] no-underline shadow-lg hover:scale-[1.02] shadow-black/30"
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <button
+                  onClick={() => {
+                    setScreen("welcome");
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  }}
+                  className="w-full bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-indigo-400 text-white py-4 rounded-xl font-black uppercase tracking-wide cursor-pointer border-0 shadow-lg transition-all hover:scale-[1.02] hover:shadow-indigo-500/50"
                 >
-                  🔔 Get Notified: PCR Technique Coming Soon
-                </a>
+                  <div className="flex items-center justify-center gap-2">
+                    <RefreshCw size={20} />
+                    <span>Try Again</span>
+                  </div>
+                </button>
+
+                <button
+                  onClick={() => navigate('/leaderboard')}
+                  className="w-full bg-slate-700 hover:bg-slate-600 text-white py-4 rounded-xl font-black uppercase tracking-wide cursor-pointer border-0 shadow-lg transition-all hover:scale-[1.02]"
+                >
+                  <div className="flex items-center justify-center gap-2">
+                    <Trophy size={20} />
+                    <span>Leaderboard</span>
+                  </div>
+                </button>
+
+                <button
+                  onClick={() => {
+                    const shareText = `I just ${status === "mastery" ? "achieved mastery" : "completed"} DNA Extraction on BioSim! 🧬\n\nPurity: ${a260_280} | Concentration: ${finalConc} ng/µL`;
+                    if (navigator.share) {
+                      navigator.share({ text: shareText }).catch(() => {});
+                    } else {
+                      navigator.clipboard.writeText(shareText);
+                      alert('Achievement copied to clipboard!');
+                    }
+                  }}
+                  className="w-full bg-slate-700 hover:bg-slate-600 text-white py-4 rounded-xl font-black uppercase tracking-wide cursor-pointer border-0 shadow-lg transition-all hover:scale-[1.02]"
+                >
+                  <div className="flex items-center justify-center gap-2">
+                    <Star size={20} />
+                    <span>Share</span>
+                  </div>
+                </button>
               </div>
 
-              <button onClick={() => setScreen("welcome")} className="w-full bg-indigo-900/20 py-6 rounded-2xl font-black uppercase text-indigo-400 border border-indigo-500/20 cursor-pointer shadow-lg text-xs tracking-widest transition-all hover:bg-indigo-900/30">
-                Reboot Workspace
+              <button onClick={() => setScreen("welcome")} className="w-full bg-slate-900/50 py-3 rounded-xl font-bold uppercase text-slate-400 border border-slate-700 cursor-pointer text-xs tracking-wide transition-all hover:bg-slate-900/70">
+                Return to Bench
               </button>
             </div>
           )}
@@ -2783,6 +2921,8 @@ export default function App() {
           </div>
         </div>
       )}
+
+      <AILabAssistant />
     </div>
   );
 }
