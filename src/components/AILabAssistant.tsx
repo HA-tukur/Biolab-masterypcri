@@ -111,16 +111,16 @@ export function AILabAssistant() {
       )}
 
       {isOpen && (
-        <div className="fixed bottom-6 right-6 w-96 h-[500px] bg-white rounded-2xl shadow-2xl flex flex-col z-50 border border-gray-200">
-          <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-4 rounded-t-2xl flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="bg-white/20 p-2 rounded-lg">
-                <Bot className="h-5 w-5" />
+        <div className="fixed bottom-6 right-6 w-[350px] h-[550px] bg-white rounded-2xl shadow-2xl flex flex-col z-50 border border-gray-200">
+          <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-3 rounded-t-2xl flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="bg-white/20 p-1.5 rounded-lg">
+                <Bot className="h-4 w-4" />
               </div>
               <div>
-                <h3 className="font-semibold flex items-center gap-2">
+                <h3 className="text-sm font-semibold flex items-center gap-1.5">
                   AI Lab Assistant
-                  <Sparkles className="h-4 w-4" />
+                  <Sparkles className="h-3 w-3" />
                 </h3>
                 <p className="text-xs text-blue-100">Always here to help</p>
               </div>
@@ -128,31 +128,31 @@ export function AILabAssistant() {
             <div className="flex items-center gap-1">
               <button
                 onClick={() => setIsOpen(false)}
-                className="hover:bg-white/20 p-2 rounded-lg transition-colors"
+                className="hover:bg-white/20 p-1.5 rounded-lg transition-colors"
                 aria-label="Minimize chat"
                 title="Minimize"
               >
-                <Minimize2 className="h-4 w-4" />
+                <Minimize2 className="h-3.5 w-3.5" />
               </button>
               <button
                 onClick={() => setIsOpen(false)}
-                className="hover:bg-white/20 p-2 rounded-lg transition-colors"
+                className="hover:bg-white/20 p-1.5 rounded-lg transition-colors"
                 aria-label="Close chat"
                 title="Close"
               >
-                <X className="h-5 w-5" />
+                <X className="h-4 w-4" />
               </button>
             </div>
           </div>
 
-          <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
+          <div className="flex-1 overflow-y-auto p-3 space-y-3 bg-gray-50">
             {messages.length === 0 && (
-              <div className="text-center py-8">
-                <div className="bg-gradient-to-r from-blue-100 to-purple-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Bot className="h-8 w-8 text-blue-600" />
+              <div className="text-center py-6">
+                <div className="bg-gradient-to-r from-blue-100 to-purple-100 w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-3">
+                  <Bot className="h-7 w-7 text-blue-600" />
                 </div>
-                <h4 className="font-semibold mb-2" style={{ color: '#1f2937' }}>Welcome to AI Lab Assistant!</h4>
-                <p className="text-sm max-w-xs mx-auto" style={{ color: '#4b5563' }}>
+                <h4 className="text-sm font-semibold mb-2" style={{ color: '#1f2937' }}>Welcome to AI Lab Assistant!</h4>
+                <p className="text-xs px-4" style={{ color: '#4b5563' }}>
                   Ask me anything about PCR, primer design, or molecular biology techniques.
                 </p>
               </div>
@@ -202,7 +202,7 @@ export function AILabAssistant() {
             <div ref={messagesEndRef} />
           </div>
 
-          <div className="p-4 border-t border-gray-200 bg-white rounded-b-2xl">
+          <div className="p-3 border-t border-gray-200 bg-white rounded-b-2xl">
             <div className="flex gap-2">
               <input
                 ref={inputRef}
