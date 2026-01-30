@@ -47,6 +47,7 @@ interface Certificate {
 interface LeaderboardProfile {
   is_visible: boolean;
   display_name: string;
+  real_name: string | null;
   school_name: string | null;
   country: string;
   user_type: string;
@@ -73,6 +74,7 @@ export default function StudentProfile() {
   const [leaderboardProfile, setLeaderboardProfile] = useState<LeaderboardProfile>({
     is_visible: true,
     display_name: '',
+    real_name: null,
     school_name: null,
     country: 'Unknown',
     user_type: 'independent'
@@ -86,11 +88,13 @@ export default function StudentProfile() {
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [editedProfile, setEditedProfile] = useState<{
     display_name: string;
+    real_name: string;
     school_name: string;
     country: string;
     user_type: string;
   }>({
     display_name: '',
+    real_name: '',
     school_name: '',
     country: 'Unknown',
     user_type: 'independent'
@@ -116,7 +120,7 @@ export default function StudentProfile() {
 
       const { data: profileData } = await supabase
         .from('leaderboard_profiles')
-        .select('is_visible, display_name, school_name, country, user_type')
+        .select('is_visible, display_name, real_name, school_name, country, user_type')
         .eq('student_id', id)
         .maybeSingle();
 
@@ -124,6 +128,7 @@ export default function StudentProfile() {
         const profile = {
           is_visible: profileData.is_visible ?? true,
           display_name: profileData.display_name || '',
+          real_name: profileData.real_name || null,
           school_name: profileData.school_name,
           country: profileData.country || 'Unknown',
           user_type: profileData.user_type || 'independent'
@@ -131,6 +136,7 @@ export default function StudentProfile() {
         setLeaderboardProfile(profile);
         setEditedProfile({
           display_name: profile.display_name,
+          real_name: profile.real_name || '',
           school_name: profile.school_name || '',
           country: profile.country,
           user_type: profile.user_type
@@ -221,6 +227,7 @@ export default function StudentProfile() {
 
   const downloadCertificate = async (cert: Certificate) => {
     let missionDisplayName = cert.mission;
+    let realName = '';
 
     try {
       const { data: missionData } = await supabase
@@ -232,8 +239,18 @@ export default function StudentProfile() {
       if (missionData) {
         missionDisplayName = missionData.display_name;
       }
+
+      const { data: profileData } = await supabase
+        .from('leaderboard_profiles')
+        .select('real_name')
+        .eq('student_id', studentId)
+        .maybeSingle();
+
+      if (profileData?.real_name) {
+        realName = profileData.real_name;
+      }
     } catch (err) {
-      console.error('Failed to fetch mission display name:', err);
+      console.error('Failed to fetch certificate data:', err);
     }
 
     const canvas = document.createElement('canvas');
@@ -259,33 +276,37 @@ export default function StudentProfile() {
     ctx.fillStyle = '#cbd5e1';
     ctx.fillText('This certifies that', 400, 170);
 
-    ctx.font = 'bold 36px sans-serif';
-    ctx.fillStyle = '#ffffff';
-    ctx.fillText(studentId, 400, 210);
+    if (realName) {
+      ctx.font = 'bold 36px sans-serif';
+      ctx.fillStyle = '#ffffff';
+      ctx.fillText(realName, 400, 220);
 
-    if (leaderboardProfile.display_name && leaderboardProfile.display_name !== studentId) {
-      ctx.font = '18px sans-serif';
+      ctx.font = '20px sans-serif';
       ctx.fillStyle = '#94a3b8';
-      ctx.fillText(leaderboardProfile.display_name, 400, 235);
+      ctx.fillText(`(${studentId})`, 400, 250);
+    } else {
+      ctx.font = 'bold 36px sans-serif';
+      ctx.fillStyle = '#ffffff';
+      ctx.fillText(studentId, 400, 220);
     }
 
     ctx.font = '24px sans-serif';
     ctx.fillStyle = '#cbd5e1';
-    ctx.fillText('has demonstrated mastery in', 400, 280);
+    ctx.fillText('has demonstrated mastery in', 400, 290);
 
     ctx.font = 'bold 28px sans-serif';
     ctx.fillStyle = '#6366f1';
     const finalMissionName = missionDisplayName.length > 50 ? missionDisplayName.substring(0, 47) + '...' : missionDisplayName;
-    ctx.fillText(finalMissionName, 400, 330);
+    ctx.fillText(finalMissionName, 400, 340);
 
     const successRate = Math.round((cert.success_count / cert.attempt_count) * 100);
 
     ctx.font = '20px sans-serif';
     ctx.fillStyle = '#94a3b8';
-    ctx.fillText(`Best Score: ${Math.round(cert.best_score)}%`, 400, 390);
-    ctx.fillText(`Total Attempts: ${cert.attempt_count}`, 400, 420);
-    ctx.fillText(`Success Rate: ${cert.success_count}/${cert.attempt_count} (${successRate}%)`, 400, 450);
-    ctx.fillText(`Date Earned: ${new Date(cert.date_earned).toLocaleDateString()}`, 400, 480);
+    ctx.fillText(`Best Score: ${Math.round(cert.best_score)}%`, 400, 400);
+    ctx.fillText(`Total Attempts: ${cert.attempt_count}`, 400, 430);
+    ctx.fillText(`Success Rate: ${cert.success_count}/${cert.attempt_count} (${successRate}%)`, 400, 460);
+    ctx.fillText(`Date Earned: ${new Date(cert.date_earned).toLocaleDateString()}`, 400, 490);
 
     ctx.font = 'italic 16px sans-serif';
     ctx.fillStyle = '#64748b';
@@ -373,6 +394,7 @@ export default function StudentProfile() {
   const startEditingProfile = () => {
     setEditedProfile({
       display_name: leaderboardProfile.display_name || studentId,
+      real_name: leaderboardProfile.real_name || '',
       school_name: leaderboardProfile.school_name || '',
       country: leaderboardProfile.country,
       user_type: leaderboardProfile.user_type
@@ -395,6 +417,7 @@ export default function StudentProfile() {
       const profileUpdate = {
         student_id: studentId,
         display_name: editedProfile.display_name || studentId,
+        real_name: editedProfile.real_name || null,
         school_name: editedProfile.school_name || null,
         country: editedProfile.country,
         user_type: editedProfile.user_type
@@ -417,6 +440,7 @@ export default function StudentProfile() {
       setLeaderboardProfile({
         ...leaderboardProfile,
         display_name: profileUpdate.display_name,
+        real_name: profileUpdate.real_name,
         school_name: profileUpdate.school_name,
         country: profileUpdate.country,
         user_type: profileUpdate.user_type
@@ -527,18 +551,35 @@ export default function StudentProfile() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="bg-slate-700/50 rounded-xl p-4 border border-slate-600">
-              <label className="block text-slate-400 text-sm mb-2">Display Name</label>
+              <label className="block text-slate-400 text-sm mb-2">Display Name (Leaderboard)</label>
               {isEditingProfile ? (
                 <input
                   type="text"
                   value={editedProfile.display_name}
                   onChange={(e) => setEditedProfile({ ...editedProfile, display_name: e.target.value })}
                   className="w-full bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Enter your name"
+                  placeholder="Enter display name"
                 />
               ) : (
                 <p className="text-white font-medium">
                   {leaderboardProfile.display_name || studentId}
+                </p>
+              )}
+            </div>
+
+            <div className="bg-slate-700/50 rounded-xl p-4 border border-slate-600">
+              <label className="block text-slate-400 text-sm mb-2">Real Name (Certificates)</label>
+              {isEditingProfile ? (
+                <input
+                  type="text"
+                  value={editedProfile.real_name}
+                  onChange={(e) => setEditedProfile({ ...editedProfile, real_name: e.target.value })}
+                  className="w-full bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Enter your real name"
+                />
+              ) : (
+                <p className="text-white font-medium">
+                  {leaderboardProfile.real_name || 'Not specified'}
                 </p>
               )}
             </div>
