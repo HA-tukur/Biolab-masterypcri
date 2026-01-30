@@ -1,4 +1,4 @@
-import { Microscope } from 'lucide-react';
+import { Microscope, User } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 
@@ -79,6 +79,18 @@ export default function Header() {
             }`}
           >
             Lab Bench
+          </button>
+          <button
+            onClick={() => handleNavigation('/profile')}
+            title="Student Profile"
+            className={`px-4 py-2 rounded-full text-sm font-medium transition-all whitespace-nowrap flex items-center gap-2 ${
+              currentPath === '/profile'
+                ? 'bg-[#0891b2] text-white'
+                : 'bg-transparent text-white/60 hover:text-white/80'
+            }`}
+          >
+            <User className="w-4 h-4" />
+            Profile
           </button>
           <button
             onClick={() => handleNavigation('/instructor/setup')}
