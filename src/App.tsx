@@ -930,10 +930,49 @@ const GelLaneComp = ({ bands = [], smear = false, faint = false, blank = false }
     </div>
 );
 
-const NanodropVisualComp = ({ step, measured, hasDNA = true }) => {
+const NanodropVisualComp = ({ step, measured, hasDNA = true, purityScore = 1.8 }) => {
   const armOpen = step === 'open' || step === 'clean' || step === 'blank' || step === 'load';
   const showPipette = step === 'load';
   const showSample = step === 'load' || step === 'measure' || step === 'complete' || measured;
+
+  const generateDNASpectrum = () => {
+    const noise = () => (Math.random() - 0.5) * 0.1;
+    const plateauQuality = Math.max(0, Math.min(1, (parseFloat(purityScore) - 1.4) / 0.6));
+
+    const wavelengths = [
+      { wl: 220, x: 10, abs: 0.1 + noise() },
+      { wl: 230, x: 21.25, abs: 0.15 + noise() },
+      { wl: 240, x: 32.5, abs: 0.25 + noise() },
+      { wl: 250, x: 43.75, abs: 0.7 + noise() },
+      { wl: 255, x: 49.375, abs: 1.3 + noise() },
+      { wl: 260, x: 55, abs: 1.8 + noise() },
+      { wl: 265, x: 60.625, abs: 1.75 + noise() * (1 - plateauQuality * 0.3) },
+      { wl: 270, x: 66.25, abs: 1.7 + noise() * (1 - plateauQuality * 0.5) },
+      { wl: 275, x: 71.875, abs: 1.5 + noise() * (1 - plateauQuality * 0.4) },
+      { wl: 280, x: 77.5, abs: 1.2 + noise() },
+      { wl: 285, x: 83.125, abs: 0.5 + noise() },
+      { wl: 290, x: 88.75, abs: 0.2 + noise() },
+      { wl: 295, x: 94.375, abs: 0.08 + noise() },
+      { wl: 300, x: 100, abs: 0.05 + noise() }
+    ];
+
+    const absToY = (abs) => {
+      const clampedAbs = Math.max(0, Math.min(2, abs));
+      return 60 - (clampedAbs / 2) * 45;
+    };
+
+    const points = wavelengths.map(p => ({
+      x: p.x,
+      y: absToY(p.abs)
+    }));
+
+    let pathData = `M ${points[0].x} ${points[0].y}`;
+    for (let i = 1; i < points.length; i++) {
+      pathData += ` L ${points[i].x} ${points[i].y}`;
+    }
+
+    return pathData;
+  };
 
   return (
     <div className="relative flex flex-col items-center gap-4">
@@ -964,7 +1003,7 @@ const NanodropVisualComp = ({ step, measured, hasDNA = true }) => {
               <text x="12" y="13" fill="#64748b" fontSize="6">Abs</text>
               <text x="85" y="68" fill="#64748b" fontSize="6">λ (nm)</text>
               {hasDNA ? (
-                <path d="M 10 60 Q 25 58 35 50 Q 45 30 55 20 Q 65 30 75 50 Q 85 58 100 60" stroke="#22c55e" strokeWidth="2" fill="none" className="animate-in fade-in" />
+                <path d={generateDNASpectrum()} stroke="#22c55e" strokeWidth="1.5" fill="none" className="animate-in fade-in" />
               ) : (
                 <line x1="10" y1="60" x2="100" y2="60" stroke="#ef4444" strokeWidth="2" className="animate-in fade-in" />
               )}
@@ -2465,7 +2504,7 @@ export default function App() {
                     {missionVerification.options.includes(VERIFICATION.NANODROP) && (
                       <div className={`border ${verificationDone.nanodrop ? "border-emerald-500/50 bg-emerald-900/20" : "border-slate-700 bg-slate-900"} p-6 rounded-2xl`}>
                         <div className="text-center mb-4">
-                          <NanodropVisualComp step={ndStep} measured={verificationDone.nanodrop} hasDNA={finalConc > 0} />
+                          <NanodropVisualComp step={ndStep} measured={verificationDone.nanodrop} hasDNA={finalConc > 0} purityScore={a260_280} />
                         </div>
                         {!verificationDone.nanodrop ? (
                           <div className="space-y-3">
