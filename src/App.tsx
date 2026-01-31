@@ -969,14 +969,34 @@ const LabManualOverlay = ({ onClose }) => (
         <div className="p-8 overflow-y-auto space-y-8 text-sm leading-relaxed text-slate-300 text-left text-white">
           <section className="bg-rose-900/10 border border-rose-500/20 p-4 rounded-2xl space-y-2 text-white">
             <h4 className="text-rose-400 font-bold uppercase text-xs font-mono flex items-center gap-2"><Undo2 size={14} />1. Lab Finality</h4>
-            <p className="italic font-mono text-[11px] text-slate-300">Actions in BioSim are final. If you miss a reagent or bypass a spin, you must complete the run.</p>
+            <p className="italic font-mono text-[11px] text-slate-300">Actions in BioSim are final. If you miss a reagent or bypass a spin, you must complete the run. Practice makes perfect!</p>
+          </section>
+          <section className="space-y-3 font-sans text-white">
+            <h4 className="text-indigo-300 font-bold uppercase text-xs font-mono flex items-center gap-2"><ScrollText size={14} />2. How to View Protocols</h4>
+            <p className="text-slate-300">Before starting any experiment, review the full protocol:</p>
+            <div className="bg-slate-900/30 border border-slate-700/50 p-4 rounded-xl space-y-2">
+              <p className="text-indigo-400 font-semibold text-xs flex items-center gap-2">📋 Step-by-Step:</p>
+              <ul className="space-y-1.5 text-slate-300 text-xs leading-relaxed ml-4">
+                <li>→ Click "Proceed to Bench" → "Proceed to Procurement"</li>
+                <li>→ Scroll to bottom → Click "Enter Lab"</li>
+                <li>→ Look for "📋 Protocol" button (top-right corner)</li>
+                <li>→ Click to read step-by-step instructions</li>
+                <li>→ Note which equipment and reagents you need</li>
+                <li>→ Click "Add Equipment" to return to Procurement</li>
+                <li>→ Select correct tools and reagents</li>
+                <li>→ Click "Enter Lab" again to start</li>
+              </ul>
+            </div>
+            <div className="bg-amber-900/20 border border-amber-500/30 p-3 rounded-xl">
+              <p className="text-amber-300 text-xs flex items-center gap-2"><Lightbulb size={12} /><span className="font-semibold">Tip:</span> Protocol button is always visible during experiments. Click it anytime to review steps.</p>
+            </div>
           </section>
           <section className="space-y-2 font-sans text-white">
-            <h4 className="text-indigo-300 font-bold uppercase text-xs font-mono flex items-center gap-2"><ShoppingCart size={14} />2. Procurement</h4>
-            <p className="text-slate-300">Selecting the correct Kit and Equipment is mandatory. Without appropriate buffers, failure is certain.</p>
+            <h4 className="text-indigo-300 font-bold uppercase text-xs font-mono flex items-center gap-2"><ShoppingCart size={14} />3. Procurement</h4>
+            <p className="text-slate-300">Selecting the correct Kit and Equipment is mandatory. Without appropriate buffers, failure is certain. Always review the protocol (see #2 above) before purchasing.</p>
           </section>
           <section className="space-y-2 font-sans text-white">
-            <h4 className="text-indigo-300 font-bold uppercase text-xs font-mono flex items-center gap-2"><Database size={14} />3. Lab IDs</h4>
+            <h4 className="text-indigo-300 font-bold uppercase text-xs font-mono flex items-center gap-2"><Database size={14} />4. Lab IDs</h4>
             <p className="text-slate-300">Your progress is saved to your Lab ID and tracked automatically for your learning journey.</p>
           </section>
         </div>
