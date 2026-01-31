@@ -39,7 +39,6 @@ import { TechniqueLibrary } from "./components/TechniqueLibrary";
 import { TechniqueCategories } from "./components/TechniqueCategories";
 import { CategoryTechniques } from "./components/CategoryTechniques";
 import { PCRMissions } from "./components/PCRMissions";
-import { ProtocolOverview } from "./components/ProtocolOverview";
 import { AntibodyIcon } from "./components/AntibodyIcon";
 import ClassCodePrompt from "./components/ClassCodePrompt";
 import { AILabAssistant } from "./components/AILabAssistant";
@@ -1225,7 +1224,6 @@ export default function App() {
   const [showProtocol, setShowProtocol] = useState(false);
   const [showReadinessModal, setShowReadinessModal] = useState(false);
   const [showPCRModal, setShowPCRModal] = useState(false);
-  const [showProtocolOverview, setShowProtocolOverview] = useState(false);
   const [ndStep, setNdStep] = useState("idle");
   const [gelStep, setGelStep] = useState("idle");
   const [verificationDone, setVerificationDone] = useState({ nanodrop: false, gel: false });
@@ -1742,20 +1740,6 @@ export default function App() {
       {showProtocol && <ProtocolBookOverlay onClose={() => setShowProtocol(false)} />}
       {showProtocolGuide && <ProtocolGuideOverlay onClose={() => setShowProtocolGuide(false)} missionId={missionId} />}
       {showReadinessModal && <ReadinessOverlay onClose={() => setShowReadinessModal(false)} />}
-      {showProtocolOverview && (
-        <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md overflow-y-auto">
-          <div className="w-full py-8">
-            <ProtocolOverview
-              missionId={selectedMissionId}
-              onBack={() => setShowProtocolOverview(false)}
-              onStartMission={() => {
-                setShowProtocolOverview(false);
-                setShowPCRModal(true);
-              }}
-            />
-          </div>
-        </div>
-      )}
       {showPCRModal && <PCRModule onClose={() => setShowPCRModal(false)} onComplete={() => setShowPCRModal(false)} onBackToLibrary={() => { setShowPCRModal(false); setScreen("welcome"); }} missionId={selectedMissionId} />}
       {showBioPopup && <BiologicalPopup type={showBioPopup} onClose={() => setShowBioPopup(null)} />}
 
@@ -1945,7 +1929,7 @@ export default function App() {
                 onBack={() => setScreen("category-techniques")}
                 onSelectMission={(missionId) => {
                   setSelectedMissionId(missionId);
-                  setShowProtocolOverview(true);
+                  setShowPCRModal(true);
                 }}
               />
             </div>
