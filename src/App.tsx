@@ -892,7 +892,7 @@ const ProtocolGuideOverlay = ({ onClose, missionId }) => {
     },
     B: {
       title: "Cassava Extraction Protocol",
-      subtitle: "Plant DNA Extraction - Select the appropriate kit for tough plant tissues (e.g., 20-100mg cassava). Volumes: 500/500/20 µl.",
+      subtitle: "Plant DNA Extraction - Select the Zymo kit for tough plant tissues (e.g., 20-100mg cassava). Volumes: 500/500/20 µl.",
       steps: [
         {
           title: "Tissue Disruption (Manual Grinding + Liquid N₂)",
