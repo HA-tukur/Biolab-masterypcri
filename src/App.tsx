@@ -43,6 +43,9 @@ import { ProtocolOverview } from "./components/ProtocolOverview";
 import { AntibodyIcon } from "./components/AntibodyIcon";
 import ClassCodePrompt from "./components/ClassCodePrompt";
 import { AILabAssistant } from "./components/AILabAssistant";
+import { Footer } from "./components/Footer";
+import { FeedbackButton } from "./components/FeedbackButton";
+import { ContactSection } from "./components/ContactSection";
 import { config } from "./config";
 import { getOrCreateStudentId } from "./utils/studentId";
 import { upsertCertificate } from "./utils/certificateManager";
@@ -1205,6 +1208,14 @@ export default function App() {
         setScreen('welcome');
       } else if (tab === 'manual') {
         setShowManual(true);
+      } else if (tab === 'contact') {
+        setScreen('welcome');
+        setTimeout(() => {
+          const contactElement = document.getElementById('contact');
+          if (contactElement) {
+            contactElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
+        }, 100);
       }
     };
     window.addEventListener('headerTabClick' as any, handleHeaderTabClick);
@@ -1897,6 +1908,8 @@ export default function App() {
                     </div>
                   </div>
                 </section>
+
+                <ContactSection />
               </section>
 
               <section className="space-y-8">
@@ -2884,7 +2897,11 @@ export default function App() {
             </div>
           )}
         </main>
+
+        <Footer />
       </div>
+
+      <FeedbackButton />
 
       {showSuccessModal && (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
