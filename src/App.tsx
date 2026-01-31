@@ -2955,7 +2955,8 @@ export default function App() {
         </div>
       )}
 
-      <AILabAssistant />
+      {/* AI Lab Assistant temporarily disabled - needs API key configuration */}
+      {/* <AILabAssistant /> */}
     </div>
   );
 }
