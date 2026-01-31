@@ -870,7 +870,7 @@ const ProtocolGuideOverlay = ({ onClose, missionId }) => {
   const protocolContent = {
     A: {
       title: "Clinical Tissue Biopsy Protocol",
-      subtitle: "Human/Animal DNA Extraction - Tailored for soft tissues (e.g., 3-25mg biopsies). Volumes: 2/500/500/20 µl.",
+      subtitle: "Human/Animal DNA Extraction -Select appropriate kit tailored for soft tissues (e.g., 3-25mg biopsies). Volumes: 2/500/500/20 µl.",
       steps: [
         {
           title: "Tissue Disruption (Enzymatic Digestion)",
