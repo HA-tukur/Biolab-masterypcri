@@ -64,6 +64,17 @@ export default function Header() {
               >
                 Manual
               </button>
+              <button
+                onClick={() => handleTabClick('contact')}
+                className={`text-sm transition-colors pb-0.5 whitespace-nowrap ${
+                  activeTab === 'contact'
+                    ? 'text-white font-semibold border-b-3'
+                    : 'text-white/60 hover:text-white/80 font-medium'
+                }`}
+                style={activeTab === 'contact' ? { borderBottom: '3px solid #22d3ee' } : {}}
+              >
+                Contact
+              </button>
             </div>
           )}
         </div>

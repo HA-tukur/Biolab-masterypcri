@@ -80,21 +80,32 @@ export const PrimerNotValidatedPage = ({ onTryAgain, onBackToLibrary, errors }: 
         </div>
 
         <div className="pt-4 border-t border-slate-700 space-y-3">
+          <p className="text-sm text-amber-400 font-bold">
+            How was your experience? Share feedback
+          </p>
           <p className="text-sm text-slate-400 leading-relaxed">
             Join the PCR waitlist — we'll notify you when the full PCR module launches.
           </p>
           <p className="text-sm text-slate-400 leading-relaxed">
             Thank you for being part of BioSim Lab's mission to close the biotech skills gap.
           </p>
-          <a
-            href="https://forms.gle/m5ua7v3mGZGLMSf66"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-bold transition-all no-underline"
-          >
-            <span>Submit Feedback</span>
-            <ExternalLink size={16} />
-          </a>
+          <div className="flex flex-wrap gap-3 justify-center">
+            <a
+              href="https://forms.gle/m5ua7v3mGZGLMSf66"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-bold transition-all no-underline"
+            >
+              <span>Submit Feedback</span>
+              <ExternalLink size={16} />
+            </a>
+            <a
+              href="mailto:info@biosimlab.app?subject=PCR Mission Feedback&body=I just attempted the PCR primer design mission.%0D%0A%0D%0AMy feedback:"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-bold transition-all no-underline"
+            >
+              <span>Email Us</span>
+            </a>
+          </div>
         </div>
       </div>
 
