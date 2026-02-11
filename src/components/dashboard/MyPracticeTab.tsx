@@ -17,7 +17,9 @@ interface EnrolledClass {
   id: string;
   class_name: string;
   class_code: string;
+  simulation_name: string | null;
   instructor_name: string;
+  completed: boolean;
   enrolled_at: string;
 }
 
@@ -71,13 +73,17 @@ export function MyPracticeTab() {
       const { data, error } = await supabase
         .from('class_enrollments')
         .select(`
-          id,
           enrolled_at,
-          classes (
+          completed,
+          classes!inner (
             id,
-            class_name,
+            name,
             class_code,
-            instructor_name
+            simulation_name,
+            instructor_id,
+            profiles!inner (
+              full_name
+            )
           )
         `)
         .eq('user_id', user.id)
@@ -87,9 +93,11 @@ export function MyPracticeTab() {
 
       const classes = data?.map((enrollment: any) => ({
         id: enrollment.classes.id,
-        class_name: enrollment.classes.class_name,
+        class_name: enrollment.classes.name,
         class_code: enrollment.classes.class_code,
-        instructor_name: enrollment.classes.instructor_name,
+        simulation_name: enrollment.classes.simulation_name,
+        instructor_name: enrollment.classes.profiles.full_name,
+        completed: enrollment.completed,
         enrolled_at: enrollment.enrolled_at,
       })) || [];
 
@@ -111,16 +119,33 @@ export function MyPracticeTab() {
     setJoinError('');
 
     try {
+      const normalizedCode = classCode.trim().toUpperCase();
+
       const { data: classData, error: classError } = await supabase
         .from('classes')
-        .select('id')
-        .eq('class_code', classCode.trim())
+        .select('*')
+        .eq('class_code', normalizedCode)
         .maybeSingle();
 
       if (classError) throw classError;
 
       if (!classData) {
-        setJoinError('Invalid class code. Please check and try again.');
+        setJoinError('Invalid class code');
+        setJoining(false);
+        return;
+      }
+
+      const { data: existingEnrollment, error: checkError } = await supabase
+        .from('class_enrollments')
+        .select('id')
+        .eq('class_id', classData.id)
+        .eq('user_id', user?.id)
+        .maybeSingle();
+
+      if (checkError) throw checkError;
+
+      if (existingEnrollment) {
+        setJoinError("You're already in this class");
         setJoining(false);
         return;
       }
@@ -130,17 +155,10 @@ export function MyPracticeTab() {
         .insert({
           class_id: classData.id,
           user_id: user?.id,
+          completed: false,
         });
 
-      if (enrollError) {
-        if (enrollError.code === '23505') {
-          setJoinError('You are already enrolled in this class');
-        } else {
-          throw enrollError;
-        }
-        setJoining(false);
-        return;
-      }
+      if (enrollError) throw enrollError;
 
       setClassCode('');
       setShowJoinModal(false);
@@ -224,11 +242,37 @@ export function MyPracticeTab() {
                 key={cls.id}
                 className="bg-white rounded-lg border border-gray-200 p-6 hover:shadow-md transition-shadow"
               >
-                <h3 className="text-lg font-bold text-gray-900 mb-2">{cls.class_name}</h3>
+                <div className="flex items-start justify-between mb-3">
+                  <h3 className="text-lg font-bold text-gray-900">{cls.class_name}</h3>
+                  {cls.completed ? (
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                      Completed
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                      In Progress
+                    </span>
+                  )}
+                </div>
                 <p className="text-sm text-gray-600 mb-1">
                   Instructor: {cls.instructor_name}
                 </p>
-                <p className="text-sm text-gray-500">Code: {cls.class_code}</p>
+                {cls.simulation_name && (
+                  <p className="text-sm text-gray-600 mb-1">
+                    Simulation: {cls.simulation_name}
+                  </p>
+                )}
+                <p className="text-sm text-gray-500 mb-4">Code: {cls.class_code}</p>
+
+                {cls.simulation_name && (
+                  <button
+                    onClick={() => navigate('/lab')}
+                    className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-cyan-600 hover:bg-cyan-700 text-white rounded-lg transition-colors text-sm font-medium"
+                  >
+                    {cls.completed ? 'Review Simulation' : 'Start Simulation'}
+                    <ArrowRight className="w-4 h-4" />
+                  </button>
+                )}
               </div>
             ))}
           </div>
@@ -253,9 +297,10 @@ export function MyPracticeTab() {
             <input
               type="text"
               value={classCode}
-              onChange={(e) => setClassCode(e.target.value)}
+              onChange={(e) => setClassCode(e.target.value.toUpperCase())}
               placeholder="Enter class code"
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 outline-none mb-4"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 outline-none mb-4 uppercase text-center font-semibold text-lg"
+              maxLength={6}
             />
 
             <div className="flex gap-3">
