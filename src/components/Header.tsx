@@ -150,17 +150,12 @@ export default function Header() {
               >
                 Manual
               </button>
-              <button
-                onClick={() => handleTabClick('contact')}
-                className={`text-sm transition-colors pb-0.5 whitespace-nowrap ${
-                  activeTab === 'contact'
-                    ? 'text-gray-900 font-semibold border-b-3'
-                    : 'text-gray-600 hover:text-gray-700 font-medium'
-                }`}
-                style={activeTab === 'contact' ? { borderBottom: '3px solid #22d3ee' } : {}}
+              <a
+                href="mailto:info@biosimlab.app"
+                className="text-sm font-medium text-gray-600 hover:text-gray-700 transition-colors whitespace-nowrap"
               >
                 Contact
-              </button>
+              </a>
             </div>
           )}
         </div>
