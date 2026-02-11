@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { Mail, Lock, AlertCircle, Microscope, User, Building, GraduationCap } from 'lucide-react';
+import { Mail, Lock, AlertCircle, Microscope, User, Building, GraduationCap, X } from 'lucide-react';
 
 export function SignupForm() {
   const navigate = useNavigate();
@@ -76,7 +76,14 @@ export function SignupForm() {
           <p className="text-gray-600">Start your molecular biology journey</p>
         </div>
 
-        <div className="bg-white rounded-lg border border-gray-200 p-8 shadow-sm">
+        <div className="bg-white rounded-lg border border-gray-200 p-8 shadow-sm relative">
+          <button
+            onClick={() => navigate('/')}
+            className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors"
+            aria-label="Close"
+          >
+            <X className="w-5 h-5" />
+          </button>
           <form onSubmit={handleSubmit} className="space-y-5">
               {error && (
                 <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-start gap-3">
