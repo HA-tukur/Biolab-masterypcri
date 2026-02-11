@@ -1,6 +1,12 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Microscope, Play, ChevronRight } from 'lucide-react';
+import {
+  Microscope, Play, ChevronRight, User, LogOut, HelpCircle,
+  ChevronDown, ArrowRight, Award, Clock, BookOpen, GraduationCap
+} from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { supabase } from '../lib/supabase';
+import { Footer } from './Footer';
 
 export function Homepage() {
   const { user } = useAuth();
@@ -22,32 +28,423 @@ export function Homepage() {
 }
 
 function NonAuthenticatedView({ onStartFree }: { onStartFree: () => void }) {
+  const navigate = useNavigate();
+
+  const scrollToSection = (sectionId: string) => {
+    const element = document.getElementById(sectionId);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
   return (
-    <>
+    <div className="min-h-screen bg-white">
+      {/* Header */}
+      <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+          <div className="flex items-center gap-8">
+            <button
+              onClick={() => navigate('/')}
+              className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+            >
+              <Microscope className="w-6 h-6 text-teal-700" />
+              <span className="text-xl font-bold text-gray-900">BioSimLab</span>
+            </button>
+            <nav className="hidden md:flex items-center gap-6">
+              <button
+                onClick={() => scrollToSection('how-it-works')}
+                className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors"
+              >
+                How It Works
+              </button>
+              <button
+                onClick={() => navigate('/login')}
+                className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors"
+              >
+                For Instructors
+              </button>
+              <button
+                onClick={() => scrollToSection('for-universities')}
+                className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors"
+              >
+                For Universities
+              </button>
+              <button
+                onClick={() => scrollToSection('faq')}
+                className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors"
+              >
+                FAQ
+              </button>
+            </nav>
+          </div>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => navigate('/login')}
+              className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors"
+            >
+              Log In
+            </button>
+            <button
+              onClick={() => navigate('/signup')}
+              className="px-6 py-2 bg-teal-700 hover:bg-teal-800 text-white text-sm font-medium rounded-md transition-colors"
+            >
+              Sign Up
+            </button>
+          </div>
+        </div>
+      </header>
+
       <HeroSection onStartFree={onStartFree} />
       <TestimonialSection />
       <ValuePropSection />
       <HowItWorksSection />
       <FAQSection />
       <FooterSection onStartFree={onStartFree} />
-    </>
+    </div>
   );
 }
 
 function AuthenticatedView() {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
+  const [profile, setProfile] = useState<any>(null);
+  const [certificates, setCertificates] = useState<any[]>([]);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
 
-  const firstName = user?.user_metadata?.full_name?.split(' ')[0] || 'there';
+  useEffect(() => {
+    if (user) {
+      loadUserData();
+    }
+  }, [user]);
+
+  const loadUserData = async () => {
+    if (!user) return;
+
+    const { data: profileData } = await supabase
+      .from('profiles')
+      .select('full_name, instructor_verified')
+      .eq('id', user.id)
+      .maybeSingle();
+
+    if (profileData) {
+      setProfile(profileData);
+    }
+
+    const { data: certsData } = await supabase
+      .from('certificates')
+      .select('id, mission_id, mission_name, created_at')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+      .limit(3);
+
+    if (certsData) {
+      setCertificates(certsData);
+    }
+  };
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/');
+  };
+
+  const firstName = profile?.full_name?.split(' ')[0] || user?.user_metadata?.full_name?.split(' ')[0] || 'there';
+
+  const missions = [
+    {
+      id: 'DNA_EXT_A',
+      title: 'DNA Extraction',
+      description: 'Learn to isolate high-purity genomic DNA from clinical samples',
+      estimatedTime: '30-45 min',
+      difficulty: 'Beginner',
+      available: true,
+    },
+    {
+      id: 'PCR_lagos-diagnostic',
+      title: 'PCR',
+      description: 'Master polymerase chain reaction techniques for DNA amplification',
+      estimatedTime: '45-60 min',
+      difficulty: 'Intermediate',
+      available: true,
+    },
+    {
+      id: 'WESTERN_BLOT',
+      title: 'Western Blot',
+      description: 'Detect and analyze specific proteins using antibody-based techniques',
+      estimatedTime: '60-90 min',
+      difficulty: 'Advanced',
+      available: false,
+    },
+  ];
 
   return (
-    <>
-      <DashboardHeader firstName={firstName} onResume={() => navigate('/lab')} />
-      <ValuePropSection />
-      <HowItWorksSection />
-      <FAQSection />
-      <FooterSection onStartFree={() => navigate('/lab')} />
-    </>
+    <div className="min-h-screen bg-white">
+      {/* Header */}
+      <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+          <button
+            onClick={() => navigate('/')}
+            className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+          >
+            <Microscope className="w-6 h-6 text-teal-700" />
+            <span className="text-xl font-bold text-gray-900">BioSimLab</span>
+          </button>
+
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => window.open('mailto:info@biosimlab.app', '_blank')}
+              className="flex items-center gap-2 text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors"
+            >
+              <HelpCircle className="w-4 h-4" />
+              <span className="hidden sm:inline">Help</span>
+            </button>
+
+            <div className="relative">
+              <button
+                onClick={() => setUserMenuOpen(!userMenuOpen)}
+                className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                <User className="w-5 h-5 text-gray-600" />
+                <span className="text-sm font-medium text-gray-900 hidden sm:inline">{firstName}</span>
+                <ChevronDown className="w-4 h-4 text-gray-600" />
+              </button>
+
+              {userMenuOpen && (
+                <>
+                  <div
+                    className="fixed inset-0 z-10"
+                    onClick={() => setUserMenuOpen(false)}
+                  />
+                  <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-lg shadow-lg py-1 z-20">
+                    <button
+                      onClick={() => {
+                        setUserMenuOpen(false);
+                        navigate('/profile');
+                      }}
+                      className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                    >
+                      Profile
+                    </button>
+                    <button
+                      onClick={() => {
+                        setUserMenuOpen(false);
+                        navigate('/dashboard');
+                      }}
+                      className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                    >
+                      Settings
+                    </button>
+                    <hr className="my-1 border-gray-200" />
+                    <button
+                      onClick={() => {
+                        setUserMenuOpen(false);
+                        handleSignOut();
+                      }}
+                      className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 transition-colors flex items-center gap-2"
+                    >
+                      <LogOut className="w-4 h-4" />
+                      Log out
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      </header>
+
+      {/* Main Content */}
+      <main>
+        {/* Hero Section */}
+        <section className="max-w-6xl mx-auto px-6 pt-12 pb-16">
+          <div className="text-center">
+            <h1 className="text-4xl font-bold text-gray-900 mb-4">
+              Welcome back, {firstName}
+            </h1>
+            <p className="text-lg text-gray-600 mb-8">
+              Ready to continue your biotech training?
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <button
+                onClick={() => navigate('/lab')}
+                className="px-8 py-3 bg-teal-700 hover:bg-teal-800 text-white font-medium rounded-md transition-colors inline-flex items-center justify-center gap-2"
+              >
+                <Play className="w-5 h-5" />
+                Continue Practicing
+              </button>
+              <button
+                onClick={() => document.getElementById('missions')?.scrollIntoView({ behavior: 'smooth' })}
+                className="px-8 py-3 border border-gray-300 hover:border-gray-400 text-gray-700 font-medium rounded-md transition-colors inline-flex items-center justify-center gap-2"
+              >
+                Browse Missions
+                <ArrowRight className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        </section>
+
+        {/* Your Progress Panel */}
+        <section className="bg-gray-50 border-y border-gray-200">
+          <div className="max-w-6xl mx-auto px-6 py-12">
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">Your Progress</h2>
+
+            <div className="grid md:grid-cols-3 gap-6">
+              <div className="bg-white border border-gray-200 rounded-lg p-6">
+                <div className="flex items-center gap-3 mb-2">
+                  <Award className="w-6 h-6 text-teal-700" />
+                  <h3 className="font-semibold text-gray-900">Certificates Earned</h3>
+                </div>
+                <p className="text-3xl font-bold text-gray-900 mb-2">{certificates.length}</p>
+                {certificates.length > 0 ? (
+                  <div className="space-y-2">
+                    {certificates.map(cert => (
+                      <div key={cert.id} className="text-sm text-gray-600">
+                        {cert.mission_name}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-600">Complete your first mission to earn a certificate</p>
+                )}
+              </div>
+
+              <div className="bg-white border border-gray-200 rounded-lg p-6">
+                <div className="flex items-center gap-3 mb-2">
+                  <BookOpen className="w-6 h-6 text-teal-700" />
+                  <h3 className="font-semibold text-gray-900">Recent Activity</h3>
+                </div>
+                <p className="text-sm text-gray-600">
+                  Last practiced: {certificates.length > 0 ? 'Recently' : 'Start your first mission'}
+                </p>
+                <button
+                  onClick={() => navigate('/lab')}
+                  className="mt-4 text-sm text-teal-700 hover:text-teal-800 font-medium inline-flex items-center gap-1"
+                >
+                  Resume last mission
+                  <ArrowRight className="w-4 h-4" />
+                </button>
+              </div>
+
+              <div className="bg-white border border-gray-200 rounded-lg p-6">
+                <div className="flex items-center gap-3 mb-2">
+                  <Clock className="w-6 h-6 text-teal-700" />
+                  <h3 className="font-semibold text-gray-900">Practice Time</h3>
+                </div>
+                <p className="text-3xl font-bold text-gray-900 mb-2">-</p>
+                <p className="text-sm text-gray-600">Total hours in simulations</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Available Missions Grid */}
+        <section id="missions" className="max-w-6xl mx-auto px-6 py-16">
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Available Missions</h2>
+          <p className="text-gray-600 mb-8">Choose a technique to master</p>
+
+          <div className="grid md:grid-cols-3 gap-6">
+            {missions.map((mission) => (
+              <div
+                key={mission.id}
+                className={`bg-white border rounded-lg p-6 ${
+                  mission.available
+                    ? 'border-gray-200 hover:border-teal-700 hover:shadow-lg transition-all'
+                    : 'border-gray-200 opacity-60'
+                }`}
+              >
+                <h3 className="text-xl font-bold text-gray-900 mb-2">{mission.title}</h3>
+                <p className="text-sm text-gray-600 mb-4">{mission.description}</p>
+
+                <div className="space-y-2 mb-6">
+                  <div className="flex items-center gap-2 text-sm text-gray-600">
+                    <Clock className="w-4 h-4" />
+                    <span>{mission.estimatedTime}</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm text-gray-600">
+                    <Award className="w-4 h-4" />
+                    <span>{mission.difficulty}</span>
+                  </div>
+                </div>
+
+                {mission.available ? (
+                  <button
+                    onClick={() => navigate('/lab')}
+                    className="w-full px-4 py-2 bg-teal-700 hover:bg-teal-800 text-white font-medium rounded-md transition-colors"
+                  >
+                    Start
+                  </button>
+                ) : (
+                  <button
+                    disabled
+                    className="w-full px-4 py-2 bg-gray-200 text-gray-500 font-medium rounded-md cursor-not-allowed"
+                  >
+                    Coming Soon
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* Instructor Section */}
+        {profile?.instructor_verified && (
+          <section className="bg-teal-50 border-y border-teal-100">
+            <div className="max-w-6xl mx-auto px-6 py-12">
+              <div className="flex items-center gap-3 mb-6">
+                <GraduationCap className="w-8 h-8 text-teal-700" />
+                <h2 className="text-2xl font-bold text-gray-900">For Instructors and Departments</h2>
+              </div>
+
+              <div className="grid md:grid-cols-3 gap-6">
+                <button
+                  onClick={() => navigate('/instructor/setup')}
+                  className="bg-white border border-teal-200 hover:border-teal-300 rounded-lg p-6 text-left transition-all hover:shadow-md"
+                >
+                  <h3 className="font-semibold text-gray-900 mb-2">Create a Class</h3>
+                  <p className="text-sm text-gray-600 mb-3">
+                    Set up a new class and generate a join code for your students
+                  </p>
+                  <span className="text-sm text-teal-700 font-medium inline-flex items-center gap-1">
+                    Get started
+                    <ArrowRight className="w-4 h-4" />
+                  </span>
+                </button>
+
+                <button
+                  onClick={() => navigate('/instructor/setup')}
+                  className="bg-white border border-teal-200 hover:border-teal-300 rounded-lg p-6 text-left transition-all hover:shadow-md"
+                >
+                  <h3 className="font-semibold text-gray-900 mb-2">Invite Students</h3>
+                  <p className="text-sm text-gray-600 mb-3">
+                    Share class codes and track student enrollment
+                  </p>
+                  <span className="text-sm text-teal-700 font-medium inline-flex items-center gap-1">
+                    Manage students
+                    <ArrowRight className="w-4 h-4" />
+                  </span>
+                </button>
+
+                <a
+                  href="mailto:info@biosimlab.app?subject=Department Pilot Program"
+                  className="bg-white border border-teal-200 hover:border-teal-300 rounded-lg p-6 text-left transition-all hover:shadow-md"
+                >
+                  <h3 className="font-semibold text-gray-900 mb-2">Book a Pilot</h3>
+                  <p className="text-sm text-gray-600 mb-3">
+                    Explore department-wide training programs and custom integrations
+                  </p>
+                  <span className="text-sm text-teal-700 font-medium inline-flex items-center gap-1">
+                    Contact us
+                    <ArrowRight className="w-4 h-4" />
+                  </span>
+                </a>
+              </div>
+            </div>
+          </section>
+        )}
+      </main>
+
+      {/* Footer */}
+      <Footer />
+    </div>
   );
 }
 
@@ -256,7 +653,7 @@ function FooterSection({ onStartFree }: { onStartFree: () => void }) {
           </div>
         </div>
         <div className="text-center text-sm text-gray-400 mb-6">
-          Endorsed by AMR Intervarsity Training Program • Developed by PhD scientists
+          Developed by PhD scientists
         </div>
         <div className="flex justify-center gap-6 text-sm text-gray-400">
           <a href="#" className="hover:text-white transition-colors">About</a>
@@ -269,119 +666,3 @@ function FooterSection({ onStartFree }: { onStartFree: () => void }) {
   );
 }
 
-function DashboardHeader({ firstName, onResume }: { firstName: string; onResume: () => void }) {
-  return (
-    <section className="max-w-6xl mx-auto px-6 pt-16 pb-24">
-      <h1 className="text-4xl font-bold text-gray-900 mb-8">
-        Welcome back, {firstName}
-      </h1>
-
-      <div className="bg-teal-50 border border-teal-200 rounded-md p-6 mb-8">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <div>
-            <p className="text-sm font-medium text-teal-700 mb-2">Continue where you left off</p>
-            <p className="text-lg font-semibold text-gray-900">DNA Extraction Simulation</p>
-          </div>
-          <button
-            onClick={onResume}
-            className="flex items-center gap-2 px-6 py-2 bg-teal-700 hover:bg-teal-800 text-white font-medium rounded-md transition-colors"
-          >
-            <Play className="w-4 h-4" />
-            Resume
-          </button>
-        </div>
-      </div>
-
-      <div className="bg-white border border-gray-200 rounded-md p-6">
-        <div className="flex justify-between items-center mb-3">
-          <p className="text-sm font-medium text-gray-700">Your Progress</p>
-          <p className="text-sm text-gray-600">1/5 completed</p>
-        </div>
-        <div className="w-full bg-gray-200 rounded-full h-2">
-          <div className="bg-teal-700 h-2 rounded-full" style={{ width: '20%' }}></div>
-        </div>
-      </div>
-
-      <div className="mt-12">
-        <h2 className="text-2xl font-bold text-gray-900 mb-6">Your Simulations</h2>
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          <SimulationCard
-            title="DNA Extraction"
-            status="In Progress"
-            statusColor="teal"
-            onClick={onResume}
-          />
-          <SimulationCard
-            title="PCR"
-            status="Not Started"
-            statusColor="gray"
-          />
-          <SimulationCard
-            title="Western Blot"
-            status="Not Started"
-            statusColor="gray"
-          />
-        </div>
-      </div>
-
-      <div className="mt-12">
-        <h2 className="text-2xl font-bold text-gray-900 mb-6">Recent Activity</h2>
-        <div className="space-y-4">
-          <ActivityItem
-            title="DNA Extraction Simulation"
-            timestamp="2 hours ago"
-          />
-          <ActivityItem
-            title="PCR Mission Viewed"
-            timestamp="Yesterday"
-          />
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function SimulationCard({
-  title,
-  status,
-  statusColor,
-  onClick,
-}: {
-  title: string;
-  status: string;
-  statusColor: 'teal' | 'gray';
-  onClick?: () => void;
-}) {
-  const statusStyles = {
-    teal: 'bg-teal-100 text-teal-800',
-    gray: 'bg-gray-100 text-gray-600',
-  };
-
-  return (
-    <div
-      className={`bg-white border border-gray-200 rounded-md p-6 ${onClick ? 'cursor-pointer hover:border-teal-700 transition-colors' : ''}`}
-      onClick={onClick}
-    >
-      <div className="flex justify-between items-start mb-4">
-        <h3 className="text-lg font-bold text-gray-900">{title}</h3>
-        <span className={`text-xs font-medium px-2 py-1 rounded ${statusStyles[statusColor]}`}>
-          {status}
-        </span>
-      </div>
-      {onClick && (
-        <div className="flex items-center text-teal-700 text-sm font-medium">
-          Continue <ChevronRight className="w-4 h-4 ml-1" />
-        </div>
-      )}
-    </div>
-  );
-}
-
-function ActivityItem({ title, timestamp }: { title: string; timestamp: string }) {
-  return (
-    <div className="flex justify-between items-center py-3 border-b border-gray-200">
-      <p className="text-gray-900">{title}</p>
-      <p className="text-sm text-gray-500">{timestamp}</p>
-    </div>
-  );
-}
