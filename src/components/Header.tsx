@@ -41,7 +41,7 @@ export default function Header() {
             <Microscope className="w-5 h-5 text-[#22d3ee]" />
             <span className="text-lg" style={{ fontFamily: 'sans-serif' }}>
               <span className="font-bold text-[#22d3ee]">BioSim</span>
-              <span className="font-normal text-white"> Lab</span>
+              <span className="font-normal text-gray-900"> Lab</span>
             </span>
           </button>
 
@@ -51,8 +51,8 @@ export default function Header() {
                 onClick={() => handleTabClick('home')}
                 className={`text-sm transition-colors pb-0.5 whitespace-nowrap ${
                   activeTab === 'home'
-                    ? 'text-white font-semibold border-b-3'
-                    : 'text-white/60 hover:text-white/80 font-medium'
+                    ? 'text-gray-900 font-semibold border-b-3'
+                    : 'text-gray-600 hover:text-gray-700 font-medium'
                 }`}
                 style={activeTab === 'home' ? { borderBottom: '3px solid #22d3ee' } : {}}
               >
@@ -60,7 +60,7 @@ export default function Header() {
               </button>
               <button
                 onClick={() => handleTabClick('manual')}
-                className="text-sm font-medium text-white/60 hover:text-white/80 transition-colors whitespace-nowrap"
+                className="text-sm font-medium text-gray-600 hover:text-gray-700 transition-colors whitespace-nowrap"
               >
                 Manual
               </button>
@@ -68,8 +68,8 @@ export default function Header() {
                 onClick={() => handleTabClick('contact')}
                 className={`text-sm transition-colors pb-0.5 whitespace-nowrap ${
                   activeTab === 'contact'
-                    ? 'text-white font-semibold border-b-3'
-                    : 'text-white/60 hover:text-white/80 font-medium'
+                    ? 'text-gray-900 font-semibold border-b-3'
+                    : 'text-gray-600 hover:text-gray-700 font-medium'
                 }`}
                 style={activeTab === 'contact' ? { borderBottom: '3px solid #22d3ee' } : {}}
               >
@@ -85,8 +85,8 @@ export default function Header() {
             title="Practice & Learn"
             className={`px-4 py-2 rounded-full text-sm font-medium transition-all whitespace-nowrap ${
               isLabBench
-                ? 'bg-[#0891b2] text-white'
-                : 'bg-transparent text-white/60 hover:text-white/80'
+                ? 'bg-[#0891b2] text-gray-900'
+                : 'bg-transparent text-gray-600 hover:text-gray-700'
             }`}
           >
             Lab Bench
@@ -96,8 +96,8 @@ export default function Header() {
             title="Student Profile"
             className={`px-4 py-2 rounded-full text-sm font-medium transition-all whitespace-nowrap flex items-center gap-2 ${
               currentPath === '/profile'
-                ? 'bg-[#0891b2] text-white'
-                : 'bg-transparent text-white/60 hover:text-white/80'
+                ? 'bg-[#0891b2] text-gray-900'
+                : 'bg-transparent text-gray-600 hover:text-gray-700'
             }`}
           >
             <User className="w-4 h-4" />
@@ -108,8 +108,8 @@ export default function Header() {
             title="Manage Students"
             className={`px-4 py-2 rounded-full text-sm font-medium transition-all whitespace-nowrap ${
               isInstructor
-                ? 'bg-[#0891b2] text-white'
-                : 'bg-transparent text-white/60 hover:text-white/80'
+                ? 'bg-[#0891b2] text-gray-900'
+                : 'bg-transparent text-gray-600 hover:text-gray-700'
             }`}
           >
             Instructor Portal

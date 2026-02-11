@@ -283,7 +283,7 @@ export const ProtocolOverview = ({ missionId, onBack, onStartMission }: Protocol
         <div className="flex items-center gap-4">
           <button
             onClick={onBack}
-            className="p-3 bg-gray-200 hover:bg-gray-300 rounded-lg transition-colors text-white border-0 cursor-pointer"
+            className="p-3 bg-gray-200 hover:bg-gray-300 rounded-lg transition-colors text-gray-900 border-0 cursor-pointer"
           >
             <ArrowLeft size={24} />
           </button>

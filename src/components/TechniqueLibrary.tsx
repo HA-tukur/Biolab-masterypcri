@@ -77,8 +77,6 @@ export const TechniqueLibrary: React.FC<TechniqueLibraryProps> = ({
                         : "bg-white border-gray-200 hover:border-gray-300 hover:bg-gray-50"
                   } border cursor-pointer`}
                 >
-                  <div className="absolute inset-0 bg-gradient-to-t from-indigo-600/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-
                   <div className="relative flex flex-col items-start gap-2.5">
                     <div className="flex items-start justify-between w-full">
                       <div className="text-2xl leading-none">
@@ -91,16 +89,16 @@ export const TechniqueLibrary: React.FC<TechniqueLibraryProps> = ({
                       >
                         <ChevronRight
                           size={16}
-                          className={expanded ? "text-indigo-400" : "text-slate-500"}
+                          className={expanded ? "text-white" : "text-gray-500"}
                         />
                       </div>
                     </div>
 
                     <div className="flex-1">
-                      <h4 className="text-sm font-bold text-white leading-tight">
+                      <h4 className={`text-sm font-bold leading-tight ${expanded ? 'text-white' : 'text-gray-900'}`}>
                         {categoryData.category}
                       </h4>
-                      <p className="text-[10px] text-slate-400 mt-1">
+                      <p className={`text-[10px] mt-1 ${expanded ? 'text-white/80' : 'text-gray-600'}`}>
                         {categoryData.items.length} technique
                         {categoryData.items.length !== 1 ? "s" : ""}
                       </p>
@@ -114,12 +112,12 @@ export const TechniqueLibrary: React.FC<TechniqueLibraryProps> = ({
                   </div>
 
                   {expanded && (
-                    <div className="absolute bottom-1.5 right-1.5 w-1 h-1 bg-indigo-400 rounded-full animate-pulse" />
+                    <div className="absolute bottom-1.5 right-1.5 w-1 h-1 bg-primary-500 rounded-full" />
                   )}
                 </button>
 
                 {expanded && (
-                  <div className="mt-3 space-y-2 animate-in slide-in-from-top-2 duration-300 relative z-20">
+                  <div className="mt-3 space-y-2 relative z-20">
                     {categoryData.items.map((tech) => {
                       const isActive = tech.status === "ACTIVE";
                       const isLocked = tech.status === "LOCKED";
