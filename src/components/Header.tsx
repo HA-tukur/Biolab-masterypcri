@@ -1,13 +1,16 @@
-import { Microscope, User } from 'lucide-react';
+import { Microscope, User, LogOut } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
 export default function Header() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { user, signOut } = useAuth();
   const currentPath = location.pathname;
   const isLabBench = currentPath === '/' || (!currentPath.startsWith('/instructor'));
   const isInstructor = currentPath.startsWith('/instructor');
+  const isAuthPage = currentPath === '/login' || currentPath === '/signup';
   const [activeTab, setActiveTab] = useState('home');
 
   useEffect(() => {
@@ -28,6 +31,11 @@ export default function Header() {
       handleNavigation('/');
     }
     window.dispatchEvent(new CustomEvent('headerTabClick', { detail: { tab } }));
+  };
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/login');
   };
 
   return (
@@ -80,40 +88,60 @@ export default function Header() {
         </div>
 
         <div className="flex items-center gap-1">
-          <button
-            onClick={() => handleNavigation('/')}
-            title="Practice & Learn"
-            className={`px-4 py-2 rounded-full text-sm font-medium transition-all whitespace-nowrap ${
-              isLabBench
-                ? 'bg-[#0891b2] text-gray-900'
-                : 'bg-transparent text-gray-600 hover:text-gray-700'
-            }`}
-          >
-            Lab Bench
-          </button>
-          <button
-            onClick={() => handleNavigation('/profile')}
-            title="Student Profile"
-            className={`px-4 py-2 rounded-full text-sm font-medium transition-all whitespace-nowrap flex items-center gap-2 ${
-              currentPath === '/profile'
-                ? 'bg-[#0891b2] text-gray-900'
-                : 'bg-transparent text-gray-600 hover:text-gray-700'
-            }`}
-          >
-            <User className="w-4 h-4" />
-            Profile
-          </button>
-          <button
-            onClick={() => handleNavigation('/instructor/setup')}
-            title="Manage Students"
-            className={`px-4 py-2 rounded-full text-sm font-medium transition-all whitespace-nowrap ${
-              isInstructor
-                ? 'bg-[#0891b2] text-gray-900'
-                : 'bg-transparent text-gray-600 hover:text-gray-700'
-            }`}
-          >
-            Instructor Portal
-          </button>
+          {!isAuthPage && user && (
+            <>
+              <button
+                onClick={() => handleNavigation('/')}
+                title="Practice & Learn"
+                className={`px-4 py-2 rounded-full text-sm font-medium transition-all whitespace-nowrap ${
+                  isLabBench
+                    ? 'bg-[#0891b2] text-white'
+                    : 'bg-transparent text-gray-600 hover:text-gray-700'
+                }`}
+              >
+                Lab Bench
+              </button>
+              <button
+                onClick={() => handleNavigation('/profile')}
+                title="Student Profile"
+                className={`px-4 py-2 rounded-full text-sm font-medium transition-all whitespace-nowrap flex items-center gap-2 ${
+                  currentPath === '/profile'
+                    ? 'bg-[#0891b2] text-white'
+                    : 'bg-transparent text-gray-600 hover:text-gray-700'
+                }`}
+              >
+                <User className="w-4 h-4" />
+                Profile
+              </button>
+              <button
+                onClick={() => handleNavigation('/instructor/setup')}
+                title="Manage Students"
+                className={`px-4 py-2 rounded-full text-sm font-medium transition-all whitespace-nowrap ${
+                  isInstructor
+                    ? 'bg-[#0891b2] text-white'
+                    : 'bg-transparent text-gray-600 hover:text-gray-700'
+                }`}
+              >
+                Instructor Portal
+              </button>
+              <button
+                onClick={handleSignOut}
+                title="Sign Out"
+                className="px-4 py-2 rounded-full text-sm font-medium transition-all whitespace-nowrap flex items-center gap-2 bg-transparent text-gray-600 hover:text-gray-700"
+              >
+                <LogOut className="w-4 h-4" />
+                Sign Out
+              </button>
+            </>
+          )}
+          {!isAuthPage && !user && (
+            <button
+              onClick={() => handleNavigation('/login')}
+              className="px-4 py-2 rounded-full text-sm font-medium transition-all whitespace-nowrap bg-cyan-600 hover:bg-cyan-700 text-white"
+            >
+              Sign In
+            </button>
+          )}
         </div>
       </div>
     </header>
