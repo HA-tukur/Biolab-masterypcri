@@ -5,6 +5,7 @@ import { ProtectedRoute } from './routes/ProtectedRoute';
 import Header from './components/Header';
 import { LoginForm } from './components/auth/LoginForm';
 import { SignupForm } from './components/auth/SignupForm';
+import { VerificationPending } from './components/auth/VerificationPending';
 
 const App = lazy(() => import('./App'));
 const InstructorSetup = lazy(() => import('./components/InstructorSetup').then(m => ({ default: m.InstructorSetup })));
@@ -28,6 +29,7 @@ export default function Router() {
           <Routes>
             <Route path="/login" element={<LoginForm />} />
             <Route path="/signup" element={<SignupForm />} />
+            <Route path="/verify-email" element={<VerificationPending />} />
             <Route path="/" element={<ProtectedRoute><App /></ProtectedRoute>} />
             <Route path="/leaderboard" element={<Leaderboard />} />
             <Route path="/profile" element={<ProtectedRoute><StudentProfile /></ProtectedRoute>} />
