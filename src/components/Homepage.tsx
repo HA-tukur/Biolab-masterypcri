@@ -256,7 +256,7 @@ function FooterSection({ onStartFree }: { onStartFree: () => void }) {
           </div>
         </div>
         <div className="text-center text-sm text-gray-400 mb-6">
-          Endorsed by AMR Intervarsity Training Program • Developed by PhD scientists
+          Developed by PhD scientists
         </div>
         <div className="flex justify-center gap-6 text-sm text-gray-400">
           <a href="#" className="hover:text-white transition-colors">About</a>
