@@ -280,11 +280,17 @@ export function SignupForm() {
               </button>
             </form>
 
-            <div className="mt-6 text-center">
+            <div className="mt-6 text-center space-y-3">
               <p className="text-sm text-gray-600">
                 Already have an account?{' '}
                 <Link to="/login" className="text-cyan-600 hover:text-cyan-700 font-medium">
                   Sign in
+                </Link>
+              </p>
+              <p className="text-sm text-gray-600">
+                Just browsing?{' '}
+                <Link to="/simulations" className="text-cyan-600 hover:text-cyan-700 font-medium inline-flex items-center gap-1">
+                  Continue as guest →
                 </Link>
               </p>
             </div>
