@@ -2,11 +2,13 @@ import { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { ProtectedRoute } from './routes/ProtectedRoute';
+import { AdminRoute } from './routes/AdminRoute';
 import Header from './components/Header';
 import { LoginForm } from './components/auth/LoginForm';
 import { SignupForm } from './components/auth/SignupForm';
 import { VerificationPending } from './components/auth/VerificationPending';
 import { Homepage } from './components/Homepage';
+import { AdminDashboard } from './components/admin/AdminDashboard';
 
 const App = lazy(() => import('./App'));
 const InstructorSetup = lazy(() => import('./components/InstructorSetup').then(m => ({ default: m.InstructorSetup })));
@@ -17,10 +19,11 @@ const Leaderboard = lazy(() => import('./components/Leaderboard'));
 function AppContent() {
   const location = useLocation();
   const isAuthPage = ['/login', '/signup', '/verify-email'].includes(location.pathname);
+  const isAdminPage = location.pathname.startsWith('/admin');
 
   return (
     <>
-      {!isAuthPage && <Header />}
+      {!isAuthPage && !isAdminPage && <Header />}
       <Suspense fallback={
         <div className="flex items-center justify-center h-screen">
           <div className="text-center">
@@ -39,6 +42,7 @@ function AppContent() {
           <Route path="/profile" element={<ProtectedRoute><StudentProfile /></ProtectedRoute>} />
           <Route path="/instructor/setup" element={<InstructorSetup />} />
           <Route path="/instructor/:code" element={<InstructorDashboard />} />
+          <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
         </Routes>
       </Suspense>
     </>
