@@ -206,17 +206,17 @@ export default function Leaderboard() {
   };
 
   const getRankBadge = (rank: number) => {
-    if (rank === 1) return 'bg-gradient-to-r from-yellow-600 to-amber-500 border-yellow-400';
-    if (rank === 2) return 'bg-gradient-to-r from-gray-400 to-slate-400 border-gray-300';
+    if (rank === 1) return 'bg-yellow-500 border-yellow-500';
+    if (rank === 2) return 'bg-gray-400 border-gray-400';
     if (rank === 3) return 'bg-gradient-to-r from-amber-700 to-orange-600 border-amber-500';
     if (rank <= 10) return 'bg-gradient-to-r from-indigo-900/40 to-purple-900/40 border-indigo-500/30';
     return 'bg-slate-800 border-slate-700';
   };
 
   return (
-    <div className="min-h-screen bg-slate-900 text-white">
+    <div className="min-h-screen bg-white text-gray-900">
       <div className="max-w-7xl mx-auto px-4 py-8">
-        <div className="bg-gradient-to-br from-amber-900/40 via-slate-800 to-indigo-900/40 border-2 border-amber-500/50 rounded-2xl p-8 mb-8">
+        <div className="bg-white border border-gray-200 rounded-lg p-8 mb-8">
           <div className="flex items-center justify-between flex-wrap gap-4">
             <div className="flex items-center gap-4">
               <div className="bg-amber-600 p-4 rounded-xl">

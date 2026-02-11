@@ -283,7 +283,7 @@ export const ProtocolOverview = ({ missionId, onBack, onStartMission }: Protocol
         <div className="flex items-center gap-4">
           <button
             onClick={onBack}
-            className="p-3 bg-slate-700 hover:bg-slate-600 rounded-lg transition-colors text-white border-0 cursor-pointer"
+            className="p-3 bg-gray-200 hover:bg-gray-300 rounded-lg transition-colors text-white border-0 cursor-pointer"
           >
             <ArrowLeft size={24} />
           </button>
@@ -295,7 +295,7 @@ export const ProtocolOverview = ({ missionId, onBack, onStartMission }: Protocol
           </div>
         </div>
 
-        <div className="bg-slate-800 border border-emerald-500/50 rounded-3xl p-8 space-y-6">
+        <div className="bg-slate-800 border border-emerald-500/50 rounded-lg p-8 space-y-6">
           <div className="space-y-2">
             <h2 className="text-2xl md:text-3xl font-black uppercase text-white">
               {protocol.title}
@@ -370,7 +370,7 @@ export const ProtocolOverview = ({ missionId, onBack, onStartMission }: Protocol
           <div className="flex gap-4 pt-4">
             <button
               onClick={() => setShowFullProtocol(true)}
-              className="flex-1 flex items-center justify-center gap-2 bg-slate-700 hover:bg-slate-600 text-white py-4 rounded-xl font-bold uppercase border-0 cursor-pointer transition-all"
+              className="flex-1 flex items-center justify-center gap-2 bg-gray-200 hover:bg-gray-300 text-white py-4 rounded-xl font-bold uppercase border-0 cursor-pointer transition-all"
             >
               <FileText size={20} />
               View Full Protocol
@@ -388,7 +388,7 @@ export const ProtocolOverview = ({ missionId, onBack, onStartMission }: Protocol
 
       {showFullProtocol && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-950/90 backdrop-blur-md overflow-y-auto">
-          <div className="bg-slate-800 border border-emerald-500/50 w-full max-w-4xl rounded-3xl shadow-2xl overflow-hidden my-8">
+          <div className="bg-slate-800 border border-emerald-500/50 w-full max-w-4xl rounded-lg shadow-2xl overflow-hidden my-8">
             <div className="p-6 border-b border-slate-700 flex justify-between items-center bg-slate-900/50 sticky top-0 z-10">
               <h3 className="text-xl font-black uppercase text-emerald-400">Full Protocol Details</h3>
               <button

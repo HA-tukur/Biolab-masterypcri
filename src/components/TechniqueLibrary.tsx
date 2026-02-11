@@ -69,12 +69,12 @@ export const TechniqueLibrary: React.FC<TechniqueLibraryProps> = ({
               >
                 <button
                   onClick={() => toggleCategory(categoryData.category)}
-                  className={`relative rounded-xl p-4 transition-all duration-300 overflow-hidden group ${
+                  className={`relative rounded-lg p-4 transition-all duration-300 overflow-hidden group ${
                     expanded
-                      ? "bg-gradient-to-br from-indigo-600/40 to-indigo-700/30 border-indigo-400 shadow-lg shadow-indigo-500/25 z-20"
+                      ? "bg-primary-500 border-primary-500 shadow-sm text-white z-20"
                       : expandedCategory
-                        ? "bg-slate-800/40 border-slate-700 opacity-60"
-                        : "bg-slate-800 border-slate-700 hover:border-slate-600 hover:shadow-lg hover:shadow-slate-900/50"
+                        ? "bg-gray-100 border-gray-200 opacity-60"
+                        : "bg-white border-gray-200 hover:border-gray-300 hover:bg-gray-50"
                   } border cursor-pointer`}
                 >
                   <div className="absolute inset-0 bg-gradient-to-t from-indigo-600/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
@@ -136,7 +136,7 @@ export const TechniqueLibrary: React.FC<TechniqueLibraryProps> = ({
                           className={`w-full rounded-lg p-3 border transition-all duration-200 text-left group/tech ${
                             isActive
                               ? "bg-slate-800/60 border-indigo-500/40 hover:border-indigo-400/60 hover:bg-slate-800/80 hover:shadow-md hover:shadow-indigo-500/15 cursor-pointer"
-                              : "bg-slate-800/40 border-slate-700/50 opacity-50 cursor-not-allowed"
+                              : "bg-gray-100 border-gray-200/50 opacity-50 cursor-not-allowed"
                           }`}
                         >
                           <div className="flex items-start justify-between gap-2">
