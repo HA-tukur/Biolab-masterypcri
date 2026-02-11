@@ -65,6 +65,12 @@ export default function Header() {
                 How It Works
               </button>
               <button
+                onClick={() => handleNavigation('/login')}
+                className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors"
+              >
+                For Instructors
+              </button>
+              <button
                 onClick={() => scrollToSection('for-universities')}
                 className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors"
               >
@@ -106,7 +112,7 @@ export default function Header() {
                   onClick={() => handleNavigation('/signup')}
                   className="px-6 py-2 bg-teal-700 hover:bg-teal-800 text-white text-sm font-medium rounded-md transition-colors"
                 >
-                  Start Free
+                  Sign Up
                 </button>
               </>
             )}
@@ -176,7 +182,7 @@ export default function Header() {
               </button>
               <button
                 onClick={() => handleNavigation('/profile')}
-                title="Student Profile"
+                title="Profile"
                 className={`px-4 py-2 rounded-full text-sm font-medium transition-all whitespace-nowrap flex items-center gap-2 ${
                   currentPath === '/profile'
                     ? 'bg-[#0891b2] text-white'
@@ -188,7 +194,7 @@ export default function Header() {
               </button>
               <button
                 onClick={() => handleNavigation('/instructor/setup')}
-                title="Manage Students"
+                title="Instructor Portal"
                 className={`px-4 py-2 rounded-full text-sm font-medium transition-all whitespace-nowrap ${
                   isInstructor
                     ? 'bg-[#0891b2] text-white'
