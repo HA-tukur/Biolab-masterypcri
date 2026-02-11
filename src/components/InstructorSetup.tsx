@@ -1,50 +1,107 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { GraduationCap, ChevronRight, Sparkles, Key, LogIn, AlertTriangle, Copy, CheckCircle2 } from 'lucide-react';
-import { createClient } from '@supabase/supabase-js';
-import { config } from '../config';
-import { MISSIONS_DATA } from '../data/missions';
+import { GraduationCap, ChevronRight, Sparkles, AlertTriangle, Copy, CheckCircle2, Loader2 } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+import { supabase } from '../lib/supabase';
 
-const supabase = createClient(config.supabase.url, config.supabase.anonKey);
-
-const AVAILABLE_MISSIONS = [
-  { id: 'DNA_EXT_A', name: 'DNA Extraction A - Superbug Clinical Diagnostic', category: 'DNA Extraction' },
-  { id: 'DNA_EXT_B', name: 'DNA Extraction B - Cassava Pathogen Sequencing', category: 'DNA Extraction' },
-  { id: 'PCR_lagos-diagnostic', name: 'PCR - Lagos Diagnostic Hub (Sickle Cell)', category: 'PCR' },
-  { id: 'PCR_great-green-wall', name: 'PCR - Great Green Wall Rescue (Drought Tolerance)', category: 'PCR' },
+const AVAILABLE_SIMULATIONS = [
+  { id: 'DNA Extraction', name: 'DNA Extraction' },
+  { id: 'PCR', name: 'PCR' },
+  { id: 'Western Blot', name: 'Western Blot' },
 ];
+
+interface InstructorStatus {
+  verified: boolean;
+  quota: number;
+  classesCreated: number;
+}
 
 export function InstructorSetup() {
   const navigate = useNavigate();
-  const [view, setView] = useState<'create' | 'login' | 'success'>('create');
+  const { user } = useAuth();
+  const [instructorStatus, setInstructorStatus] = useState<InstructorStatus | null>(null);
+  const [checkingStatus, setCheckingStatus] = useState(true);
   const [className, setClassName] = useState('');
-  const [instructorName, setInstructorName] = useState('');
-  const [selectedMission, setSelectedMission] = useState('');
-  const [adminKeyInput, setAdminKeyInput] = useState('');
+  const [selectedSimulation, setSelectedSimulation] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [successData, setSuccessData] = useState<{ classCode: string; adminKey: string } | null>(null);
-  const [copiedField, setCopiedField] = useState<'classCode' | 'adminKey' | null>(null);
+  const [successData, setSuccessData] = useState<{ classCode: string } | null>(null);
+  const [copiedField, setCopiedField] = useState<'classCode' | null>(null);
 
-  const generateClassCode = () => {
-    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-    let code = '';
-    for (let i = 0; i < 6; i++) {
-      code += chars.charAt(Math.floor(Math.random() * chars.length));
+  useEffect(() => {
+    checkInstructorStatus();
+  }, [user]);
+
+  const checkInstructorStatus = async () => {
+    if (!user) {
+      navigate('/dashboard');
+      return;
     }
-    return code;
+
+    try {
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('instructor_verified, classes_quota')
+        .eq('id', user.id)
+        .maybeSingle();
+
+      if (profileError) throw profileError;
+
+      if (!profile || !profile.instructor_verified) {
+        navigate('/dashboard', { state: { message: 'Request instructor access first' } });
+        return;
+      }
+
+      const { count, error: countError } = await supabase
+        .from('classes')
+        .select('id', { count: 'exact', head: true })
+        .eq('instructor_id', user.id);
+
+      if (countError) throw countError;
+
+      setInstructorStatus({
+        verified: profile.instructor_verified,
+        quota: profile.classes_quota,
+        classesCreated: count || 0,
+      });
+    } catch (error) {
+      console.error('Error checking instructor status:', error);
+      setError('Failed to load instructor status');
+    } finally {
+      setCheckingStatus(false);
+    }
   };
 
-  const generateAdminKey = () => {
+  const generateClassCode = async (): Promise<string> => {
     const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-    let key = 'ADM-';
-    for (let i = 0; i < 6; i++) {
-      key += chars.charAt(Math.floor(Math.random() * chars.length));
+    let attempts = 0;
+    const maxAttempts = 10;
+
+    while (attempts < maxAttempts) {
+      let code = '';
+      for (let i = 0; i < 6; i++) {
+        code += chars.charAt(Math.floor(Math.random() * chars.length));
+      }
+
+      const { data, error } = await supabase
+        .from('classes')
+        .select('class_code')
+        .eq('class_code', code)
+        .maybeSingle();
+
+      if (error) throw error;
+
+      if (!data) {
+        return code;
+      }
+
+      attempts++;
     }
-    return key;
+
+    throw new Error('Failed to generate unique class code');
   };
 
-  const copyToClipboard = async (text: string, field: 'classCode' | 'adminKey') => {
+  const copyToClipboard = async (text: string, field: 'classCode') => {
     try {
       await navigator.clipboard.writeText(text);
       setCopiedField(field);
@@ -55,13 +112,18 @@ export function InstructorSetup() {
   };
 
   const handleCreateClass = async () => {
-    if (!className.trim() || !instructorName.trim()) {
-      setError('Please fill in all fields');
+    if (!className.trim()) {
+      setError('Please enter a class name');
       return;
     }
 
-    if (!selectedMission) {
-      setError('Please select a target module');
+    if (!selectedSimulation) {
+      setError('Please select a simulation');
+      return;
+    }
+
+    if (!instructorStatus || instructorStatus.classesCreated >= instructorStatus.quota) {
+      setError('You have reached your class creation limit');
       return;
     }
 
@@ -69,28 +131,27 @@ export function InstructorSetup() {
     setError('');
 
     try {
-      const classCode = generateClassCode();
-      const adminKey = generateAdminKey();
+      const classCode = await generateClassCode();
 
-      const { data, error: insertError } = await supabase
+      const { error: insertError } = await supabase
         .from('classes')
         .insert({
+          instructor_id: user?.id,
+          name: className.trim(),
           class_code: classCode,
-          class_name: className.trim(),
-          instructor_name: instructorName.trim(),
-          admin_key: adminKey,
-          mission_id: selectedMission
-        })
-        .select();
+          simulation_name: selectedSimulation,
+        });
 
       if (insertError) {
         console.error('Supabase error:', insertError);
         throw insertError;
       }
 
-      console.log('Class created successfully:', data);
-      setSuccessData({ classCode, adminKey });
-      setView('success');
+      setSuccessData({ classCode });
+      setInstructorStatus({
+        ...instructorStatus,
+        classesCreated: instructorStatus.classesCreated + 1,
+      });
     } catch (err: any) {
       console.error('Error creating class:', err);
       const errorMessage = err?.message || 'Failed to create class. Please try again.';
@@ -100,120 +161,67 @@ export function InstructorSetup() {
     }
   };
 
-  const handleLoginWithAdminKey = async () => {
-    if (!adminKeyInput.trim()) {
-      setError('Please enter your admin key');
-      return;
-    }
-
-    setLoading(true);
-    setError('');
-
-    try {
-      const { data, error: queryError } = await supabase
-        .from('classes')
-        .select('class_code')
-        .eq('admin_key', adminKeyInput.trim())
-        .maybeSingle();
-
-      if (queryError) {
-        console.error('Supabase error:', queryError);
-        throw queryError;
-      }
-
-      if (!data) {
-        setError('Invalid admin key. Please check and try again.');
-        return;
-      }
-
-      navigate(`/instructor/${data.class_code}`);
-    } catch (err: any) {
-      console.error('Error logging in:', err);
-      const errorMessage = err?.message || 'Failed to login. Please try again.';
-      setError(errorMessage);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const goToDashboard = () => {
-    if (successData) {
-      navigate(`/instructor/${successData.classCode}`);
-    }
+    navigate('/dashboard');
   };
 
-  if (view === 'success' && successData) {
+  if (checkingStatus) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-indigo-900 to-slate-900">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="w-8 h-8 animate-spin text-cyan-600 mx-auto mb-4" />
+          <p className="text-gray-600">Loading instructor status...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (successData) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
         <div className="max-w-2xl mx-auto px-4 py-16">
           <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-emerald-500/20 border-2 border-emerald-400/50 mb-6">
-              <CheckCircle2 size={40} className="text-emerald-400" />
+            <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-green-100 border-2 border-green-400 mb-6">
+              <CheckCircle2 size={40} className="text-green-600" />
             </div>
-            <h1 className="text-4xl font-black text-white mb-4">Class Created Successfully!</h1>
-            <p className="text-slate-300 text-lg">Save both codes below to manage your class</p>
+            <h1 className="text-4xl font-bold text-gray-900 mb-4">Class Created Successfully!</h1>
+            <p className="text-gray-600 text-lg">Share this code with your students</p>
           </div>
 
-          <div className="space-y-4">
-            <div className="bg-slate-800/50 border border-slate-700 rounded-2xl p-6 backdrop-blur-sm">
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="text-sm font-bold text-slate-300 uppercase tracking-wide">Student Join Code</h3>
-                <span className="text-xs text-slate-400">Share with students</span>
-              </div>
-              <div className="bg-slate-900/50 border border-slate-600 rounded-lg p-4 mb-3">
-                <p className="text-3xl font-black text-white text-center tracking-wider">{successData.classCode}</p>
-              </div>
-              <button
-                onClick={() => copyToClipboard(successData.classCode, 'classCode')}
-                className="w-full bg-indigo-600/20 hover:bg-indigo-600/30 border border-indigo-500/30 text-indigo-300 font-bold py-2 rounded-lg transition-all text-sm flex items-center justify-center gap-2"
-              >
-                {copiedField === 'classCode' ? (
-                  <>
-                    <CheckCircle2 size={16} />
-                    Copied!
-                  </>
-                ) : (
-                  <>
-                    <Copy size={16} />
-                    Copy Code
-                  </>
-                )}
-              </button>
+          <div className="bg-white border border-gray-200 rounded-2xl p-8 shadow-sm">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-sm font-bold text-gray-700 uppercase tracking-wide">Student Join Code</h3>
+              <span className="text-xs text-gray-500">Share with students</span>
             </div>
-
-            <div className="bg-amber-900/20 border border-amber-500/30 rounded-2xl p-6 backdrop-blur-sm">
-              <div className="flex items-center gap-2 mb-3">
-                <AlertTriangle size={20} className="text-amber-400" />
-                <h3 className="text-sm font-bold text-amber-300 uppercase tracking-wide">Private Admin Key</h3>
-              </div>
-              <p className="text-amber-200/80 text-xs mb-3">Save this key to resume your session later. Do not share with students.</p>
-              <div className="bg-slate-900/50 border border-amber-600/30 rounded-lg p-4 mb-3">
-                <p className="text-2xl font-black text-amber-100 text-center tracking-wider">{successData.adminKey}</p>
-              </div>
-              <button
-                onClick={() => copyToClipboard(successData.adminKey, 'adminKey')}
-                className="w-full bg-amber-600/20 hover:bg-amber-600/30 border border-amber-500/30 text-amber-300 font-bold py-2 rounded-lg transition-all text-sm flex items-center justify-center gap-2"
-              >
-                {copiedField === 'adminKey' ? (
-                  <>
-                    <CheckCircle2 size={16} />
-                    Copied!
-                  </>
-                ) : (
-                  <>
-                    <Copy size={16} />
-                    Copy Admin Key
-                  </>
-                )}
-              </button>
+            <div className="bg-gray-50 border border-gray-200 rounded-lg p-6 mb-4">
+              <p className="text-4xl font-black text-gray-900 text-center tracking-wider">{successData.classCode}</p>
             </div>
+            <button
+              onClick={() => copyToClipboard(successData.classCode, 'classCode')}
+              className="w-full bg-cyan-600 hover:bg-cyan-700 text-white font-bold py-3 rounded-lg transition-all text-sm flex items-center justify-center gap-2 mb-4"
+            >
+              {copiedField === 'classCode' ? (
+                <>
+                  <CheckCircle2 size={16} />
+                  Copied!
+                </>
+              ) : (
+                <>
+                  <Copy size={16} />
+                  Copy Code
+                </>
+              )}
+            </button>
+            <p className="text-sm text-gray-600 text-center mb-4">
+              Share this code: <span className="font-mono font-bold">{successData.classCode}</span>
+            </p>
           </div>
 
           <button
             onClick={goToDashboard}
-            className="w-full mt-6 bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-4 rounded-xl transition-all uppercase tracking-wider text-sm flex items-center justify-center gap-2 group"
+            className="w-full mt-6 bg-gray-800 hover:bg-gray-900 text-white font-bold py-4 rounded-xl transition-all text-sm flex items-center justify-center gap-2 group"
           >
-            Go to Dashboard
+            Back to Dashboard
             <ChevronRight size={20} className="group-hover:translate-x-1 transition-transform" />
           </button>
         </div>
@@ -221,200 +229,154 @@ export function InstructorSetup() {
     );
   }
 
+  const quotaReached = instructorStatus && instructorStatus.classesCreated >= instructorStatus.quota;
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-indigo-900 to-slate-900">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
       <div className="max-w-2xl mx-auto px-4 py-16">
-        <div className="text-center mb-12">
-          <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-indigo-500/20 border-2 border-indigo-400/50 mb-6">
-            <GraduationCap size={40} className="text-indigo-400" />
+        <div className="text-center mb-8">
+          <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-cyan-100 border-2 border-cyan-400 mb-6">
+            <GraduationCap size={40} className="text-cyan-600" />
           </div>
-          <h1 className="text-4xl font-black text-white mb-4">Instructor Portal</h1>
-          <p className="text-slate-300 text-lg">
-            {view === 'create' ? 'Create a class and get your unique access code' : 'Resume your existing session'}
+          <h1 className="text-4xl font-bold text-gray-900 mb-4">Create a Class</h1>
+          <p className="text-gray-600 text-lg">
+            Set up a new class for your students
           </p>
         </div>
 
-        <div className="flex gap-2 mb-6">
-          <button
-            onClick={() => {
-              setView('create');
-              setError('');
-            }}
-            className={`flex-1 py-3 rounded-lg font-bold text-sm uppercase tracking-wide transition-all ${
-              view === 'create'
-                ? 'bg-indigo-600 text-white'
-                : 'bg-slate-800/50 text-slate-400 hover:bg-slate-800 border border-slate-700'
-            }`}
-          >
-            Create New Class
-          </button>
-          <button
-            onClick={() => {
-              setView('login');
-              setError('');
-            }}
-            className={`flex-1 py-3 rounded-lg font-bold text-sm uppercase tracking-wide transition-all ${
-              view === 'login'
-                ? 'bg-indigo-600 text-white'
-                : 'bg-slate-800/50 text-slate-400 hover:bg-slate-800 border border-slate-700'
-            }`}
-          >
-            Resume Session
-          </button>
-        </div>
+        {instructorStatus && (
+          <div className="bg-white border border-gray-200 rounded-lg p-4 mb-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-700">Classes Created</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {instructorStatus.classesCreated} / {instructorStatus.quota}
+                </p>
+              </div>
+              <div className={`px-4 py-2 rounded-full ${
+                quotaReached
+                  ? 'bg-red-100 text-red-800'
+                  : 'bg-green-100 text-green-800'
+              }`}>
+                <p className="text-sm font-bold">
+                  {quotaReached ? 'Quota Reached' : `${instructorStatus.quota - instructorStatus.classesCreated} Remaining`}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
 
-        <div className="bg-slate-800/50 border border-slate-700 rounded-2xl p-8 backdrop-blur-sm">
-          {view === 'create' ? (
+        {quotaReached ? (
+          <div className="bg-amber-50 border border-amber-200 rounded-2xl p-8 text-center">
+            <AlertTriangle size={48} className="text-amber-600 mx-auto mb-4" />
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">
+              You've Used All {instructorStatus?.quota} Free Classes
+            </h2>
+            <p className="text-gray-600 mb-6">
+              Contact us to increase your class creation limit
+            </p>
+            <a
+              href="mailto:info@biosimlab.app"
+              className="inline-block bg-cyan-600 hover:bg-cyan-700 text-white font-bold py-3 px-6 rounded-lg transition-all"
+            >
+              Contact: info@biosimlab.app
+            </a>
+          </div>
+        ) : (
+          <div className="bg-white border border-gray-200 rounded-2xl p-8 shadow-sm">
             <div className="space-y-6">
               <div>
-                <label htmlFor="instructorName" className="block text-sm font-bold text-slate-300 mb-2 uppercase tracking-wide">
-                  Instructor Name
-                </label>
-                <input
-                  id="instructorName"
-                  type="text"
-                  value={instructorName}
-                  onChange={(e) => setInstructorName(e.target.value)}
-                  placeholder="Dr. Smith"
-                  className="w-full bg-slate-900/50 border border-slate-600 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20"
-                />
-              </div>
-
-              <div>
-                <label htmlFor="className" className="block text-sm font-bold text-slate-300 mb-2 uppercase tracking-wide">
-                  Class Name
+                <label htmlFor="className" className="block text-sm font-bold text-gray-700 mb-2">
+                  Class Name <span className="text-red-500">*</span>
                 </label>
                 <input
                   id="className"
                   type="text"
                   value={className}
                   onChange={(e) => setClassName(e.target.value)}
-                  placeholder="Biology 101 - Section A"
-                  className="w-full bg-slate-900/50 border border-slate-600 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20"
+                  placeholder="e.g., Biology 101 - Section A"
+                  className="w-full bg-white border border-gray-300 rounded-lg px-4 py-3 text-gray-900 placeholder-gray-400 focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20"
+                  required
                 />
               </div>
 
               <div>
-                <label htmlFor="targetModule" className="block text-sm font-bold text-slate-300 mb-2 uppercase tracking-wide">
-                  Select Target Module
+                <label htmlFor="simulation" className="block text-sm font-bold text-gray-700 mb-2">
+                  Simulation <span className="text-red-500">*</span>
                 </label>
                 <select
-                  id="targetModule"
-                  value={selectedMission}
-                  onChange={(e) => setSelectedMission(e.target.value)}
-                  className="w-full bg-slate-900/50 border border-slate-600 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20"
+                  id="simulation"
+                  value={selectedSimulation}
+                  onChange={(e) => setSelectedSimulation(e.target.value)}
+                  className="w-full bg-white border border-gray-300 rounded-lg px-4 py-3 text-gray-900 focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20"
+                  required
                 >
-                  <option value="" className="bg-slate-900">Select a module...</option>
-                  {AVAILABLE_MISSIONS.map((mission) => (
-                    <option
-                      key={mission.id}
-                      value={mission.id}
-                      disabled={mission.locked}
-                      className="bg-slate-900"
-                    >
-                      {mission.name} {mission.locked ? '(Coming Soon)' : ''}
+                  <option value="">Select a simulation...</option>
+                  {AVAILABLE_SIMULATIONS.map((sim) => (
+                    <option key={sim.id} value={sim.id}>
+                      {sim.name}
                     </option>
                   ))}
                 </select>
-                <p className="text-slate-400 text-xs mt-2">Students will be directed to this module when they join</p>
+                <p className="text-gray-500 text-xs mt-2">Students will practice this simulation</p>
               </div>
 
               {error && (
-                <div className="bg-rose-900/20 border border-rose-500/30 rounded-lg p-4">
-                  <p className="text-rose-300 text-sm">{error}</p>
+                <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                  <p className="text-red-800 text-sm">{error}</p>
                 </div>
               )}
 
               <button
                 onClick={handleCreateClass}
                 disabled={loading}
-                className="w-full bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-700 disabled:cursor-not-allowed text-white font-bold py-4 rounded-xl transition-all uppercase tracking-wider text-sm flex items-center justify-center gap-2 group"
+                className="w-full bg-cyan-600 hover:bg-cyan-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-bold py-4 rounded-xl transition-all text-sm flex items-center justify-center gap-2 group"
               >
                 {loading ? (
-                  <>Creating Class...</>
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    Creating Class...
+                  </>
                 ) : (
                   <>
                     <Sparkles size={20} />
-                    Generate Class Code
+                    Create Class
                     <ChevronRight size={20} className="group-hover:translate-x-1 transition-transform" />
                   </>
                 )}
               </button>
 
-              <div className="mt-8 pt-8 border-t border-slate-700">
-                <h3 className="text-slate-300 font-bold mb-3 uppercase tracking-wide text-sm">What happens next?</h3>
-                <ul className="space-y-2 text-slate-400 text-sm">
+              <div className="mt-6 pt-6 border-t border-gray-200">
+                <h3 className="text-gray-700 font-bold mb-3 text-sm">What happens next?</h3>
+                <ul className="space-y-2 text-gray-600 text-sm">
                   <li className="flex items-start gap-2">
-                    <span className="text-indigo-400 font-bold mt-0.5">1.</span>
-                    <span>You'll receive a unique 6-character class code and a private admin key</span>
+                    <span className="text-cyan-600 font-bold mt-0.5">1.</span>
+                    <span>You'll receive a unique 6-character class code</span>
                   </li>
                   <li className="flex items-start gap-2">
-                    <span className="text-indigo-400 font-bold mt-0.5">2.</span>
-                    <span>Share the class code with your students (not the admin key)</span>
+                    <span className="text-cyan-600 font-bold mt-0.5">2.</span>
+                    <span>Share the class code with your students</span>
                   </li>
                   <li className="flex items-start gap-2">
-                    <span className="text-indigo-400 font-bold mt-0.5">3.</span>
-                    <span>Students will be automatically directed to your selected module</span>
+                    <span className="text-cyan-600 font-bold mt-0.5">3.</span>
+                    <span>Students will join and complete the assigned simulation</span>
                   </li>
                   <li className="flex items-start gap-2">
-                    <span className="text-indigo-400 font-bold mt-0.5">4.</span>
-                    <span>Save your admin key to resume your session anytime</span>
+                    <span className="text-cyan-600 font-bold mt-0.5">4.</span>
+                    <span>Track their progress from your dashboard</span>
                   </li>
                 </ul>
               </div>
             </div>
-          ) : (
-            <div className="space-y-6">
-              <div>
-                <label htmlFor="adminKey" className="block text-sm font-bold text-slate-300 mb-2 uppercase tracking-wide">
-                  Admin Key
-                </label>
-                <div className="relative">
-                  <Key size={20} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
-                  <input
-                    id="adminKey"
-                    type="text"
-                    value={adminKeyInput}
-                    onChange={(e) => setAdminKeyInput(e.target.value.toUpperCase())}
-                    placeholder="ADM-XXXXXX"
-                    className="w-full bg-slate-900/50 border border-slate-600 rounded-lg pl-11 pr-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 font-mono"
-                  />
-                </div>
-                <p className="text-slate-400 text-xs mt-2">Enter your private admin key to access your instructor dashboard</p>
-              </div>
+          </div>
+        )}
 
-              {error && (
-                <div className="bg-rose-900/20 border border-rose-500/30 rounded-lg p-4">
-                  <p className="text-rose-300 text-sm">{error}</p>
-                </div>
-              )}
-
-              <button
-                onClick={handleLoginWithAdminKey}
-                disabled={loading}
-                className="w-full bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-700 disabled:cursor-not-allowed text-white font-bold py-4 rounded-xl transition-all uppercase tracking-wider text-sm flex items-center justify-center gap-2 group"
-              >
-                {loading ? (
-                  <>Logging In...</>
-                ) : (
-                  <>
-                    <LogIn size={20} />
-                    Access Dashboard
-                    <ChevronRight size={20} className="group-hover:translate-x-1 transition-transform" />
-                  </>
-                )}
-              </button>
-
-              <div className="mt-8 pt-8 border-t border-slate-700">
-                <h3 className="text-slate-300 font-bold mb-3 uppercase tracking-wide text-sm">Need Help?</h3>
-                <p className="text-slate-400 text-sm">
-                  Your admin key was provided when you created your class. It follows the format ADM-XXXXXX.
-                  If you've lost your admin key, you'll need to create a new class.
-                </p>
-              </div>
-            </div>
-          )}
-        </div>
+        <button
+          onClick={goToDashboard}
+          className="w-full mt-6 text-center text-gray-600 hover:text-gray-900 font-medium py-3 transition-colors"
+        >
+          Back to Dashboard
+        </button>
       </div>
     </div>
   );
