@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { GraduationCap, Lock, CheckCircle, Users, Copy, Trash2, Plus, Clock } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../lib/supabase';
+import { InstructorRequestModal } from './InstructorRequestModal';
 
 interface Profile {
   instructor_verified: boolean;
@@ -28,8 +29,7 @@ export function InstructorPortalTab() {
   const [request, setRequest] = useState<InstructorRequest | null>(null);
   const [classes, setClasses] = useState<Class[]>([]);
   const [loading, setLoading] = useState(true);
-  const [requestMessage, setRequestMessage] = useState('');
-  const [submitting, setSubmitting] = useState(false);
+  const [showRequestModal, setShowRequestModal] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -78,29 +78,6 @@ export function InstructorPortalTab() {
       console.error('Error loading data:', error);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleRequestAccess = async () => {
-    if (!user) return;
-
-    setSubmitting(true);
-    try {
-      const { error } = await supabase
-        .from('instructor_requests')
-        .insert({
-          user_id: user.id,
-          message: requestMessage.trim() || null,
-        });
-
-      if (error) throw error;
-
-      await loadData();
-      setRequestMessage('');
-    } catch (error) {
-      console.error('Error submitting request:', error);
-    } finally {
-      setSubmitting(false);
     }
   };
 
@@ -169,22 +146,12 @@ export function InstructorPortalTab() {
           </div>
 
           {!hasPendingRequest ? (
-            <>
-              <textarea
-                value={requestMessage}
-                onChange={(e) => setRequestMessage(e.target.value)}
-                placeholder="Tell us about your teaching role (optional)"
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 outline-none mb-4 resize-none"
-                rows={3}
-              />
-              <button
-                onClick={handleRequestAccess}
-                disabled={submitting}
-                className="w-full py-3 bg-cyan-600 hover:bg-cyan-700 disabled:bg-gray-400 text-white font-medium rounded-lg transition-colors"
-              >
-                {submitting ? 'Submitting...' : 'Request Instructor Access'}
-              </button>
-            </>
+            <button
+              onClick={() => setShowRequestModal(true)}
+              className="w-full py-3 bg-cyan-600 hover:bg-cyan-700 text-white font-medium rounded-lg transition-colors"
+            >
+              Request Instructor Access
+            </button>
           ) : (
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex items-center gap-3">
               <Clock className="w-5 h-5 text-blue-600 flex-shrink-0" />
@@ -198,6 +165,12 @@ export function InstructorPortalTab() {
             Free for verified instructors. We'll review your request within 24-48 hours.
           </p>
         </div>
+
+        <InstructorRequestModal
+          isOpen={showRequestModal}
+          onClose={() => setShowRequestModal(false)}
+          onSuccess={() => loadData()}
+        />
       </div>
     );
   }
