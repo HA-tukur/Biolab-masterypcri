@@ -22,11 +22,10 @@ function AppContent() {
   const isAuthPage = ['/login', '/signup', '/verify-email'].includes(location.pathname);
   const isAdminPage = location.pathname.startsWith('/admin');
   const isDashboardPage = location.pathname === '/dashboard';
-  const isHomepage = location.pathname === '/';
 
   return (
     <>
-      {!isAuthPage && !isAdminPage && !isDashboardPage && !isHomepage && <Header />}
+      {!isAuthPage && !isAdminPage && !isDashboardPage && <Header />}
       <Suspense fallback={
         <div className="flex items-center justify-center h-screen">
           <div className="text-center">
