@@ -46,6 +46,9 @@ import { AILabAssistant } from "./components/AILabAssistant";
 import { Footer } from "./components/Footer";
 import { FeedbackButton } from "./components/FeedbackButton";
 import { ContactSection } from "./components/ContactSection";
+import { SignupBanner } from "./components/SignupBanner";
+import { SignupModal } from "./components/SignupModal";
+import { useAnonymousUser } from "./hooks/useAnonymousUser";
 import { config } from "./config";
 import { getOrCreateStudentId } from "./utils/studentId";
 import { upsertCertificate } from "./utils/certificateManager";
@@ -1317,6 +1320,9 @@ export default function App() {
   const [difficultyMode, setDifficultyMode] = useState("learning");
   const [challengeModeErrors, setChallengeModeErrors] = useState([]);
   const [showProtocolGuide, setShowProtocolGuide] = useState(false);
+  const [guestModeDismissed, setGuestModeDismissed] = useState(false);
+
+  const anonymousUser = useAnonymousUser();
 
   const has = (itemId) => inventory.includes(itemId);
 
@@ -1696,6 +1702,7 @@ export default function App() {
       if (data) {
         setSavedRecordId(data.id);
         setShowSuccessModal(true);
+        anonymousUser.recordSimulation(missionTitle);
       }
 
       await upsertCertificate(studentId, missionTitle, parseFloat(localPurity));
@@ -1752,6 +1759,20 @@ export default function App() {
     <div className="min-h-screen text-slate-100 font-sans bg-[#0f172a]">
       {console.log('Rendering App, screen state:', screen)}
 
+      {anonymousUser.shouldShowBanner && !guestModeDismissed && (
+        <SignupBanner
+          isLastChance={anonymousUser.isLastChance}
+          onDismiss={anonymousUser.dismissBanner}
+        />
+      )}
+
+      {anonymousUser.shouldShowModal && !guestModeDismissed && (
+        <SignupModal
+          simulationCount={anonymousUser.simulationCount}
+          onContinueAsGuest={() => setGuestModeDismissed(true)}
+        />
+      )}
+
       {showClassCodePrompt && (
         <ClassCodePrompt
           onComplete={() => {
@@ -1790,7 +1811,15 @@ export default function App() {
       {showPCRModal && <PCRModule onClose={() => setShowPCRModal(false)} onComplete={() => setShowPCRModal(false)} onBackToLibrary={() => { setShowPCRModal(false); setScreen("welcome"); }} missionId={selectedMissionId} />}
       {showBioPopup && <BiologicalPopup type={showBioPopup} onClose={() => setShowBioPopup(null)} />}
 
-      <div className="px-4">
+      {guestModeDismissed && anonymousUser.shouldShowModal && (
+        <div className="fixed top-0 left-0 right-0 z-40 bg-amber-50 border-b border-amber-200 py-3 px-4">
+          <p className="text-sm text-amber-900 text-center font-medium">
+            Unlock all modules — <button onClick={() => navigate('/signup')} className="underline hover:text-amber-950">Sign up free</button>
+          </p>
+        </div>
+      )}
+
+      <div className={`px-4 ${anonymousUser.shouldShowBanner && !guestModeDismissed ? 'pt-[60px] md:pt-[70px]' : ''} ${guestModeDismissed && anonymousUser.shouldShowModal ? 'pt-[48px]' : ''}`}>
         <main>
           {screen === "welcome" && (
             <div className="space-y-12 animate-in fade-in py-8">
@@ -1939,6 +1968,13 @@ export default function App() {
                     if (tech.id === "DNA_EXT") setScreen("missions");
                     if (tech.id === "PCR") setShowPCRModal(true);
                   }}
+                  lockedTechniqueIds={
+                    guestModeDismissed && anonymousUser.shouldShowModal
+                      ? TECHNIQUE_LIBRARY.flatMap(cat => cat.items)
+                          .filter(item => item.id !== 'DNA_EXT')
+                          .map(item => item.id)
+                      : []
+                  }
                 />
               </section>
             </div>

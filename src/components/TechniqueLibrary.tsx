@@ -18,11 +18,13 @@ interface TechniqueCategory {
 interface TechniqueLibraryProps {
   data: TechniqueCategory[];
   onTechniqueClick?: (tech: TechniqueItem) => void;
+  lockedTechniqueIds?: string[];
 }
 
 export const TechniqueLibrary: React.FC<TechniqueLibraryProps> = ({
   data,
-  onTechniqueClick
+  onTechniqueClick,
+  lockedTechniqueIds = []
 }) => {
   const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
 
@@ -119,8 +121,9 @@ export const TechniqueLibrary: React.FC<TechniqueLibraryProps> = ({
                 {expanded && (
                   <div className="mt-3 space-y-2 relative z-20">
                     {categoryData.items.map((tech) => {
-                      const isActive = tech.status === "ACTIVE";
-                      const isLocked = tech.status === "LOCKED";
+                      const isGuestLocked = lockedTechniqueIds.includes(tech.id);
+                      const isActive = tech.status === "ACTIVE" && !isGuestLocked;
+                      const isLocked = tech.status === "LOCKED" || isGuestLocked;
 
                       return (
                         <button
@@ -188,7 +191,7 @@ export const TechniqueLibrary: React.FC<TechniqueLibraryProps> = ({
 
                           {isLocked && (
                             <p className="text-[10px] text-amber-500/70 font-bold uppercase mt-1.5 ml-8">
-                              Coming Soon
+                              {isGuestLocked ? 'Sign up to unlock' : 'Coming Soon'}
                             </p>
                           )}
                         </button>
