@@ -9,6 +9,7 @@ import { SignupForm } from './components/auth/SignupForm';
 import { VerificationPending } from './components/auth/VerificationPending';
 import { Homepage } from './components/Homepage';
 import { AdminDashboard } from './components/admin/AdminDashboard';
+import { Dashboard } from './components/Dashboard';
 
 const App = lazy(() => import('./App'));
 const InstructorSetup = lazy(() => import('./components/InstructorSetup').then(m => ({ default: m.InstructorSetup })));
@@ -20,10 +21,11 @@ function AppContent() {
   const location = useLocation();
   const isAuthPage = ['/login', '/signup', '/verify-email'].includes(location.pathname);
   const isAdminPage = location.pathname.startsWith('/admin');
+  const isDashboardPage = location.pathname === '/dashboard';
 
   return (
     <>
-      {!isAuthPage && !isAdminPage && <Header />}
+      {!isAuthPage && !isAdminPage && !isDashboardPage && <Header />}
       <Suspense fallback={
         <div className="flex items-center justify-center h-screen">
           <div className="text-center">
@@ -37,6 +39,7 @@ function AppContent() {
           <Route path="/signup" element={<SignupForm />} />
           <Route path="/verify-email" element={<VerificationPending />} />
           <Route path="/" element={<Homepage />} />
+          <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
           <Route path="/lab" element={<ProtectedRoute><App /></ProtectedRoute>} />
           <Route path="/leaderboard" element={<Leaderboard />} />
           <Route path="/profile" element={<ProtectedRoute><StudentProfile /></ProtectedRoute>} />
