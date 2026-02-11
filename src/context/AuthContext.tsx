@@ -8,8 +8,8 @@ export interface SignUpData {
   fullName: string;
   university: string;
   programDepartment: string;
-  yearOfStudy?: string;
-  referralSource?: string;
+  yearOfStudy: string;
+  referralSource: string;
 }
 
 interface AuthContextType {

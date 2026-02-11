@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { Mail, Lock, AlertCircle, Microscope, User, Building, GraduationCap, X } from 'lucide-react';
+import { Mail, Lock, AlertCircle, Microscope, User, Building, GraduationCap, X, Lightbulb } from 'lucide-react';
 
 export function SignupForm() {
   const navigate = useNavigate();
@@ -32,7 +32,7 @@ export function SignupForm() {
       return;
     }
 
-    if (!fullName.trim() || !university.trim() || !programDepartment.trim()) {
+    if (!fullName.trim() || !university.trim() || !programDepartment.trim() || !yearOfStudy.trim() || !referralSource.trim()) {
       setError('Please fill in all required fields');
       return;
     }
@@ -60,7 +60,7 @@ export function SignupForm() {
       setError(error.message);
       setLoading(false);
     } else {
-      navigate('/verify-email');
+      navigate('/dashboard');
     }
   };
 
@@ -93,24 +93,6 @@ export function SignupForm() {
               )}
 
               <div>
-                <label htmlFor="fullName" className="block text-sm font-medium text-gray-700 mb-2">
-                  Full Name <span className="text-red-500">*</span>
-                </label>
-                <div className="relative">
-                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                  <input
-                    id="fullName"
-                    type="text"
-                    value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
-                    required
-                    className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 outline-none transition-colors"
-                    placeholder="John Doe"
-                  />
-                </div>
-              </div>
-
-              <div>
                 <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
                   Email Address <span className="text-red-500">*</span>
                 </label>
@@ -124,6 +106,60 @@ export function SignupForm() {
                     required
                     className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 outline-none transition-colors"
                     placeholder="you@example.com"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
+                  Password <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <input
+                    id="password"
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 outline-none transition-colors"
+                    placeholder="At least 8 characters"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-2">
+                  Confirm Password <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <input
+                    id="confirmPassword"
+                    type="password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    required
+                    className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 outline-none transition-colors"
+                    placeholder="Re-enter your password"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label htmlFor="fullName" className="block text-sm font-medium text-gray-700 mb-2">
+                  Full Name <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <input
+                    id="fullName"
+                    type="text"
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    required
+                    className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 outline-none transition-colors"
+                    placeholder="John Doe"
                   />
                 </div>
               </div>
@@ -175,7 +211,7 @@ export function SignupForm() {
 
               <div>
                 <label htmlFor="programDepartment" className="block text-sm font-medium text-gray-700 mb-2">
-                  Program/Department <span className="text-red-500">*</span>
+                  Program / Department <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
                   <GraduationCap className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -186,89 +222,66 @@ export function SignupForm() {
                     onChange={(e) => setProgramDepartment(e.target.value)}
                     required
                     className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 outline-none transition-colors"
-                    placeholder="Biochemistry"
+                    placeholder="e.g., Biochemistry, Microbiology"
                   />
                 </div>
               </div>
 
               <div>
                 <label htmlFor="yearOfStudy" className="block text-sm font-medium text-gray-700 mb-2">
-                  Year of Study
+                  Year of Study <span className="text-red-500">*</span>
                 </label>
                 <select
                   id="yearOfStudy"
                   value={yearOfStudy}
                   onChange={(e) => setYearOfStudy(e.target.value)}
+                  required
                   className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 outline-none transition-colors"
                 >
-                  <option value="">Select year (optional)</option>
-                  <option value="100L">100L</option>
-                  <option value="200L">200L</option>
-                  <option value="300L">300L</option>
-                  <option value="400L">400L</option>
-                  <option value="500L">500L</option>
-                  <option value="MSc">MSc</option>
-                  <option value="PhD">PhD</option>
-                  <option value="Lecturer">Lecturer</option>
+                  <option value="">Select your year/level</option>
+                  <option value="Undergraduate (Year 1)">Undergraduate (Year 1)</option>
+                  <option value="Undergraduate (Year 2)">Undergraduate (Year 2)</option>
+                  <option value="Undergraduate (Year 3)">Undergraduate (Year 3)</option>
+                  <option value="Undergraduate (Year 4)">Undergraduate (Year 4)</option>
+                  <option value="Undergraduate (Year 5)">Undergraduate (Year 5)</option>
+                  <option value="Masters Student">Masters Student</option>
+                  <option value="PhD Student">PhD Student</option>
+                  <option value="Postdoctoral Researcher">Postdoctoral Researcher</option>
+                  <option value="Faculty/Instructor">Faculty/Instructor</option>
                   <option value="Lab Technician">Lab Technician</option>
-                  <option value="Staff">Staff</option>
-                </select>
-              </div>
-
-              <div>
-                <label htmlFor="referralSource" className="block text-sm font-medium text-gray-700 mb-2">
-                  How did you hear about us?
-                </label>
-                <select
-                  id="referralSource"
-                  value={referralSource}
-                  onChange={(e) => setReferralSource(e.target.value)}
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 outline-none transition-colors"
-                >
-                  <option value="">Select source (optional)</option>
-                  <option value="WhatsApp Group">WhatsApp Group</option>
-                  <option value="Lecturer">Lecturer</option>
-                  <option value="Friend">Friend</option>
-                  <option value="Social Media">Social Media</option>
-                  <option value="AMR-ITP">AMR-ITP</option>
+                  <option value="Industry Professional">Industry Professional</option>
                   <option value="Other">Other</option>
                 </select>
               </div>
 
               <div>
-                <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
-                  Password <span className="text-red-500">*</span>
+                <label htmlFor="referralSource" className="block text-sm font-medium text-gray-700 mb-2">
+                  How did you hear about us? <span className="text-red-500">*</span>
                 </label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                  <input
-                    id="password"
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                    className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 outline-none transition-colors"
-                    placeholder="At least 8 characters"
-                  />
-                </div>
+                <select
+                  id="referralSource"
+                  value={referralSource}
+                  onChange={(e) => setReferralSource(e.target.value)}
+                  required
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 outline-none transition-colors"
+                >
+                  <option value="">Select a source</option>
+                  <option value="Lecturer/Professor Recommendation">Lecturer/Professor Recommendation</option>
+                  <option value="Friend/Colleague">Friend/Colleague</option>
+                  <option value="Social Media (LinkedIn, Twitter, etc.)">Social Media (LinkedIn, Twitter, etc.)</option>
+                  <option value="WhatsApp/Telegram Group">WhatsApp/Telegram Group</option>
+                  <option value="Google Search">Google Search</option>
+                  <option value="University/Program Announcement">University/Program Announcement</option>
+                  <option value="Conference/Workshop">Conference/Workshop</option>
+                  <option value="Other">Other</option>
+                </select>
               </div>
 
-              <div>
-                <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-2">
-                  Confirm Password <span className="text-red-500">*</span>
-                </label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                  <input
-                    id="confirmPassword"
-                    type="password"
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    required
-                    className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 outline-none transition-colors"
-                    placeholder="Re-enter your password"
-                  />
-                </div>
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex items-start gap-3">
+                <Lightbulb className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                <p className="text-sm text-blue-800">
+                  <strong>Faculty & Instructors:</strong> Request instructor access after signup to create classes and track student progress. Free for verified instructors.
+                </p>
               </div>
 
               <button
