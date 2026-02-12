@@ -27,36 +27,28 @@ export function InstructorRequestsAdmin() {
       setLoading(true);
       setError(null);
 
-      const { data, error: fetchError } = await supabase
-        .from('instructor_requests')
-        .select(`
-          id,
-          user_id,
-          status,
-          department,
-          course_taught,
-          student_count,
-          university_email,
-          reason,
-          created_at,
-          requested_at
-        `)
-        .eq('status', 'pending')
-        .order('created_at', { ascending: false });
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error('Not authenticated');
+      }
 
-      if (fetchError) throw fetchError;
+      const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/get-instructor-requests`;
 
-      const requestsWithEmails = await Promise.all(
-        (data || []).map(async (request) => {
-          const { data: userData } = await supabase.auth.admin.getUserById(request.user_id);
-          return {
-            ...request,
-            email: userData?.user?.email || 'Unknown',
-          };
-        })
-      );
+      const response = await fetch(apiUrl, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json',
+        },
+      });
 
-      setRequests(requestsWithEmails);
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to fetch requests');
+      }
+
+      const { requests: fetchedRequests } = await response.json();
+      setRequests(fetchedRequests);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch requests');
       console.error('Error fetching requests:', err);
