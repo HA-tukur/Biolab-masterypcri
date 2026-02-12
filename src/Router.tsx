@@ -10,6 +10,7 @@ import { VerificationPending } from './components/auth/VerificationPending';
 import { Homepage } from './components/Homepage';
 import { AdminDashboard } from './components/admin/AdminDashboard';
 import { Dashboard } from './components/Dashboard';
+import { BrowseSimulations } from './components/BrowseSimulations';
 
 const App = lazy(() => import('./App'));
 const InstructorSetup = lazy(() => import('./components/InstructorSetup').then(m => ({ default: m.InstructorSetup })));
@@ -39,6 +40,7 @@ function AppContent() {
           <Route path="/signup" element={<SignupForm />} />
           <Route path="/verify-email" element={<VerificationPending />} />
           <Route path="/" element={<Homepage />} />
+          <Route path="/browse" element={<BrowseSimulations />} />
           <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
           <Route path="/lab" element={<ProtectedRoute><App /></ProtectedRoute>} />
           <Route path="/leaderboard" element={<Leaderboard />} />

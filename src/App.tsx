@@ -1827,188 +1827,265 @@ export default function App() {
         <main>
           {screen === "welcome" && (
             <div className="space-y-12 animate-in fade-in">
-              <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
-                <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Microscope className="w-6 h-6 text-teal-700" />
-                    <span className="text-xl font-bold text-gray-900">BioSimLab</span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <button
-                      onClick={() => navigate('/login')}
-                      className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors"
-                    >
-                      Log In
-                    </button>
-                    <button
-                      onClick={() => navigate('/signup')}
-                      className="px-6 py-2 bg-teal-700 hover:bg-teal-800 text-white text-sm font-medium rounded-md transition-colors"
-                    >
-                      Sign Up
-                    </button>
-                  </div>
-                </div>
-              </header>
-              <section className="text-center space-y-6 max-w-4xl mx-auto px-6 pt-8">
-                <h1 className="text-3xl md:text-5xl font-bold text-gray-900 leading-tight">
-                  Practice Lab Protocols Before Your First Real Experiment
-                </h1>
+              {!user && (
+                <>
+                  <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
+                    <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Microscope className="w-6 h-6 text-teal-700" />
+                        <span className="text-xl font-bold text-gray-900">BioSimLab</span>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <button
+                          onClick={() => navigate('/login')}
+                          className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors"
+                        >
+                          Log In
+                        </button>
+                        <button
+                          onClick={() => navigate('/signup')}
+                          className="px-6 py-2 bg-teal-700 hover:bg-teal-800 text-white text-sm font-medium rounded-md transition-colors"
+                        >
+                          Sign Up
+                        </button>
+                      </div>
+                    </div>
+                  </header>
+                  <section className="text-center space-y-6 max-w-4xl mx-auto px-6 pt-8">
+                    <h1 className="text-3xl md:text-5xl font-bold text-gray-900 leading-tight">
+                      Practice Lab Protocols Before Your First Real Experiment
+                    </h1>
 
-                <p className="text-xl text-gray-600 leading-relaxed max-w-3xl mx-auto">
-                  Built for students who lack equipment access—fail safely,
-                  learn consequences, build confidence before touching real reagents.
-                </p>
-
-                <div className="bg-gray-50 border border-gray-200 p-4 rounded-md">
-                  <p className="text-gray-700 font-medium text-base flex items-center justify-center gap-6 flex-wrap">
-                    <span className="flex items-center gap-2">
-                      <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                      </svg>
-                      Free to Use
-                    </span>
-                    <span className="text-gray-400">•</span>
-                    <span className="flex items-center gap-2">
-                      <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                      </svg>
-                      No Download Required
-                    </span>
-                    <span className="text-gray-400">•</span>
-                    <span className="flex items-center gap-2">
-                      <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                      </svg>
-                      Works on Any Device
-                    </span>
-                  </p>
-                </div>
-                <div className="bg-teal-50 border-l-4 border-teal-700 rounded-md p-6 mx-auto max-w-4xl my-12 text-left">
-                  <h3 className="text-teal-900 text-xl font-bold mb-2">
-                    Practice & Learn
-                  </h3>
-                  <p className="text-gray-700 text-base leading-relaxed">
-                    Make mistakes safely. Get instant feedback. Build confidence.
-                    Start with <strong className="text-teal-900 font-semibold">DNA Extraction (15 mins)</strong>. More techniques soon.
-                  </p>
-                </div>
-                <button
-                  onClick={() => setScreen("categories")}
-                  className="bg-teal-700 hover:bg-teal-800 text-white px-8 py-3 rounded-md font-medium text-lg transition-colors border-0 cursor-pointer"
-                >
-                  Start Practicing Now
-                </button>
-
-
-                <section className="max-w-6xl mx-auto bg-white rounded-lg shadow-sm border border-gray-200 p-8 md:p-12">
-                  <div className="text-center mb-8">
-                    <h2 className="text-3xl font-bold text-gray-900 mb-3">
-                      Choose your learning path
-                    </h2>
-                    <p className="text-gray-600 text-lg">
-                      All paths access the same high-quality simulations.
+                    <p className="text-xl text-gray-600 leading-relaxed max-w-3xl mx-auto">
+                      Built for students who lack equipment access—fail safely,
+                      learn consequences, build confidence before touching real reagents.
                     </p>
-                  </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div
-                      onClick={() => setShowClassCodePrompt(true)}
-                      className="bg-white border-2 border-gray-200 p-6 rounded-md cursor-pointer hover:border-teal-700 transition-colors group"
-                    >
-                      <div className="bg-teal-50 w-14 h-14 rounded-md flex items-center justify-center mb-4">
-                        <GraduationCap size={28} className="text-teal-700" />
-                      </div>
-                      <h3 className="text-gray-900 font-bold text-xl mb-2">University Student</h3>
-                      <p className="text-gray-600 text-sm mb-4 leading-relaxed">
-                        Join your instructor's class. Enter code to sync with your faculty dashboard.
+                    <div className="bg-gray-50 border border-gray-200 p-4 rounded-md">
+                      <p className="text-gray-700 font-medium text-base flex items-center justify-center gap-6 flex-wrap">
+                        <span className="flex items-center gap-2">
+                          <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                          </svg>
+                          Free to Use
+                        </span>
+                        <span className="text-gray-400">•</span>
+                        <span className="flex items-center gap-2">
+                          <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                          </svg>
+                          No Download Required
+                        </span>
+                        <span className="text-gray-400">•</span>
+                        <span className="flex items-center gap-2">
+                          <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                          </svg>
+                          Works on Any Device
+                        </span>
                       </p>
-                      <div className="flex items-center gap-2 text-teal-700 font-medium text-sm mt-4">
-                        <span>Enter Class Code</span>
-                        <ChevronRight size={16} />
-                      </div>
                     </div>
-
-                    <div
+                    <div className="bg-teal-50 border-l-4 border-teal-700 rounded-md p-6 mx-auto max-w-4xl my-12 text-left">
+                      <h3 className="text-teal-900 text-xl font-bold mb-2">
+                        Practice & Learn
+                      </h3>
+                      <p className="text-gray-700 text-base leading-relaxed">
+                        Make mistakes safely. Get instant feedback. Build confidence.
+                        Start with <strong className="text-teal-900 font-semibold">DNA Extraction (15 mins)</strong>. More techniques soon.
+                      </p>
+                    </div>
+                    <button
                       onClick={() => setScreen("categories")}
-                      className="bg-white border-2 border-gray-200 p-6 rounded-md cursor-pointer hover:border-teal-700 transition-colors group"
+                      className="bg-teal-700 hover:bg-teal-800 text-white px-8 py-3 rounded-md font-medium text-lg transition-colors border-0 cursor-pointer"
                     >
-                      <div className="bg-blue-50 w-14 h-14 rounded-md flex items-center justify-center mb-4">
-                        <Target size={28} className="text-blue-700" />
-                      </div>
-                      <h3 className="text-gray-900 font-bold text-xl mb-2">Independent Learner</h3>
-                      <p className="text-gray-600 text-sm mb-4 leading-relaxed">
-                        Master lab techniques at your own pace. Build your digital lab resume.
+                      Start Practicing Now
+                    </button>
+                  </section>
+                </>
+              )}
+              <section className="max-w-6xl mx-auto px-6 pt-8">
+                {!user && (
+                  <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 md:p-12 mb-8">
+                    <div className="text-center mb-8">
+                      <h2 className="text-3xl font-bold text-gray-900 mb-3">
+                        Choose your learning path
+                      </h2>
+                      <p className="text-gray-600 text-lg">
+                        All paths access the same high-quality simulations.
                       </p>
-                      <div className="flex items-center gap-2 text-blue-700 font-medium text-sm mt-4">
-                        <span>Start Learning</span>
-                        <ChevronRight size={16} />
-                      </div>
                     </div>
 
-                    <div
-                      onClick={() => setScreen("categories")}
-                      className="bg-white border-2 border-gray-200 p-6 rounded-md cursor-pointer hover:border-teal-700 transition-colors group"
-                    >
-                      <div className="bg-gray-50 w-14 h-14 rounded-md flex items-center justify-center mb-4">
-                        <Sparkles size={28} className="text-gray-700" />
-                      </div>
-                      <h3 className="text-gray-900 font-bold text-xl mb-2">Pre-university</h3>
-                      <p className="text-gray-600 text-sm mb-4 leading-relaxed">
-                        Get a head start on college science. Explore molecular biology basics.
-                      </p>
-                      <div className="flex items-center gap-2 text-gray-700 font-medium text-sm mt-4">
-                        <span>Start Learning</span>
-                        <ChevronRight size={16} />
-                      </div>
-                    </div>
-                  </div>
-                </section>
-
-                <section className="max-w-6xl mx-auto py-3">
-                  <div
-                    onClick={() => navigate('/leaderboard')}
-                    className="bg-white border-2 border-gray-200 rounded-md p-6 cursor-pointer hover:border-teal-700 transition-colors"
-                  >
-                    <div className="flex items-center justify-between flex-wrap gap-4">
-                      <div className="flex items-center gap-4">
-                        <div className="bg-amber-50 p-3 rounded-md">
-                          <Trophy size={28} className="text-amber-600" />
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                      <div
+                        onClick={() => setShowClassCodePrompt(true)}
+                        className="bg-white border-2 border-gray-200 p-6 rounded-md cursor-pointer hover:border-teal-700 transition-colors group"
+                      >
+                        <div className="bg-teal-50 w-14 h-14 rounded-md flex items-center justify-center mb-4">
+                          <GraduationCap size={28} className="text-teal-700" />
                         </div>
-                        <div>
-                          <h3 className="text-xl font-bold text-gray-900 mb-1.5 flex items-center gap-3">
-                            Global Rankings
-                            <span className="text-xs bg-amber-100 text-amber-800 px-2.5 py-0.5 rounded-full font-semibold">NEW</span>
-                          </h3>
-                          <p className="text-gray-600 text-sm leading-relaxed">
-                            Compete with learners worldwide. Track your progress. Build verifiable competency records. From students to researchers—see where you rank.
-                          </p>
+                        <h3 className="text-gray-900 font-bold text-xl mb-2">University Student</h3>
+                        <p className="text-gray-600 text-sm mb-4 leading-relaxed">
+                          Join your instructor's class. Enter code to sync with your faculty dashboard.
+                        </p>
+                        <div className="flex items-center gap-2 text-teal-700 font-medium text-sm mt-4">
+                          <span>Enter Class Code</span>
+                          <ChevronRight size={16} />
                         </div>
                       </div>
-                      <div className="flex items-center gap-2 text-teal-700 font-semibold text-base">
-                        <span>View Rankings</span>
-                        <ChevronRight size={20} />
+
+                      <div
+                        onClick={() => setScreen("categories")}
+                        className="bg-white border-2 border-gray-200 p-6 rounded-md cursor-pointer hover:border-teal-700 transition-colors group"
+                      >
+                        <div className="bg-blue-50 w-14 h-14 rounded-md flex items-center justify-center mb-4">
+                          <Target size={28} className="text-blue-700" />
+                        </div>
+                        <h3 className="text-gray-900 font-bold text-xl mb-2">Independent Learner</h3>
+                        <p className="text-gray-600 text-sm mb-4 leading-relaxed">
+                          Master lab techniques at your own pace. Build your digital lab resume.
+                        </p>
+                        <div className="flex items-center gap-2 text-blue-700 font-medium text-sm mt-4">
+                          <span>Start Learning</span>
+                          <ChevronRight size={16} />
+                        </div>
+                      </div>
+
+                      <div
+                        onClick={() => setScreen("categories")}
+                        className="bg-white border-2 border-gray-200 p-6 rounded-md cursor-pointer hover:border-teal-700 transition-colors group"
+                      >
+                        <div className="bg-gray-50 w-14 h-14 rounded-md flex items-center justify-center mb-4">
+                          <Sparkles size={28} className="text-gray-700" />
+                        </div>
+                        <h3 className="text-gray-900 font-bold text-xl mb-2">Pre-university</h3>
+                        <p className="text-gray-600 text-sm mb-4 leading-relaxed">
+                          Get a head start on college science. Explore molecular biology basics.
+                        </p>
+                        <div className="flex items-center gap-2 text-gray-700 font-medium text-sm mt-4">
+                          <span>Start Learning</span>
+                          <ChevronRight size={16} />
+                        </div>
                       </div>
                     </div>
                   </div>
-                </section>
+                )}
+
+                {user && (
+                  <div className="mb-8">
+                    <div className="text-center mb-8">
+                      <h1 className="text-3xl font-bold text-gray-900 mb-3">
+                        Choose Your Learning Path
+                      </h1>
+                      <p className="text-gray-600 text-lg">
+                        Select how you'd like to practice
+                      </p>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                      <div
+                        onClick={() => setShowClassCodePrompt(true)}
+                        className="bg-white border border-gray-200 p-6 rounded-lg cursor-pointer hover:shadow-md transition-shadow"
+                      >
+                        <div className="bg-teal-50 w-14 h-14 rounded-md flex items-center justify-center mb-4">
+                          <GraduationCap size={28} className="text-teal-700" />
+                        </div>
+                        <h3 className="text-gray-900 font-bold text-xl mb-2">University Student</h3>
+                        <p className="text-gray-600 text-sm mb-4 leading-relaxed">
+                          Join your instructor's class with a code
+                        </p>
+                      </div>
+
+                      <div
+                        onClick={() => setScreen("categories")}
+                        className="bg-white border border-gray-200 p-6 rounded-lg cursor-pointer hover:shadow-md transition-shadow"
+                      >
+                        <div className="bg-blue-50 w-14 h-14 rounded-md flex items-center justify-center mb-4">
+                          <Target size={28} className="text-blue-700" />
+                        </div>
+                        <h3 className="text-gray-900 font-bold text-xl mb-2">Independent Learner</h3>
+                        <p className="text-gray-600 text-sm mb-4 leading-relaxed">
+                          Practice at your own pace
+                        </p>
+                      </div>
+
+                      <div
+                        onClick={() => setScreen("categories")}
+                        className="bg-white border border-gray-200 p-6 rounded-lg cursor-pointer hover:shadow-md transition-shadow"
+                      >
+                        <div className="bg-gray-50 w-14 h-14 rounded-md flex items-center justify-center mb-4">
+                          <Sparkles size={28} className="text-gray-700" />
+                        </div>
+                        <h3 className="text-gray-900 font-bold text-xl mb-2">Pre-university</h3>
+                        <p className="text-gray-600 text-sm mb-4 leading-relaxed">
+                          Explore molecular biology basics
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {!user && (
+                  <div className="py-3">
+                    <div
+                      onClick={() => navigate('/leaderboard')}
+                      className="bg-white border-2 border-gray-200 rounded-md p-6 cursor-pointer hover:border-teal-700 transition-colors"
+                    >
+                      <div className="flex items-center justify-between flex-wrap gap-4">
+                        <div className="flex items-center gap-4">
+                          <div className="bg-amber-50 p-3 rounded-md">
+                            <Trophy size={28} className="text-amber-600" />
+                          </div>
+                          <div>
+                            <h3 className="text-xl font-bold text-gray-900 mb-1.5 flex items-center gap-3">
+                              Global Rankings
+                              <span className="text-xs bg-amber-100 text-amber-800 px-2.5 py-0.5 rounded-full font-semibold">NEW</span>
+                            </h3>
+                            <p className="text-gray-600 text-sm leading-relaxed">
+                              Compete with learners worldwide. Track your progress. Build verifiable competency records. From students to researchers—see where you rank.
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 text-teal-700 font-semibold text-base">
+                          <span>View Rankings</span>
+                          <ChevronRight size={20} />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </section>
 
-              <section className="space-y-8 px-6">
-                <TechniqueLibrary
-                  data={TECHNIQUE_LIBRARY}
-                  onTechniqueClick={(tech) => {
-                    if (tech.id === "DNA_EXT") setScreen("missions");
-                    if (tech.id === "PCR") setShowPCRModal(true);
-                  }}
-                  lockedTechniqueIds={
-                    guestModeDismissed && anonymousUser.shouldShowModal
-                      ? TECHNIQUE_LIBRARY.flatMap(cat => cat.items)
-                          .filter(item => item.id !== 'DNA_EXT')
-                          .map(item => item.id)
-                      : []
-                  }
-                />
-              </section>
+              {!user && (
+                <section className="space-y-8 px-6">
+                  <TechniqueLibrary
+                    data={TECHNIQUE_LIBRARY}
+                    onTechniqueClick={(tech) => {
+                      if (tech.id === "DNA_EXT") setScreen("missions");
+                      if (tech.id === "PCR") setShowPCRModal(true);
+                    }}
+                    lockedTechniqueIds={
+                      guestModeDismissed && anonymousUser.shouldShowModal
+                        ? TECHNIQUE_LIBRARY.flatMap(cat => cat.items)
+                            .filter(item => item.id !== 'DNA_EXT')
+                            .map(item => item.id)
+                        : []
+                    }
+                  />
+                </section>
+              )}
+
+              {user && (
+                <section className="space-y-8 px-6">
+                  <TechniqueLibrary
+                    data={TECHNIQUE_LIBRARY}
+                    onTechniqueClick={(tech) => {
+                      if (tech.id === "DNA_EXT") setScreen("missions");
+                      if (tech.id === "PCR") setShowPCRModal(true);
+                    }}
+                    lockedTechniqueIds={[]}
+                  />
+                </section>
+              )}
             </div>
           )}
 
