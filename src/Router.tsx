@@ -7,6 +7,8 @@ import Header from './components/Header';
 import { LoginForm } from './components/auth/LoginForm';
 import { SignupForm } from './components/auth/SignupForm';
 import { VerificationPending } from './components/auth/VerificationPending';
+import { ForgotPassword } from './components/auth/ForgotPassword';
+import { ResetPassword } from './components/auth/ResetPassword';
 import { Homepage } from './components/Homepage';
 import { AdminDashboard } from './components/admin/AdminDashboard';
 import { Dashboard } from './components/Dashboard';
@@ -20,7 +22,7 @@ const Leaderboard = lazy(() => import('./components/Leaderboard'));
 
 function AppContent() {
   const location = useLocation();
-  const isAuthPage = ['/login', '/signup', '/verify-email'].includes(location.pathname);
+  const isAuthPage = ['/login', '/signup', '/verify-email', '/forgot-password', '/reset-password'].includes(location.pathname);
   const isAdminPage = location.pathname.startsWith('/admin');
   const isDashboardPage = location.pathname === '/dashboard';
   const isBrowsePage = location.pathname === '/browse';
@@ -40,6 +42,8 @@ function AppContent() {
           <Route path="/login" element={<LoginForm />} />
           <Route path="/signup" element={<SignupForm />} />
           <Route path="/verify-email" element={<VerificationPending />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/" element={<Homepage />} />
           <Route path="/browse" element={<BrowseSimulations />} />
           <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
