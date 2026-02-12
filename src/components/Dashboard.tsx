@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { BookOpen, GraduationCap, Settings, LogOut, Menu, X, User, ChevronDown } from 'lucide-react';
+import { BookOpen, GraduationCap, Settings, LogOut, Menu, X, User, ChevronDown, Home, Microscope } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { MyPracticeTab } from './dashboard/MyPracticeTab';
 import { InstructorPortalTab } from './dashboard/InstructorPortalTab';
@@ -56,7 +56,14 @@ export function Dashboard() {
             >
               {sidebarOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
             </button>
-            <h1 className="text-xl font-bold text-gray-900">BioSim Lab</h1>
+            <button
+              onClick={() => navigate('/')}
+              className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+              title="Go to homepage"
+            >
+              <Microscope className="w-5 h-5 text-teal-700" />
+              <h1 className="text-xl font-bold text-gray-900">BioSim Lab</h1>
+            </button>
           </div>
 
           {/* User dropdown */}
@@ -130,6 +137,16 @@ export function Dashboard() {
           `}
         >
           <nav className="flex-1 p-4 space-y-2">
+            <button
+              onClick={() => {
+                navigate('/lab');
+                setSidebarOpen(false);
+              }}
+              className="w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors text-gray-700 hover:bg-gray-100 border-b border-gray-200 mb-4"
+            >
+              <Microscope className="w-5 h-5" />
+              <span>Browse Simulations</span>
+            </button>
             {menuItems.map((item) => {
               const Icon = item.icon;
               const isActive = activeTab === item.id;
