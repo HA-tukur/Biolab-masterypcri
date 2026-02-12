@@ -32,6 +32,7 @@ import {
   Computer,
   Trophy,
   Microscope,
+  Lock,
   X
 } from "lucide-react";
 import { SupabaseHistoryStore, HistoryStore } from "./services/historyStore";
@@ -1219,53 +1220,7 @@ export default function App() {
     try {
       const guestTrial = localStorage.getItem('guestTrial');
       if (guestTrial === 'dna-extraction' && !user) {
-        localStorage.removeItem('guestTrial');
-
-        setTechniqueId('DNA_EXT');
-        setMissionId('A');
-        setCoins(MISSIONS_DATA['DNA_EXT']['A'].budget);
-        setInventory([]);
-        setLogs([]);
-        setProtocolIndex(0);
-        setSampleMass(50);
-        setBufferVolume(0);
-        setVolumeAddedThisStep(0);
-        setElutionVolume(0);
-        setNdStep("idle");
-        setGelStep("idle");
-        setVerificationDone({ nanodrop: false, gel: false });
-        setStatus("idle");
-        setHasDispensedThisStep(false);
-        setHasSpunThisStep(false);
-        setTubeInCentrifuge(false);
-        setNeedsMixing(false);
-        setIsMixing(false);
-        setMissedSpins(0);
-        setMissedReagents(0);
-        setStoichiometryError(false);
-        setPelletVisible(false);
-        setUserRating(0);
-        setFeedbackSent(false);
-        setShowQuant(false);
-        setCanNanodropNow(false);
-        setShowPhaseSeparation(false);
-        setShowBioPopup(null);
-        setStepVolumes({ protK: 0, lysis: 0, binding: 0, wash: 0, elution: 0 });
-        setProtKIncubationOK(false);
-        setTubeAnimating(false);
-        setHasSeenBalancingTip(false);
-        setElutionVolumeChoice(null);
-        setIsIncubating(false);
-        setIncubationTemp(25);
-        setProtocolAdherenceCompromised(false);
-        setStep1Method(null);
-        setStep2Mixed(false);
-        setStep3Mixed(false);
-        setYieldQuality(null);
-        setDifficultyMode("learning");
-        setChallengeModeErrors([]);
-        setScreen("lab");
-
+        setScreen('missions');
         return;
       }
 
@@ -1756,6 +1711,7 @@ export default function App() {
       if (data) {
         setSavedRecordId(data.id);
         if (!user && techniqueId === 'DNA_EXT') {
+          localStorage.removeItem('guestTrial');
           setShowGuestSignupModal(true);
         } else {
           setShowSuccessModal(true);
@@ -2188,7 +2144,10 @@ export default function App() {
 
           {screen === "missions" && (
             <div className="space-y-8 animate-in slide-in-from-right">
-              <button onClick={() => setScreen("welcome")} className="flex items-center gap-2 text-slate-400 hover:text-white transition-all text-sm">
+              <button onClick={() => {
+                localStorage.removeItem('guestTrial');
+                setScreen("welcome");
+              }} className="flex items-center gap-2 text-slate-400 hover:text-white transition-all text-sm">
                 <ChevronRight size={16} className="rotate-180" /> Back to Library
               </button>
 
@@ -2196,30 +2155,51 @@ export default function App() {
                 <h2 className="text-3xl font-black text-slate-50 uppercase tracking-tighter flex items-center gap-3"><Dna size={28} className="text-indigo-400" /> DNA Extraction Missions</h2>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {Object.entries(MISSIONS_DATA.DNA_EXT).map(([key, mission]) => (
-                    <div key={key} className="bg-slate-800 border border-slate-700 rounded-3xl overflow-hidden hover:border-indigo-500/50 transition-all group">
-                      <div className="p-8 space-y-4">
-                        <div className="flex items-start justify-between">
-                          <div className="space-y-2">
-                            <h3 className="text-2xl font-black text-slate-50 uppercase tracking-tight">{mission.title}</h3>
-                            <p className="text-sm text-slate-400 leading-relaxed">{mission.brief}</p>
+                  {Object.entries(MISSIONS_DATA.DNA_EXT).map(([key, mission]) => {
+                    const isGuestMode = !user && localStorage.getItem('guestTrial') === 'dna-extraction';
+                    const isLocked = isGuestMode && key !== 'A';
+
+                    return (
+                      <div key={key} className={`bg-slate-800 border border-slate-700 rounded-3xl overflow-hidden transition-all ${isLocked ? 'opacity-50 cursor-not-allowed' : 'hover:border-indigo-500/50 group'}`}>
+                        <div className="p-8 space-y-4 relative">
+                          {isLocked && (
+                            <div className="absolute inset-0 bg-slate-900/70 backdrop-blur-sm z-10 flex items-center justify-center rounded-3xl">
+                              <div className="text-center space-y-2">
+                                <Lock className="mx-auto text-slate-400" size={32} />
+                                <p className="text-slate-300 font-bold text-sm">Complete Mission 1 First</p>
+                              </div>
+                            </div>
+                          )}
+                          <div className="flex items-start justify-between">
+                            <div className="space-y-2">
+                              <h3 className="text-2xl font-black text-slate-50 uppercase tracking-tight">{mission.title}</h3>
+                              <p className="text-sm text-slate-400 leading-relaxed">{mission.brief}</p>
+                            </div>
                           </div>
-                        </div>
-                        <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-700">
-                          <p className="text-xs text-slate-400 font-mono">{mission.summary}</p>
-                        </div>
-                        <div className="flex items-center justify-between pt-4 border-t border-slate-700">
-                          <div className="text-left">
-                            <p className="text-[9px] text-slate-500 uppercase font-bold tracking-wider mb-1">Budget</p>
-                            <p className="text-lg font-black text-amber-400 font-mono">{mission.budget} BC</p>
+                          <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-700">
+                            <p className="text-xs text-slate-400 font-mono">{mission.summary}</p>
                           </div>
-                          <button onClick={() => startMission("DNA_EXT", key)} className="bg-indigo-600 hover:bg-indigo-500 text-white px-6 py-3 rounded-xl font-black uppercase text-sm transition-all group-hover:scale-105 cursor-pointer border-0">
-                            Start Mission
-                          </button>
+                          <div className="flex items-center justify-between pt-4 border-t border-slate-700">
+                            <div className="text-left">
+                              <p className="text-[9px] text-slate-500 uppercase font-bold tracking-wider mb-1">Budget</p>
+                              <p className="text-lg font-black text-amber-400 font-mono">{mission.budget} BC</p>
+                            </div>
+                            <button
+                              onClick={() => !isLocked && startMission("DNA_EXT", key)}
+                              disabled={isLocked}
+                              className={`px-6 py-3 rounded-xl font-black uppercase text-sm transition-all border-0 ${
+                                isLocked
+                                  ? 'bg-slate-700 text-slate-500 cursor-not-allowed'
+                                  : 'bg-indigo-600 hover:bg-indigo-500 text-white group-hover:scale-105 cursor-pointer'
+                              }`}
+                            >
+                              Start Mission
+                            </button>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </section>
             </div>
