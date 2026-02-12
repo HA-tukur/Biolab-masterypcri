@@ -31,6 +31,7 @@ import {
   Glasses,
   Computer,
   Trophy,
+  Microscope,
   X
 } from "lucide-react";
 import { SupabaseHistoryStore, HistoryStore } from "./services/historyStore";
