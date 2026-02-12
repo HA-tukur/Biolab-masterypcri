@@ -2144,21 +2144,6 @@ export default function App() {
 
           {screen === "missions" && (
             <div className="space-y-8 animate-in slide-in-from-right">
-              {!user && (
-                <div className="bg-slate-900 border border-slate-700 rounded-2xl p-4 mb-4">
-                  <button
-                    onClick={() => {
-                      localStorage.removeItem('guestTrial');
-                      setScreen("welcome");
-                    }}
-                    className="flex items-center gap-2 text-white hover:text-indigo-400 transition-all font-bold text-lg"
-                  >
-                    <Microscope size={24} />
-                    <span>BioSim Lab</span>
-                  </button>
-                </div>
-              )}
-
               <button onClick={() => {
                 localStorage.removeItem('guestTrial');
                 setScreen("welcome");
