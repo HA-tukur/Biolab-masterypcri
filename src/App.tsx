@@ -1770,7 +1770,10 @@ export default function App() {
       {anonymousUser.shouldShowModal && !guestModeDismissed && (
         <SignupModal
           simulationCount={anonymousUser.simulationCount}
-          onContinueAsGuest={() => setGuestModeDismissed(true)}
+          onContinueAsGuest={() => {
+            setGuestModeDismissed(true);
+            setScreen("welcome");
+          }}
         />
       )}
 
