@@ -1220,11 +1220,52 @@ export default function App() {
       const guestTrial = localStorage.getItem('guestTrial');
       if (guestTrial === 'dna-extraction' && !user) {
         localStorage.removeItem('guestTrial');
-        setScreen('categories');
-        setTimeout(() => {
-          setScreen('lab');
-          setTechniqueId('DNA_Extraction');
-        }, 100);
+
+        setTechniqueId('DNA_EXT');
+        setMissionId('A');
+        setCoins(MISSIONS_DATA['DNA_EXT']['A'].budget);
+        setInventory([]);
+        setLogs([]);
+        setProtocolIndex(0);
+        setSampleMass(50);
+        setBufferVolume(0);
+        setVolumeAddedThisStep(0);
+        setElutionVolume(0);
+        setNdStep("idle");
+        setGelStep("idle");
+        setVerificationDone({ nanodrop: false, gel: false });
+        setStatus("idle");
+        setHasDispensedThisStep(false);
+        setHasSpunThisStep(false);
+        setTubeInCentrifuge(false);
+        setNeedsMixing(false);
+        setIsMixing(false);
+        setMissedSpins(0);
+        setMissedReagents(0);
+        setStoichiometryError(false);
+        setPelletVisible(false);
+        setUserRating(0);
+        setFeedbackSent(false);
+        setShowQuant(false);
+        setCanNanodropNow(false);
+        setShowPhaseSeparation(false);
+        setShowBioPopup(null);
+        setStepVolumes({ protK: 0, lysis: 0, binding: 0, wash: 0, elution: 0 });
+        setProtKIncubationOK(false);
+        setTubeAnimating(false);
+        setHasSeenBalancingTip(false);
+        setElutionVolumeChoice(null);
+        setIsIncubating(false);
+        setIncubationTemp(25);
+        setProtocolAdherenceCompromised(false);
+        setStep1Method(null);
+        setStep2Mixed(false);
+        setStep3Mixed(false);
+        setYieldQuality(null);
+        setDifficultyMode("learning");
+        setChallengeModeErrors([]);
+        setScreen("lab");
+
         return;
       }
 
@@ -1714,7 +1755,7 @@ export default function App() {
 
       if (data) {
         setSavedRecordId(data.id);
-        if (!user && techniqueId === 'DNA_Extraction') {
+        if (!user && techniqueId === 'DNA_EXT') {
           setShowGuestSignupModal(true);
         } else {
           setShowSuccessModal(true);

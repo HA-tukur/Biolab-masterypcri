@@ -10,7 +10,8 @@ export function Homepage() {
     if (user) {
       navigate('/lab');
     } else {
-      navigate('/signup');
+      localStorage.setItem('guestTrial', 'dna-extraction');
+      navigate('/lab');
     }
   };
 
