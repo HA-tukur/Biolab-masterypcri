@@ -208,13 +208,6 @@ export function MyPracticeTab() {
     }
   };
 
-  const handleScrollToSimulations = () => {
-    const element = document.getElementById('all-simulations');
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
-  };
-
   const handleStartSimulation = async (simulationName: string) => {
     if (!user) return;
 
@@ -261,42 +254,24 @@ export function MyPracticeTab() {
 
   return (
     <div className="space-y-8">
-      {/* SECTION 1: LEARNING PATH SELECTOR */}
+      {/* Quick Actions */}
       <section>
-        <h2 className="text-2xl font-semibold text-gray-900 mb-2">Choose Your Learning Path</h2>
-        <p className="text-gray-600 mb-6">Select how you'd like to practice</p>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {/* University Student Card */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-2xl font-semibold text-gray-900">My Practice</h2>
+            <p className="text-gray-600 mt-1">Continue learning or start a new simulation</p>
+          </div>
           <button
             onClick={() => setShowJoinModal(true)}
-            className="bg-white border border-gray-200 rounded-lg p-6 text-left hover:shadow-md transition-shadow"
+            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors flex items-center gap-2"
           >
-            <div className="text-4xl mb-3">🎓</div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-1">University Student</h3>
-            <p className="text-sm text-gray-600">Join your instructor's class</p>
+            <GraduationCap className="w-4 h-4" />
+            <span>Join a Class</span>
           </button>
-
-          {/* Independent Learner Card */}
-          <button
-            onClick={handleScrollToSimulations}
-            className="bg-white border border-gray-200 rounded-lg p-6 text-left hover:shadow-md transition-shadow"
-          >
-            <div className="text-4xl mb-3">📚</div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-1">Independent Learner</h3>
-            <p className="text-sm text-gray-600">Practice at your own pace</p>
-          </button>
-
-          {/* High School Student Card - Disabled */}
-          <div className="bg-white border border-gray-200 rounded-lg p-6 text-left opacity-50 cursor-not-allowed">
-            <div className="text-4xl mb-3">🔬</div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-1">High School Student</h3>
-            <p className="text-sm text-gray-600">Coming soon</p>
-          </div>
         </div>
       </section>
 
-      {/* SECTION 2: CONTINUE PRACTICING */}
+      {/* Continue Practicing */}
       {!loading && inProgressSims.length > 0 && (
         <section>
           <h2 className="text-2xl font-semibold text-gray-900 mb-4">Continue Practicing</h2>
@@ -324,8 +299,8 @@ export function MyPracticeTab() {
         </section>
       )}
 
-      {/* SECTION 3: ALL SIMULATIONS */}
-      <section id="all-simulations">
+      {/* All Simulations */}
+      <section>
         <h2 className="text-2xl font-semibold text-gray-900 mb-4">Available Simulations</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {availableSimulations.map((sim) => (
@@ -351,7 +326,7 @@ export function MyPracticeTab() {
         </div>
       </section>
 
-      {/* SECTION 4: MY CLASSES */}
+      {/* My Classes */}
       {!loading && enrolledClasses.length > 0 && (
         <section>
           <h2 className="text-2xl font-semibold text-gray-900 mb-4">My Classes</h2>

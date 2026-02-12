@@ -46,6 +46,15 @@ export function BrowseSimulations() {
   const navigate = useNavigate();
   const [showSignupModal, setShowSignupModal] = useState(false);
 
+  const handleSimulationClick = (simId: string) => {
+    if (simId === 'dna-extraction') {
+      localStorage.setItem('guestTrial', 'dna-extraction');
+      navigate('/lab');
+    } else {
+      setShowSignupModal(true);
+    }
+  };
+
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {
       case 'Beginner':
@@ -101,8 +110,13 @@ export function BrowseSimulations() {
           {simulations.map((sim) => (
             <div
               key={sim.id}
-              className="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow"
+              className="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow relative"
             >
+              {sim.id === 'dna-extraction' && (
+                <div className="absolute -top-3 -right-3 bg-green-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg">
+                  Try Free
+                </div>
+              )}
               <div className="flex items-start justify-between mb-3">
                 <h3 className="text-lg font-semibold text-gray-900">{sim.name}</h3>
                 <span className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${getDifficultyColor(sim.difficulty)}`}>
@@ -111,10 +125,14 @@ export function BrowseSimulations() {
               </div>
               <p className="text-sm text-gray-600 mb-4">{sim.description}</p>
               <button
-                onClick={() => setShowSignupModal(true)}
-                className="w-full px-4 py-2 bg-teal-700 hover:bg-teal-800 text-white rounded-md transition-colors"
+                onClick={() => handleSimulationClick(sim.id)}
+                className={`w-full px-4 py-2 rounded-md transition-colors ${
+                  sim.id === 'dna-extraction'
+                    ? 'bg-green-600 hover:bg-green-700 text-white'
+                    : 'bg-teal-700 hover:bg-teal-800 text-white'
+                }`}
               >
-                Sign Up to Start
+                {sim.id === 'dna-extraction' ? 'Try Now' : 'Sign Up to Start'}
               </button>
             </div>
           ))}

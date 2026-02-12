@@ -1180,6 +1180,7 @@ export default function App() {
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [savedRecordId, setSavedRecordId] = useState(null);
   const [showClassCodePrompt, setShowClassCodePrompt] = useState(false);
+  const [showGuestSignupModal, setShowGuestSignupModal] = useState(false);
   const [screen, setScreen] = useState("welcome");
   const [selectedCategory, setSelectedCategory] = useState(null);
 
@@ -1216,14 +1217,25 @@ export default function App() {
 
   useEffect(() => {
     try {
+      const guestTrial = localStorage.getItem('guestTrial');
+      if (guestTrial === 'dna-extraction' && !user) {
+        localStorage.removeItem('guestTrial');
+        setScreen('categories');
+        setTimeout(() => {
+          setScreen('lab');
+          setTechniqueId('DNA_Extraction');
+        }, 100);
+        return;
+      }
+
       const hasSeenPrompt = localStorage.getItem('biosim_class_prompt_shown');
-      if (!hasSeenPrompt) {
+      if (!hasSeenPrompt && user) {
         setShowClassCodePrompt(true);
       }
     } catch (error) {
       console.error("LocalStorage error:", error);
     }
-  }, []);
+  }, [user]);
 
   useEffect(() => {
     const handleHeaderTabClick = (e: CustomEvent) => {
@@ -1702,7 +1714,11 @@ export default function App() {
 
       if (data) {
         setSavedRecordId(data.id);
-        setShowSuccessModal(true);
+        if (!user && techniqueId === 'DNA_Extraction') {
+          setShowGuestSignupModal(true);
+        } else {
+          setShowSuccessModal(true);
+        }
         anonymousUser.recordSimulation(missionTitle);
       }
 
@@ -3114,6 +3130,71 @@ export default function App() {
                 className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-4 rounded-xl transition-all uppercase tracking-wider text-sm"
               >
                 Continue
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showGuestSignupModal && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 relative animate-in fade-in duration-300">
+            <div className="text-center space-y-6">
+              <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-green-100 mb-4">
+                <Trophy size={40} className="text-green-600" />
+              </div>
+
+              <div>
+                <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                  Nice work!
+                </h2>
+                <p className="text-gray-600 text-base">
+                  You've completed the DNA Extraction trial. Sign up free to unlock all simulations and track your progress.
+                </p>
+              </div>
+
+              <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 space-y-2">
+                <div className="flex items-center gap-3">
+                  <svg className="w-5 h-5 text-green-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                  <span className="text-sm text-gray-700">Access 10+ lab simulations</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <svg className="w-5 h-5 text-green-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                  <span className="text-sm text-gray-700">Track your progress</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <svg className="w-5 h-5 text-green-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                  <span className="text-sm text-gray-700">Join your class</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <svg className="w-5 h-5 text-green-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                  <span className="text-sm text-gray-700">100% free forever</span>
+                </div>
+              </div>
+
+              <button
+                onClick={() => navigate('/signup')}
+                className="w-full bg-teal-700 hover:bg-teal-800 text-white font-bold py-4 rounded-xl transition-all uppercase tracking-wider text-sm"
+              >
+                Create Free Account
+              </button>
+
+              <button
+                onClick={() => {
+                  setShowGuestSignupModal(false);
+                  navigate('/browse');
+                }}
+                className="text-sm text-gray-500 hover:text-gray-700 transition-colors"
+              >
+                Maybe later
               </button>
             </div>
           </div>
