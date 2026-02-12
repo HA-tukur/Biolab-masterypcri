@@ -1,16 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Dna, Zap, Activity, Plus, ArrowRight } from 'lucide-react';
+import { GraduationCap, BookOpen, Microscope, X } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../lib/supabase';
 
-interface Simulation {
+interface InProgressSimulation {
   id: string;
-  title: string;
-  description: string;
-  icon: React.ElementType;
-  path: string;
-  color: string;
+  simulation_name: string;
+  started_at: string;
 }
 
 interface EnrolledClass {
@@ -23,30 +20,43 @@ interface EnrolledClass {
   enrolled_at: string;
 }
 
-const simulations: Simulation[] = [
+interface AvailableSimulation {
+  id: string;
+  name: string;
+  difficulty: 'Beginner' | 'Intermediate' | 'Advanced';
+  description: string;
+}
+
+const availableSimulations: AvailableSimulation[] = [
   {
     id: 'dna-extraction',
-    title: 'DNA Extraction',
-    description: 'Learn DNA isolation techniques',
-    icon: Dna,
-    path: '/lab',
-    color: 'cyan',
+    name: 'DNA Extraction',
+    difficulty: 'Beginner',
+    description: 'Learn to isolate DNA from cells',
   },
   {
-    id: 'pcr',
-    title: 'PCR Simulation',
-    description: 'Master PCR protocols',
-    icon: Zap,
-    path: '/lab',
-    color: 'blue',
+    id: 'pcr-setup',
+    name: 'PCR Setup',
+    difficulty: 'Intermediate',
+    description: 'Master polymerase chain reaction',
   },
   {
     id: 'western-blot',
-    title: 'Western Blot',
-    description: 'Protein analysis techniques',
-    icon: Activity,
-    path: '/lab',
-    color: 'green',
+    name: 'Western Blot',
+    difficulty: 'Advanced',
+    description: 'Detect specific proteins',
+  },
+  {
+    id: 'gel-electrophoresis',
+    name: 'Gel Electrophoresis',
+    difficulty: 'Intermediate',
+    description: 'Separate DNA fragments',
+  },
+  {
+    id: 'confocal-microscopy',
+    name: 'Confocal Microscopy',
+    difficulty: 'Advanced',
+    description: 'High-resolution cell imaging',
   },
 ];
 
@@ -54,17 +64,46 @@ export function MyPracticeTab() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [enrolledClasses, setEnrolledClasses] = useState<EnrolledClass[]>([]);
+  const [inProgressSims, setInProgressSims] = useState<InProgressSimulation[]>([]);
   const [loading, setLoading] = useState(true);
   const [showJoinModal, setShowJoinModal] = useState(false);
   const [classCode, setClassCode] = useState('');
   const [joinError, setJoinError] = useState('');
   const [joining, setJoining] = useState(false);
 
-  const firstName = user?.user_metadata?.full_name?.split(' ')[0] || 'there';
-
   useEffect(() => {
-    loadEnrolledClasses();
+    loadData();
   }, [user]);
+
+  const loadData = async () => {
+    if (!user) return;
+
+    await Promise.all([
+      loadEnrolledClasses(),
+      loadInProgressSimulations(),
+    ]);
+
+    setLoading(false);
+  };
+
+  const loadInProgressSimulations = async () => {
+    if (!user) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('simulation_usage')
+        .select('id, simulation_name, started_at')
+        .eq('user_id', user.id)
+        .eq('completed', false)
+        .order('started_at', { ascending: false })
+        .limit(3);
+
+      if (error) throw error;
+      setInProgressSims(data || []);
+    } catch (error) {
+      console.error('Error loading in-progress simulations:', error);
+    }
+  };
 
   const loadEnrolledClasses = async () => {
     if (!user) return;
@@ -104,8 +143,6 @@ export function MyPracticeTab() {
       setEnrolledClasses(classes);
     } catch (error) {
       console.error('Error loading classes:', error);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -171,119 +208,207 @@ export function MyPracticeTab() {
     }
   };
 
+  const handleScrollToSimulations = () => {
+    const element = document.getElementById('all-simulations');
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
+
+  const handleStartSimulation = async (simulationName: string) => {
+    if (!user) return;
+
+    try {
+      await supabase
+        .from('simulation_usage')
+        .insert({
+          user_id: user.id,
+          simulation_name: simulationName,
+          started_at: new Date().toISOString(),
+          completed: false,
+        });
+
+      navigate('/lab');
+    } catch (error) {
+      console.error('Error recording simulation start:', error);
+      navigate('/lab');
+    }
+  };
+
+  const getDifficultyColor = (difficulty: string) => {
+    switch (difficulty) {
+      case 'Beginner':
+        return 'bg-green-100 text-green-800';
+      case 'Intermediate':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'Advanced':
+        return 'bg-red-100 text-red-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const formatTimeAgo = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const seconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+
+    if (seconds < 60) return 'just now';
+    if (seconds < 3600) return `${Math.floor(seconds / 60)} min ago`;
+    if (seconds < 86400) return `${Math.floor(seconds / 3600)} hours ago`;
+    return `${Math.floor(seconds / 86400)} days ago`;
+  };
+
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">
-          Welcome back, {firstName}!
-        </h1>
-        <p className="text-gray-600">Continue your molecular biology journey</p>
-      </div>
-
-      {/* Solo Practice Section */}
+      {/* SECTION 1: LEARNING PATH SELECTOR */}
       <section>
-        <h2 className="text-2xl font-bold text-gray-900 mb-4">Available Simulations</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {simulations.map((sim) => {
-            const Icon = sim.icon;
-            return (
-              <button
-                key={sim.id}
-                onClick={() => navigate(sim.path)}
-                className="bg-white rounded-lg border border-gray-200 p-6 hover:shadow-lg transition-shadow text-left group"
-              >
-                <div className={`inline-flex p-3 rounded-lg bg-${sim.color}-50 text-${sim.color}-600 mb-4`}>
-                  <Icon className="w-6 h-6" />
-                </div>
-                <h3 className="text-lg font-bold text-gray-900 mb-2">{sim.title}</h3>
-                <p className="text-gray-600 mb-4">{sim.description}</p>
-                <div className="flex items-center text-cyan-600 font-medium group-hover:gap-2 transition-all">
-                  <span>Start Practice</span>
-                  <ArrowRight className="w-4 h-4 ml-1" />
-                </div>
-              </button>
-            );
-          })}
+        <h2 className="text-2xl font-semibold text-gray-900 mb-2">Choose Your Learning Path</h2>
+        <p className="text-gray-600 mb-6">Select how you'd like to practice</p>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {/* University Student Card */}
+          <button
+            onClick={() => setShowJoinModal(true)}
+            className="bg-white border border-gray-200 rounded-lg p-6 text-left hover:shadow-md transition-shadow"
+          >
+            <div className="text-4xl mb-3">🎓</div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-1">University Student</h3>
+            <p className="text-sm text-gray-600">Join your instructor's class</p>
+          </button>
+
+          {/* Independent Learner Card */}
+          <button
+            onClick={handleScrollToSimulations}
+            className="bg-white border border-gray-200 rounded-lg p-6 text-left hover:shadow-md transition-shadow"
+          >
+            <div className="text-4xl mb-3">📚</div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-1">Independent Learner</h3>
+            <p className="text-sm text-gray-600">Practice at your own pace</p>
+          </button>
+
+          {/* High School Student Card - Disabled */}
+          <div className="bg-white border border-gray-200 rounded-lg p-6 text-left opacity-50 cursor-not-allowed">
+            <div className="text-4xl mb-3">🔬</div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-1">High School Student</h3>
+            <p className="text-sm text-gray-600">Coming soon</p>
+          </div>
         </div>
       </section>
 
-      {/* My Classes Section */}
-      <section>
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-2xl font-bold text-gray-900">Classes I've Joined</h2>
-          <button
-            onClick={() => setShowJoinModal(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-cyan-600 hover:bg-cyan-700 text-white rounded-lg transition-colors"
-          >
-            <Plus className="w-4 h-4" />
-            Join a Class
-          </button>
-        </div>
+      {/* SECTION 2: CONTINUE PRACTICING */}
+      {!loading && inProgressSims.length > 0 && (
+        <section>
+          <h2 className="text-2xl font-semibold text-gray-900 mb-4">Continue Practicing</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {inProgressSims.map((sim) => (
+              <div
+                key={sim.id}
+                className="bg-white border border-gray-200 rounded-lg p-6"
+              >
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                  {sim.simulation_name}
+                </h3>
+                <p className="text-sm text-gray-600 mb-4">
+                  Started {formatTimeAgo(sim.started_at)}
+                </p>
+                <button
+                  onClick={() => navigate('/lab')}
+                  className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+                >
+                  Resume
+                </button>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
-        {loading ? (
-          <div className="bg-white rounded-lg border border-gray-200 p-8 text-center">
-            <p className="text-gray-600">Loading classes...</p>
-          </div>
-        ) : enrolledClasses.length === 0 ? (
-          <div className="bg-white rounded-lg border border-gray-200 p-8 text-center">
-            <p className="text-gray-600 mb-4">You haven't joined any classes yet</p>
-            <button
-              onClick={() => setShowJoinModal(true)}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-cyan-600 hover:bg-cyan-700 text-white rounded-lg transition-colors"
+      {/* SECTION 3: ALL SIMULATIONS */}
+      <section id="all-simulations">
+        <h2 className="text-2xl font-semibold text-gray-900 mb-4">Available Simulations</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {availableSimulations.map((sim) => (
+            <div
+              key={sim.id}
+              className="bg-white border border-gray-200 rounded-lg p-6"
             >
-              <Plus className="w-4 h-4" />
-              Join a Class with Code
-            </button>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="flex items-start justify-between mb-3">
+                <h3 className="text-lg font-semibold text-gray-900">{sim.name}</h3>
+                <span className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${getDifficultyColor(sim.difficulty)}`}>
+                  {sim.difficulty}
+                </span>
+              </div>
+              <p className="text-sm text-gray-600 mb-4">{sim.description}</p>
+              <button
+                onClick={() => handleStartSimulation(sim.name)}
+                className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+              >
+                Start Practice
+              </button>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* SECTION 4: MY CLASSES */}
+      {!loading && enrolledClasses.length > 0 && (
+        <section>
+          <h2 className="text-2xl font-semibold text-gray-900 mb-4">My Classes</h2>
+          <div className="space-y-4">
             {enrolledClasses.map((cls) => (
               <div
                 key={cls.id}
-                className="bg-white rounded-lg border border-gray-200 p-6 hover:shadow-md transition-shadow"
+                className="bg-white border border-gray-200 rounded-lg p-6"
               >
-                <div className="flex items-start justify-between mb-3">
-                  <h3 className="text-lg font-bold text-gray-900">{cls.class_name}</h3>
-                  {cls.completed ? (
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                      Completed
-                    </span>
-                  ) : (
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                      In Progress
-                    </span>
-                  )}
+                <div className="flex items-start justify-between mb-2">
+                  <h3 className="text-lg font-semibold text-gray-900">{cls.class_name}</h3>
+                  <span className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${
+                    cls.completed ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                  }`}>
+                    {cls.completed ? 'Completed' : 'Not Started'}
+                  </span>
                 </div>
                 <p className="text-sm text-gray-600 mb-1">
                   Instructor: {cls.instructor_name}
                 </p>
                 {cls.simulation_name && (
-                  <p className="text-sm text-gray-600 mb-1">
-                    Simulation: {cls.simulation_name}
+                  <p className="text-sm text-gray-600 mb-4">
+                    Assigned: {cls.simulation_name}
                   </p>
                 )}
-                <p className="text-sm text-gray-500 mb-4">Code: {cls.class_code}</p>
-
                 {cls.simulation_name && (
                   <button
                     onClick={() => navigate('/lab')}
-                    className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-cyan-600 hover:bg-cyan-700 text-white rounded-lg transition-colors text-sm font-medium"
+                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
                   >
-                    {cls.completed ? 'Review Simulation' : 'Start Simulation'}
-                    <ArrowRight className="w-4 h-4" />
+                    {cls.completed ? 'Review' : 'Start Assignment'}
                   </button>
                 )}
               </div>
             ))}
           </div>
-        )}
-      </section>
+        </section>
+      )}
 
       {/* Join Class Modal */}
       {showJoinModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg max-w-md w-full p-6">
-            <h3 className="text-xl font-bold text-gray-900 mb-4">Join a Class</h3>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-semibold text-gray-900">Join a Class</h3>
+              <button
+                onClick={() => {
+                  setShowJoinModal(false);
+                  setClassCode('');
+                  setJoinError('');
+                }}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
             <p className="text-gray-600 mb-4">
               Enter the class code provided by your instructor
             </p>
@@ -299,7 +424,7 @@ export function MyPracticeTab() {
               value={classCode}
               onChange={(e) => setClassCode(e.target.value.toUpperCase())}
               placeholder="Enter class code"
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 outline-none mb-4 uppercase text-center font-semibold text-lg"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none mb-4 uppercase text-center font-semibold text-lg"
               maxLength={6}
             />
 
@@ -317,9 +442,9 @@ export function MyPracticeTab() {
               <button
                 onClick={handleJoinClass}
                 disabled={joining}
-                className="flex-1 px-4 py-2 bg-cyan-600 hover:bg-cyan-700 disabled:bg-gray-400 text-white rounded-lg transition-colors"
+                className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white rounded-lg transition-colors"
               >
-                {joining ? 'Joining...' : 'Join Class'}
+                {joining ? 'Joining...' : 'Join'}
               </button>
             </div>
           </div>
