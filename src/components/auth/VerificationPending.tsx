@@ -45,7 +45,7 @@ export function VerificationPending() {
           <p className="text-sm text-gray-600">
             Already verified?{' '}
             <Link to="/login" className="text-cyan-600 hover:text-cyan-700 font-medium">
-              Sign in here
+              Log in here
             </Link>
           </p>
         </div>

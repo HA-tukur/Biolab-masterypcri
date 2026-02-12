@@ -43,7 +43,7 @@ function AppContent() {
           <Route path="/" element={<Homepage />} />
           <Route path="/browse" element={<BrowseSimulations />} />
           <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-          <Route path="/lab" element={<ProtectedRoute><App /></ProtectedRoute>} />
+          <Route path="/lab" element={<ProtectedRoute allowGuestTrial={true}><App /></ProtectedRoute>} />
           <Route path="/leaderboard" element={<Leaderboard />} />
           <Route path="/profile" element={<ProtectedRoute><StudentProfile /></ProtectedRoute>} />
           <Route path="/instructor/setup" element={<InstructorSetup />} />

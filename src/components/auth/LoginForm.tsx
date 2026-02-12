@@ -35,7 +35,7 @@ export function LoginForm() {
             <span className="text-2xl font-bold text-gray-900">BioSim Lab</span>
           </div>
           <h1 className="text-2xl font-bold text-gray-900 mb-2">Welcome Back</h1>
-          <p className="text-gray-600">Sign in to continue your lab simulations</p>
+          <p className="text-gray-600">Log in to continue your lab simulations</p>
         </div>
 
         <div className="bg-white rounded-lg border border-gray-200 p-8 shadow-sm relative">
@@ -95,7 +95,7 @@ export function LoginForm() {
               disabled={loading}
               className="w-full bg-cyan-600 hover:bg-cyan-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-medium py-2.5 rounded-lg transition-colors"
             >
-              {loading ? 'Signing in...' : 'Sign In'}
+              {loading ? 'Logging in...' : 'Log In'}
             </button>
           </form>
 

@@ -1,12 +1,14 @@
-import { Navigate } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
+  allowGuestTrial?: boolean;
 }
 
-export function ProtectedRoute({ children }: ProtectedRouteProps) {
+export function ProtectedRoute({ children, allowGuestTrial = false }: ProtectedRouteProps) {
   const { user, loading } = useAuth();
+  const location = useLocation();
 
   if (loading) {
     return (
@@ -20,6 +22,12 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
   }
 
   if (!user) {
+    if (allowGuestTrial && location.pathname === '/lab') {
+      const guestTrial = localStorage.getItem('guestTrial');
+      if (guestTrial === 'dna-extraction') {
+        return <>{children}</>;
+      }
+    }
     return <Navigate to="/login" replace />;
   }
 
