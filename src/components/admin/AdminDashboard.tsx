@@ -2,14 +2,13 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../context/AuthContext';
+import { isAdmin } from '../../utils/adminCheck';
 import { MetricCard } from './MetricCard';
 import { SignupsChart } from './SignupsChart';
 import { UniversityChart } from './UniversityChart';
 import { ProgramChart } from './ProgramChart';
 import { SignupSourceList } from './SignupSourceList';
 import { ActiveUsersTable } from './ActiveUsersTable';
-
-const ADMIN_EMAIL = 'brianidoko27@gmail.com';
 
 interface DashboardData {
   totalUsers: number;
@@ -42,7 +41,7 @@ export function AdminDashboard() {
       return;
     }
 
-    if (user.email !== ADMIN_EMAIL) {
+    if (!isAdmin(user)) {
       navigate('/');
       return;
     }

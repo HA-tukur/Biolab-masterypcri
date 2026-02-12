@@ -1,8 +1,7 @@
 import { ReactNode, useEffect, useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-
-const ADMIN_EMAIL = 'brianidoko27@gmail.com';
+import { isAdmin } from '../utils/adminCheck';
 
 interface AdminRouteProps {
   children: ReactNode;
@@ -33,7 +32,7 @@ export function AdminRoute({ children }: AdminRouteProps) {
     return <Navigate to="/login" replace />;
   }
 
-  if (user.email !== ADMIN_EMAIL) {
+  if (!isAdmin(user)) {
     return <Navigate to="/" replace />;
   }
 

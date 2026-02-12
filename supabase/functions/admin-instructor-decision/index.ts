@@ -7,11 +7,25 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Client-Info, Apikey",
 };
 
-const ADMIN_EMAIL = "brianidoko27@gmail.com";
-
 interface RequestBody {
   requestId: string;
   action: "approve" | "reject";
+}
+
+function isAdmin(userEmail: string | undefined, appMetadata: any): boolean {
+  if (!userEmail) return false;
+
+  if (appMetadata?.role === "admin") {
+    return true;
+  }
+
+  const adminEmailsEnv = Deno.env.get("ADMIN_EMAILS") || "";
+  const adminEmails = adminEmailsEnv
+    .split(",")
+    .map((email) => email.trim())
+    .filter((email) => email.length > 0);
+
+  return adminEmails.includes(userEmail);
 }
 
 Deno.serve(async (req: Request) => {
@@ -56,7 +70,7 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    if (user.email !== ADMIN_EMAIL && user.app_metadata?.role !== "admin") {
+    if (!isAdmin(user.email, user.app_metadata)) {
       return new Response(
         JSON.stringify({ error: "Forbidden: Admin access required" }),
         {
