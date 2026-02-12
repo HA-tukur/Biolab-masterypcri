@@ -27,6 +27,7 @@ function NonAuthenticatedView({ onStartFree }: { onStartFree: () => void }) {
       <HeroSection onStartFree={onStartFree} />
       <TestimonialSection />
       <ValuePropSection />
+      <ForInstructorsSection />
       <HowItWorksSection />
       <FAQSection />
       <FooterSection onStartFree={onStartFree} />
@@ -44,6 +45,7 @@ function AuthenticatedView() {
     <>
       <DashboardHeader firstName={firstName} onResume={() => navigate('/lab')} />
       <ValuePropSection />
+      <ForInstructorsSection />
       <HowItWorksSection />
       <FAQSection />
       <FooterSection onStartFree={() => navigate('/lab')} />
@@ -150,6 +152,65 @@ function ValuePropSection() {
           </p>
           <p className="text-gray-900 font-medium">
             Train more learners without proportional expansion in lab space and manpower.
+          </p>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function ForInstructorsSection() {
+  const navigate = useNavigate();
+
+  const features = [
+    {
+      icon: '🎓',
+      title: 'Prepare Students Before Lab',
+      body: 'Let students practice protocols virtually before touching expensive equipment and reagents. Reduce waste, improve safety, increase confidence.',
+    },
+    {
+      icon: '📊',
+      title: 'Track Student Progress',
+      body: 'Create classes, generate shareable codes, and monitor which students have completed assigned simulations. Export analytics for grading.',
+    },
+    {
+      icon: '✓',
+      title: 'Free for Verified Instructors',
+      body: 'Get access to create up to 2 free classes with 100 students total. No credit card required. Request instructor access in minutes.',
+    },
+  ];
+
+  return (
+    <section id="for-instructors" className="bg-blue-50 py-12 md:py-20">
+      <div className="max-w-6xl mx-auto px-6">
+        <h2 className="text-2xl md:text-3xl font-bold text-gray-900 text-center mb-4">
+          For Instructors: Enhance Your Lab Courses
+        </h2>
+        <p className="text-base md:text-lg text-gray-600 text-center mb-12 max-w-3xl mx-auto">
+          Prepare students, track progress, and reduce equipment costs
+        </p>
+
+        <div className="grid md:grid-cols-3 gap-6 mb-8">
+          {features.map((feature) => (
+            <div key={feature.title} className="bg-white rounded-lg border border-gray-200 p-6">
+              <div className="w-12 h-12 bg-teal-100 rounded-full flex items-center justify-center text-2xl mb-4 mx-auto">
+                {feature.icon}
+              </div>
+              <h3 className="text-xl font-semibold text-gray-900 mb-3 text-center">{feature.title}</h3>
+              <p className="text-base text-gray-600 leading-relaxed text-center">{feature.body}</p>
+            </div>
+          ))}
+        </div>
+
+        <div className="text-center mt-8">
+          <button
+            onClick={() => navigate('/signup')}
+            className="px-8 py-3 bg-teal-700 hover:bg-teal-800 text-white font-medium rounded-md transition-colors"
+          >
+            Request Instructor Access
+          </button>
+          <p className="text-sm text-gray-500 mt-3">
+            Free for verified instructors. We'll review your request within 24-48 hours.
           </p>
         </div>
       </div>
