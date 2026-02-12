@@ -13,11 +13,15 @@ export function AdminRoute({ children }: AdminRouteProps) {
 
   useEffect(() => {
     if (!loading) {
+      console.log('=== ADMIN ROUTE CHECK ===');
+      console.log('User loading complete');
+      console.log('User:', user?.email);
       setChecking(false);
     }
-  }, [loading]);
+  }, [loading, user]);
 
   if (checking || loading) {
+    console.log('AdminRoute: Still loading/checking auth...');
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
@@ -29,12 +33,18 @@ export function AdminRoute({ children }: AdminRouteProps) {
   }
 
   if (!user) {
+    console.log('AdminRoute: No user, redirecting to /login');
     return <Navigate to="/login" replace />;
   }
 
-  if (!isAdmin(user)) {
+  const userIsAdmin = isAdmin(user);
+  console.log('AdminRoute: Admin check result:', userIsAdmin);
+
+  if (!userIsAdmin) {
+    console.log('AdminRoute: User is not admin, redirecting to /');
     return <Navigate to="/" replace />;
   }
 
+  console.log('AdminRoute: User is admin, rendering children');
   return <>{children}</>;
 }

@@ -22,6 +22,8 @@ export function InstructorRequestsAdmin() {
   const [processing, setProcessing] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  console.log('InstructorRequestsAdmin component rendered');
+
   const fetchRequests = async () => {
     try {
       setLoading(true);
@@ -100,6 +102,7 @@ export function InstructorRequestsAdmin() {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="text-center">
+          <h1 className="text-2xl font-bold text-gray-900 mb-4">Instructor Requests Admin Page</h1>
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-navy-700 mx-auto"></div>
           <p className="mt-4 text-gray-600">Loading requests...</p>
         </div>

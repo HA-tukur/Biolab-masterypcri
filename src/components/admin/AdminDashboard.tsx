@@ -7,13 +7,21 @@ export function AdminDashboard() {
   const { user } = useAuth();
   const navigate = useNavigate();
 
+  console.log('AdminDashboard component rendered');
+  console.log('Current user in AdminDashboard:', user?.email);
+
   useEffect(() => {
     if (!user) {
+      console.log('AdminDashboard: No user, navigating to /login');
       navigate('/login');
       return;
     }
 
-    if (!isAdmin(user)) {
+    const userIsAdmin = isAdmin(user);
+    console.log('AdminDashboard: Admin check result:', userIsAdmin);
+
+    if (!userIsAdmin) {
+      console.log('AdminDashboard: User is not admin, navigating to /');
       navigate('/');
       return;
     }
