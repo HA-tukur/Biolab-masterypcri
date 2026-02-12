@@ -11,6 +11,7 @@ import { ForgotPassword } from './components/auth/ForgotPassword';
 import { ResetPassword } from './components/auth/ResetPassword';
 import { Homepage } from './components/Homepage';
 import { AdminDashboard } from './components/admin/AdminDashboard';
+import { InstructorRequestsAdmin } from './components/admin/InstructorRequestsAdmin';
 import { Dashboard } from './components/Dashboard';
 import { BrowseSimulations } from './components/BrowseSimulations';
 
@@ -53,6 +54,7 @@ function AppContent() {
           <Route path="/instructor/setup" element={<InstructorSetup />} />
           <Route path="/instructor/:code" element={<InstructorDashboard />} />
           <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
+          <Route path="/admin/requests" element={<AdminRoute><InstructorRequestsAdmin /></AdminRoute>} />
         </Routes>
       </Suspense>
     </>
