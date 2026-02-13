@@ -1841,8 +1841,14 @@ export default function App() {
           }}
           onJoinMission={(techniqueId, missionId) => {
             if (techniqueId === 'PCR') {
-              setSelectedMissionId(missionId);
-              setShowPCRModal(true);
+              if (missionId === 'pcr-missions') {
+                setScreen('pcr-missions');
+              } else {
+                setSelectedMissionId(missionId);
+                setShowPCRModal(true);
+              }
+            } else if (techniqueId === 'DNA_EXT' && missionId === 'missions') {
+              setScreen('missions');
             } else {
               startMission(techniqueId, missionId);
             }

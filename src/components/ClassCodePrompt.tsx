@@ -29,7 +29,7 @@ export default function ClassCodePrompt({ onComplete, onJoinMission }: ClassCode
     try {
       const { data, error: fetchError } = await supabase
         .from('classes')
-        .select('id, class_name, instructor_name, mission_id')
+        .select('id, class_name, instructor_name, mission_id, simulation_name')
         .eq('class_code', classCode.trim().toUpperCase())
         .maybeSingle();
 
@@ -70,6 +70,16 @@ export default function ClassCodePrompt({ onComplete, onJoinMission }: ClassCode
           const missionId = parts[2];
           setTimeout(() => {
             onJoinMission(techniqueId, missionId);
+          }, 100);
+        }
+      } else if (data.simulation_name && onJoinMission) {
+        if (data.simulation_name === 'PCR') {
+          setTimeout(() => {
+            onJoinMission('PCR', 'pcr-missions');
+          }, 100);
+        } else if (data.simulation_name === 'DNA Extraction') {
+          setTimeout(() => {
+            onJoinMission('DNA_EXT', 'missions');
           }, 100);
         }
       }
