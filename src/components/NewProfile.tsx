@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Save, Eye, EyeOff, Trash2, LogOut, Edit, X } from 'lucide-react';
+import { Save, Eye, EyeOff, Trash2, LogOut, Edit, X } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
+import { SharedNavigation } from './SharedNavigation';
 
 interface ProfileData {
   id: string;
@@ -201,15 +202,8 @@ export function NewProfile() {
 
   return (
     <div className="min-h-screen bg-slate-50">
+      <SharedNavigation />
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Back Button */}
-        <button
-          onClick={() => navigate('/dashboard')}
-          className="inline-flex items-center gap-2 text-slate-600 hover:text-slate-900 mb-6 transition-colors"
-        >
-          <ArrowLeft size={20} />
-          <span className="font-medium">Back to Dashboard</span>
-        </button>
 
         {/* Profile Header */}
         <div className="bg-white border border-slate-200 rounded-lg p-6 mb-6">

@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  Play, Trophy, TrendingUp, Award, Calendar, User,
-  LogOut, Menu, X, Microscope, ChevronDown
+  Play, Trophy, TrendingUp, Award, Calendar
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
 import { OnboardingModal } from './OnboardingModal';
+import { SharedNavigation } from './SharedNavigation';
 
 interface Profile {
   full_name: string;
@@ -63,8 +63,6 @@ export function NewDashboard() {
   const [leaderboardPreview, setLeaderboardPreview] = useState<LeaderboardEntry[]>([]);
   const [recentSessions, setRecentSessions] = useState<RecentSession[]>([]);
   const [loading, setLoading] = useState(true);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [dropdownOpen, setDropdownOpen] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
 
   useEffect(() => {
@@ -151,11 +149,6 @@ export function NewDashboard() {
     }
   };
 
-  const handleLogout = async () => {
-    await signOut();
-    navigate('/');
-  };
-
   const handleStartSimulation = (simName: string) => {
     navigate('/lab');
   };
@@ -213,141 +206,7 @@ export function NewDashboard() {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      {/* Top Navigation */}
-      <header className="bg-white border-b border-slate-200 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center gap-3">
-              <button
-                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="lg:hidden p-2 rounded-lg hover:bg-slate-100"
-              >
-                {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
-              </button>
-              <button
-                onClick={() => navigate('/dashboard')}
-                className="flex items-center gap-2"
-              >
-                <Microscope className="w-6 h-6 text-emerald-600" />
-                <span className="text-xl font-bold text-slate-900">BioSim Lab</span>
-              </button>
-            </div>
-
-            <nav className="hidden lg:flex items-center gap-6">
-              <button
-                onClick={() => navigate('/dashboard')}
-                className="text-slate-900 font-medium hover:text-emerald-600 transition-colors"
-              >
-                Dashboard
-              </button>
-              <button
-                onClick={() => navigate('/leaderboard')}
-                className="text-slate-600 hover:text-emerald-600 transition-colors"
-              >
-                Leaderboard
-              </button>
-              <button
-                onClick={() => navigate('/profile')}
-                className="text-slate-600 hover:text-emerald-600 transition-colors"
-              >
-                Profile
-              </button>
-              {profile?.instructor_verified && (
-                <button
-                  onClick={() => navigate('/instructor/setup')}
-                  className="text-slate-600 hover:text-emerald-600 transition-colors"
-                >
-                  Instructor Portal
-                </button>
-              )}
-            </nav>
-
-            <div className="relative">
-              <button
-                onClick={() => setDropdownOpen(!dropdownOpen)}
-                className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-slate-100 transition-colors"
-              >
-                <div className="w-8 h-8 bg-emerald-600 rounded-full flex items-center justify-center">
-                  <User className="w-4 h-4 text-white" />
-                </div>
-                <span className="hidden sm:block text-sm font-medium text-slate-700">
-                  {getFirstName()}
-                </span>
-                <ChevronDown className="w-4 h-4 text-slate-500" />
-              </button>
-
-              {dropdownOpen && (
-                <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-slate-200 py-2">
-                  <button
-                    onClick={() => {
-                      navigate('/profile');
-                      setDropdownOpen(false);
-                    }}
-                    className="w-full flex items-center gap-3 px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 transition-colors"
-                  >
-                    <User size={16} />
-                    Profile
-                  </button>
-                  <div className="border-t border-slate-200 my-2" />
-                  <button
-                    onClick={handleLogout}
-                    className="w-full flex items-center gap-3 px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
-                  >
-                    <LogOut size={16} />
-                    Sign Out
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Mobile Menu */}
-        {mobileMenuOpen && (
-          <div className="lg:hidden border-t border-slate-200 bg-white">
-            <nav className="px-4 py-4 space-y-2">
-              <button
-                onClick={() => {
-                  navigate('/dashboard');
-                  setMobileMenuOpen(false);
-                }}
-                className="w-full text-left px-4 py-2 text-slate-900 font-medium hover:bg-slate-100 rounded-lg"
-              >
-                Dashboard
-              </button>
-              <button
-                onClick={() => {
-                  navigate('/leaderboard');
-                  setMobileMenuOpen(false);
-                }}
-                className="w-full text-left px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg"
-              >
-                Leaderboard
-              </button>
-              <button
-                onClick={() => {
-                  navigate('/profile');
-                  setMobileMenuOpen(false);
-                }}
-                className="w-full text-left px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg"
-              >
-                Profile
-              </button>
-              {profile?.instructor_verified && (
-                <button
-                  onClick={() => {
-                    navigate('/instructor/setup');
-                    setMobileMenuOpen(false);
-                  }}
-                  className="w-full text-left px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg"
-                >
-                  Instructor Portal
-                </button>
-              )}
-            </nav>
-          </div>
-        )}
-      </header>
+      <SharedNavigation />
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
