@@ -13,7 +13,6 @@ import { Homepage } from './components/Homepage';
 import { AdminDashboard } from './components/admin/AdminDashboard';
 import { InstructorRequestsAdmin } from './components/admin/InstructorRequestsAdmin';
 import { Dashboard } from './components/Dashboard';
-import { BrowseSimulations } from './components/BrowseSimulations';
 
 const App = lazy(() => import('./App'));
 const InstructorSetup = lazy(() => import('./components/InstructorSetup').then(m => ({ default: m.InstructorSetup })));
@@ -26,11 +25,10 @@ function AppContent() {
   const isAuthPage = ['/login', '/signup', '/verify-email', '/forgot-password', '/reset-password'].includes(location.pathname);
   const isAdminPage = location.pathname.startsWith('/admin');
   const isDashboardPage = location.pathname === '/dashboard';
-  const isBrowsePage = location.pathname === '/browse';
 
   return (
     <>
-      {!isAuthPage && !isAdminPage && !isDashboardPage && !isBrowsePage && <Header />}
+      {!isAuthPage && !isAdminPage && !isDashboardPage && <Header />}
       <Suspense fallback={
         <div className="flex items-center justify-center h-screen">
           <div className="text-center">
@@ -46,7 +44,6 @@ function AppContent() {
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/" element={<Homepage />} />
-          <Route path="/browse" element={<BrowseSimulations />} />
           <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
           <Route path="/lab" element={<ProtectedRoute allowGuestTrial={true}><App /></ProtectedRoute>} />
           <Route path="/leaderboard" element={<Leaderboard />} />

@@ -16,7 +16,7 @@ export function SignupModal({ simulationCount, onContinueAsGuest }: SignupModalP
   };
 
   const handleContinueAsGuest = () => {
-    navigate('/browse');
+    navigate('/');
   };
 
   if (!isVisible) {

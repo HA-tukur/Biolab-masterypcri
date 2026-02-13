@@ -2144,12 +2144,21 @@ export default function App() {
 
           {screen === "missions" && (
             <div className="space-y-8 animate-in slide-in-from-right">
-              <button onClick={() => {
-                localStorage.removeItem('guestTrial');
-                setScreen("welcome");
-              }} className="flex items-center gap-2 text-slate-400 hover:text-white transition-all text-sm">
-                <ChevronRight size={16} className="rotate-180" /> Back to Library
-              </button>
+              {user ? (
+                <button onClick={() => {
+                  localStorage.removeItem('guestTrial');
+                  setScreen("welcome");
+                }} className="flex items-center gap-2 text-slate-400 hover:text-white transition-all text-sm">
+                  <ChevronRight size={16} className="rotate-180" /> Back to Library
+                </button>
+              ) : (
+                <button onClick={() => {
+                  localStorage.removeItem('guestTrial');
+                  navigate('/');
+                }} className="flex items-center gap-2 text-slate-400 hover:text-white transition-all text-sm">
+                  <ChevronRight size={16} className="rotate-180" /> Back to Home
+                </button>
+              )}
 
               <section className="space-y-6">
                 <h2 className="text-3xl font-black text-slate-50 uppercase tracking-tighter flex items-center gap-3"><Dna size={28} className="text-indigo-400" /> DNA Extraction Missions</h2>

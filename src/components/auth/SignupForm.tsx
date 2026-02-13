@@ -302,8 +302,8 @@ export function SignupForm() {
               </p>
               <p className="text-sm text-gray-600">
                 Just browsing?{' '}
-                <Link to="/browse" className="text-cyan-600 hover:text-cyan-700 font-medium inline-flex items-center gap-1">
-                  Continue as guest →
+                <Link to="/" className="text-cyan-600 hover:text-cyan-700 font-medium inline-flex items-center gap-1">
+                  Back to home →
                 </Link>
               </p>
             </div>
