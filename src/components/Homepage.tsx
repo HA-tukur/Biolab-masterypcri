@@ -1,10 +1,13 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Microscope, Play, ChevronRight } from 'lucide-react';
+import { useState } from 'react';
+import { InstructorRequestModal } from './dashboard/InstructorRequestModal';
 
 export function Homepage() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [showRequestModal, setShowRequestModal] = useState(false);
 
   const handleStartFree = () => {
     if (user) {
@@ -15,20 +18,37 @@ export function Homepage() {
     }
   };
 
+  const handleRequestInstructorAccess = () => {
+    if (user) {
+      setShowRequestModal(true);
+    } else {
+      navigate('/signup');
+    }
+  };
+
   return (
     <div className="min-h-screen bg-white">
-      {user ? <AuthenticatedView /> : <NonAuthenticatedView onStartFree={handleStartFree} />}
+      {user ? (
+        <AuthenticatedView onRequestInstructorAccess={handleRequestInstructorAccess} />
+      ) : (
+        <NonAuthenticatedView onStartFree={handleStartFree} onRequestInstructorAccess={handleRequestInstructorAccess} />
+      )}
+      <InstructorRequestModal
+        isOpen={showRequestModal}
+        onClose={() => setShowRequestModal(false)}
+        onSuccess={() => setShowRequestModal(false)}
+      />
     </div>
   );
 }
 
-function NonAuthenticatedView({ onStartFree }: { onStartFree: () => void }) {
+function NonAuthenticatedView({ onStartFree, onRequestInstructorAccess }: { onStartFree: () => void; onRequestInstructorAccess: () => void }) {
   return (
     <>
       <HeroSection onStartFree={onStartFree} />
       <TestimonialSection />
       <ValuePropSection />
-      <ForInstructorsSection />
+      <ForInstructorsSection onRequestInstructorAccess={onRequestInstructorAccess} />
       <HowItWorksSection />
       <FAQSection />
       <FooterSection onStartFree={onStartFree} />
@@ -36,7 +56,7 @@ function NonAuthenticatedView({ onStartFree }: { onStartFree: () => void }) {
   );
 }
 
-function AuthenticatedView() {
+function AuthenticatedView({ onRequestInstructorAccess }: { onRequestInstructorAccess: () => void }) {
   const navigate = useNavigate();
   const { user } = useAuth();
 
@@ -46,7 +66,7 @@ function AuthenticatedView() {
     <>
       <DashboardHeader firstName={firstName} onResume={() => navigate('/lab')} />
       <ValuePropSection />
-      <ForInstructorsSection />
+      <ForInstructorsSection onRequestInstructorAccess={onRequestInstructorAccess} />
       <HowItWorksSection />
       <FAQSection />
       <FooterSection onStartFree={() => navigate('/lab')} />
@@ -160,9 +180,7 @@ function ValuePropSection() {
   );
 }
 
-function ForInstructorsSection() {
-  const navigate = useNavigate();
-
+function ForInstructorsSection({ onRequestInstructorAccess }: { onRequestInstructorAccess: () => void }) {
   const features = [
     {
       icon: '🎓',
@@ -205,7 +223,7 @@ function ForInstructorsSection() {
 
         <div className="text-center mt-8">
           <button
-            onClick={() => navigate('/signup')}
+            onClick={onRequestInstructorAccess}
             className="px-8 py-3 bg-teal-700 hover:bg-teal-800 text-white font-medium rounded-md transition-colors"
           >
             Request Instructor Access
