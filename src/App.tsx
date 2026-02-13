@@ -46,7 +46,6 @@ import { AntibodyIcon } from "./components/AntibodyIcon";
 import ClassCodePrompt from "./components/ClassCodePrompt";
 import { AILabAssistant } from "./components/AILabAssistant";
 import { Footer } from "./components/Footer";
-import { FeedbackButton } from "./components/FeedbackButton";
 import { ContactSection } from "./components/ContactSection";
 import { SignupBanner } from "./components/SignupBanner";
 import { SignupModal } from "./components/SignupModal";
@@ -3123,8 +3122,6 @@ export default function App() {
 
         <Footer />
       </div>
-
-      <FeedbackButton />
 
       {showSuccessModal && (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
