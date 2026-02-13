@@ -187,13 +187,14 @@ export function InstructorPortal() {
 
       const insertData = {
         instructor_id: user?.id,
-        name: formData.className,
+        instructor_name: profile?.full_name || user?.email || 'Instructor',
+        instructor_email: user?.email || null,
         class_name: formData.className,
+        name: formData.className,
         simulation_name: formData.module,
         class_code: classCode,
         admin_key: adminKey,
-        instructor_name: profile?.full_name || '',
-        instructor_email: user?.email || '',
+        mission_id: null,
       };
       console.log('Insert data:', insertData);
 
