@@ -165,7 +165,6 @@ export function NewDashboard() {
         .select(`
           id,
           class_id,
-          completed,
           enrolled_at
         `)
         .eq('user_id', user?.id)
@@ -188,7 +187,7 @@ export function NewDashboard() {
               class_name: classData?.class_name || 'Unknown Class',
               simulation_name: classData?.simulation_name || '',
               instructor_name: classData?.instructor_name || '',
-              completed: enrollment.completed,
+              completed: false,
               enrolled_at: enrollment.enrolled_at,
             };
           })

@@ -65,7 +65,6 @@ export function JoinClassModal({ onClose, onSuccess }: JoinClassModalProps) {
         .insert({
           class_id: classData.id,
           user_id: user.id,
-          completed: false,
         });
 
       if (enrollError) throw enrollError;

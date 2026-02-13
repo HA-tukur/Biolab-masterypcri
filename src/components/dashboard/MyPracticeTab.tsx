@@ -113,7 +113,6 @@ export function MyPracticeTab() {
         .from('class_enrollments')
         .select(`
           enrolled_at,
-          completed,
           classes!inner (
             id,
             name,
@@ -136,7 +135,7 @@ export function MyPracticeTab() {
         class_code: enrollment.classes.class_code,
         simulation_name: enrollment.classes.simulation_name,
         instructor_name: enrollment.classes.profiles.full_name,
-        completed: enrollment.completed,
+        completed: false,
         enrolled_at: enrollment.enrolled_at,
       })) || [];
 
