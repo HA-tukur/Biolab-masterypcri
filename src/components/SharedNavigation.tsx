@@ -3,7 +3,11 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { Microscope, User, LogOut, Menu, X, ChevronDown } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
-export function SharedNavigation() {
+interface SharedNavigationProps {
+  onShowManual?: () => void;
+}
+
+export function SharedNavigation({ onShowManual }: SharedNavigationProps = {}) {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, signOut } = useAuth();
@@ -62,6 +66,14 @@ export function SharedNavigation() {
             >
               Browse Simulations
             </button>
+            {onShowManual && (
+              <button
+                onClick={onShowManual}
+                className="hover:text-emerald-600 transition-colors text-slate-600"
+              >
+                Manual
+              </button>
+            )}
             <button
               onClick={() => navigate('/leaderboard')}
               className={`hover:text-emerald-600 transition-colors ${
@@ -155,6 +167,17 @@ export function SharedNavigation() {
             >
               Browse Simulations
             </button>
+            {onShowManual && (
+              <button
+                onClick={() => {
+                  onShowManual();
+                  setMobileMenuOpen(false);
+                }}
+                className="w-full text-left px-4 py-2 hover:bg-slate-100 rounded-lg text-slate-600"
+              >
+                Manual
+              </button>
+            )}
             <button
               onClick={() => {
                 navigate('/leaderboard');

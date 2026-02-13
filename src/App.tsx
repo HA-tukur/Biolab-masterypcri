@@ -1849,7 +1849,9 @@ export default function App() {
       {showManual && <LabManualOverlay onClose={() => setShowManual(false)} />}
       {showProtocol && <ProtocolBookOverlay onClose={() => setShowProtocol(false)} />}
       {showProtocolGuide && <ProtocolGuideOverlay onClose={() => setShowProtocolGuide(false)} missionId={missionId} />}
-      {showReadinessModal && <ReadinessOverlay onClose={() => setShowReadinessModal(false)} />}
+      {showReadinessModal && <ReadinessOverlay onClose={() => {
+        setShowReadinessModal(false);
+      }} />}
       {showProtocolOverview && (
         <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md overflow-y-auto">
           <div className="w-full py-8">
@@ -2129,7 +2131,7 @@ export default function App() {
 
           {screen === "missions" && (
             <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
-              <SharedNavigation />
+              <SharedNavigation onShowManual={() => setShowManual(true)} />
               <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-8">
                 <section className="space-y-6">
                 <h2 className="text-4xl font-bold text-slate-900 flex items-center gap-3 mb-8"><Dna size={32} className="text-emerald-600" /> DNA Extraction Missions</h2>
@@ -2187,7 +2189,9 @@ export default function App() {
           )}
 
           {screen === "briefing" && (
-            <div className="space-y-8 animate-in slide-in-from-right">
+            <div className="min-h-screen bg-[#0f172a]">
+              <SharedNavigation onShowManual={() => setShowManual(true)} />
+              <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-8">
               <div className="bg-gradient-to-br from-indigo-900/20 to-slate-800 border border-indigo-500/30 p-8 rounded-3xl">
                 <div className="space-y-6">
                   <div className="flex items-center gap-4">
@@ -2240,15 +2244,30 @@ export default function App() {
               </div>
 
               <div className="flex gap-4">
+                <button
+                  onClick={() => {
+                    if (user) {
+                      navigate('/browse');
+                    } else {
+                      setScreen("missions");
+                    }
+                  }}
+                  className="px-6 py-4 bg-slate-700 hover:bg-slate-600 text-white rounded-2xl font-bold uppercase tracking-wider transition-all cursor-pointer border-0"
+                >
+                  ← Exit Lab
+                </button>
                 <button onClick={() => setScreen("procurement")} className="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white py-4 px-6 rounded-2xl font-black uppercase tracking-wider transition-all cursor-pointer border-0 text-lg">
                   Proceed to Procurement
                 </button>
+              </div>
               </div>
             </div>
           )}
 
           {screen === "procurement" && (
-            <div className="space-y-8 animate-in slide-in-from-right">
+            <div className="min-h-screen bg-[#0f172a]">
+              <SharedNavigation onShowManual={() => setShowManual(true)} />
+              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-8">
               <div className="bg-slate-800 border border-slate-700 p-6 rounded-2xl flex justify-between items-center">
                 <div>
                   <h2 className="text-2xl font-black text-slate-50 uppercase tracking-tight">Laboratory Procurement</h2>
@@ -2425,11 +2444,14 @@ export default function App() {
                   Enter Lab
                 </button>
               </div>
+              </div>
             </div>
           )}
 
           {screen === "lab" && status === "idle" && currentStep && (
-            <div className="space-y-8 animate-in fade-in">
+            <div className="min-h-screen bg-[#0f172a]">
+              <SharedNavigation onShowManual={() => setShowManual(true)} />
+              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-8">
               <div className="bg-slate-800 border border-slate-700 p-6 rounded-2xl">
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="text-xl font-black text-slate-50 uppercase tracking-tight">Step {protocolIndex + 1}: {currentStep.title}</h2>
@@ -2828,11 +2850,14 @@ export default function App() {
                   )}
                 </div>
               </div>
+              </div>
             </div>
           )}
 
           {screen === "lab" && status === "verification" && !showQuant && (
-            <div className="space-y-8 animate-in fade-in">
+            <div className="min-h-screen bg-[#0f172a]">
+              <SharedNavigation onShowManual={() => setShowManual(true)} />
+              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-8">
               <div className="flex justify-end mb-4">
                 <button
                   onClick={() => setShowProtocolGuide(true)}
@@ -2966,11 +2991,14 @@ export default function App() {
               <button onClick={finalizeCalculations} disabled={!isVerificationSatisfied} className={`w-full py-4 rounded-2xl font-black uppercase tracking-wider transition-all cursor-pointer border-0 ${isVerificationSatisfied ? "bg-emerald-600 hover:bg-emerald-500 text-white" : "bg-slate-700 text-slate-500 cursor-not-allowed"}`}>
                 Analyze Results
               </button>
+              </div>
             </div>
           )}
 
           {screen === "lab" && showQuant && (
-            <div className="space-y-6 animate-in fade-in max-w-5xl mx-auto">
+            <div className="min-h-screen bg-[#0f172a]">
+              <SharedNavigation onShowManual={() => setShowManual(true)} />
+              <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-6">
               <div className={`bg-gradient-to-br ${status === "mastery" ? "from-emerald-900/20 to-slate-800 border-emerald-500/30" : "from-rose-900/20 to-slate-800 border-rose-500/30"} border p-6 rounded-3xl text-center space-y-5`}>
                 {status === "mastery" && <MasteryBadge />}
                 {status !== "mastery" && (
@@ -3081,11 +3109,12 @@ export default function App() {
               <button onClick={() => { if (user) { navigate('/browse'); } else { setScreen("welcome"); } }} className="w-full bg-slate-900/50 py-3 rounded-xl font-bold uppercase text-slate-400 border border-slate-700 cursor-pointer text-xs tracking-wide transition-all hover:bg-slate-900/70">
                 Return to Browse
               </button>
+              </div>
             </div>
           )}
         </main>
 
-        <Footer />
+        {screen === "welcome" && <Footer />}
       </div>
 
       {showSuccessModal && (
