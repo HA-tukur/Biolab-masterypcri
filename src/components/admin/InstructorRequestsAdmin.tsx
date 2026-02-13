@@ -35,7 +35,12 @@ export function InstructorRequestsAdmin() {
         throw new Error('Not authenticated');
       }
 
+      console.log('=== FETCHING INSTRUCTOR REQUESTS ===');
+      console.log('Session user:', session.user.email);
+      console.log('Session app_metadata:', session.user.app_metadata);
+
       const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/get-instructor-requests`;
+      console.log('Fetching from:', apiUrl);
 
       const response = await fetch(apiUrl, {
         method: 'GET',
@@ -45,16 +50,69 @@ export function InstructorRequestsAdmin() {
         },
       });
 
+      console.log('Response status:', response.status);
+      console.log('Response ok:', response.ok);
+
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to fetch requests');
+        const errorText = await response.text();
+        console.error('Error response text:', errorText);
+        try {
+          const errorData = JSON.parse(errorText);
+          throw new Error(errorData.error || `Failed to fetch requests (${response.status})`);
+        } catch (parseError) {
+          throw new Error(`Failed to fetch requests: ${response.status} - ${errorText}`);
+        }
       }
 
-      const { requests: fetchedRequests } = await response.json();
+      const responseData = await response.json();
+      console.log('Response data:', responseData);
+
+      const { requests: fetchedRequests } = responseData;
+      console.log('Fetched requests count:', fetchedRequests?.length || 0);
       setRequests(fetchedRequests);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch requests');
-      console.error('Error fetching requests:', err);
+      console.error('=== ERROR FETCHING REQUESTS (trying fallback) ===');
+      console.error('Error:', err);
+
+      // Fallback: try direct query (requires RLS policy for admins)
+      try {
+        console.log('Attempting direct query fallback...');
+        const { data: directRequests, error: directError } = await supabase
+          .from('instructor_requests')
+          .select('*')
+          .eq('status', 'pending')
+          .order('created_at', { ascending: false });
+
+        if (directError) {
+          throw directError;
+        }
+
+        console.log('Direct query successful! Requests found:', directRequests?.length || 0);
+
+        // Try to get emails from profiles table
+        const requestsWithEmails = await Promise.all(
+          (directRequests || []).map(async (request) => {
+            const { data: profileData } = await supabase
+              .from('profiles')
+              .select('email')
+              .eq('id', request.user_id)
+              .maybeSingle();
+
+            return {
+              ...request,
+              email: profileData?.email || request.university_email || 'Unknown',
+            };
+          })
+        );
+
+        setRequests(requestsWithEmails);
+        setError(null);
+      } catch (fallbackErr) {
+        const errorMessage = err instanceof Error ? err.message : 'Failed to fetch requests';
+        setError(`${errorMessage} (Fallback also failed: ${fallbackErr instanceof Error ? fallbackErr.message : 'Unknown error'})`);
+        console.error('=== FALLBACK ALSO FAILED ===');
+        console.error('Fallback error:', fallbackErr);
+      }
     } finally {
       setLoading(false);
     }
@@ -148,7 +206,16 @@ export function InstructorRequestsAdmin() {
 
         {error && (
           <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-            <p className="text-red-800 text-sm">{error}</p>
+            <p className="text-red-800 text-sm font-semibold mb-2">Error: {error}</p>
+            <div className="text-red-700 text-sm space-y-2 mt-3">
+              <p className="font-medium">Troubleshooting steps:</p>
+              <ol className="list-decimal list-inside space-y-1 ml-2">
+                <li>Check the browser console for detailed error logs</li>
+                <li>Verify your admin email ({import.meta.env.VITE_ADMIN_EMAILS}) matches your logged-in email</li>
+                <li>If using RLS policies, ensure your user has app_metadata.role = 'admin' in Supabase Dashboard</li>
+                <li>Check that the get-instructor-requests edge function is deployed and ADMIN_EMAILS env var is set</li>
+              </ol>
+            </div>
           </div>
         )}
 
