@@ -118,55 +118,27 @@ export function InstructorRequestsAdmin() {
       setProcessing(requestId);
       setError(null);
 
-      console.log('=== PROCESSING INSTRUCTOR REQUEST ===');
-      console.log('Request ID:', requestId);
-      console.log('Action:', action);
+      const functionName = action === 'approve'
+        ? 'approve_instructor_request'
+        : 'reject_instructor_request';
 
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        console.error('No session found');
-        throw new Error('Not authenticated');
-      }
-
-      console.log('Session user:', session.user.email);
-
-      const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-instructor-decision`;
-      console.log('Calling edge function:', apiUrl);
-
-      const response = await fetch(apiUrl, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${session.access_token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ requestId, action }),
+      const { data, error } = await supabase.rpc(functionName, {
+        request_id: requestId,
       });
 
-      console.log('Response status:', response.status);
-      console.log('Response ok:', response.ok);
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Error response text:', errorText);
-        try {
-          const errorData = JSON.parse(errorText);
-          throw new Error(errorData.error || `Failed to ${action} request (${response.status})`);
-        } catch (parseError) {
-          throw new Error(`Failed to ${action} request: ${response.status} - ${errorText}`);
-        }
+      if (error) {
+        throw new Error(error.message);
       }
 
-      const result = await response.json();
-      console.log('Success:', result);
+      if (data && data.error) {
+        throw new Error(data.error);
+      }
 
       await fetchRequests();
     } catch (err) {
-      console.error('=== ERROR PROCESSING REQUEST ===');
-      console.error('Error object:', err);
-      console.error('Error message:', err instanceof Error ? err.message : 'Unknown error');
-
       const errorMessage = err instanceof Error ? err.message : 'Failed to process request';
       setError(errorMessage);
+      console.error('Error processing request:', err);
     } finally {
       setProcessing(null);
     }
