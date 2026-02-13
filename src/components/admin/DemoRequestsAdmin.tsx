@@ -8,10 +8,10 @@ interface DemoRequest {
   institution_name: string;
   country: string;
   state: string | null;
-  name: string;
+  contact_name: string;
   contact_email: string;
-  contact_number: string;
-  role_position: string;
+  contact_number: string | null;
+  role_position: string | null;
   created_at: string;
 }
 
@@ -128,12 +128,14 @@ export function DemoRequestsAdmin() {
                           </div>
                           <div>
                             <span className="text-slate-500">Contact:</span>{' '}
-                            <span className="text-slate-900">{request.name}</span>
+                            <span className="text-slate-900">{request.contact_name}</span>
                           </div>
-                          <div>
-                            <span className="text-slate-500">Role:</span>{' '}
-                            <span className="text-slate-900">{request.role_position}</span>
-                          </div>
+                          {request.role_position && (
+                            <div>
+                              <span className="text-slate-500">Role:</span>{' '}
+                              <span className="text-slate-900">{request.role_position}</span>
+                            </div>
+                          )}
                         </div>
                       </div>
                       <div>
@@ -147,15 +149,17 @@ export function DemoRequestsAdmin() {
                               {request.contact_email}
                             </a>
                           </div>
-                          <div>
-                            <span className="text-slate-500">Phone:</span>{' '}
-                            <a
-                              href={`tel:${request.contact_number}`}
-                              className="text-emerald-600 hover:text-emerald-700 font-medium"
-                            >
-                              {request.contact_number}
-                            </a>
-                          </div>
+                          {request.contact_number && (
+                            <div>
+                              <span className="text-slate-500">Phone:</span>{' '}
+                              <a
+                                href={`tel:${request.contact_number}`}
+                                className="text-emerald-600 hover:text-emerald-700 font-medium"
+                              >
+                                {request.contact_number}
+                              </a>
+                            </div>
+                          )}
                           <div className="flex items-center gap-1.5 text-slate-500 mt-4">
                             <Calendar className="w-4 h-4" />
                             <span>{formatDate(request.created_at)}</span>

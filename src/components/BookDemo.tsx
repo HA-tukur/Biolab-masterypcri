@@ -15,7 +15,7 @@ export function BookDemo() {
     institution_name: '',
     country: '',
     state: '',
-    name: '',
+    contact_name: '',
     contact_email: '',
     contact_number: '',
     role_position: ''
@@ -41,10 +41,10 @@ export function BookDemo() {
           institution_name: formData.institution_name.trim(),
           country: formData.country.trim(),
           state: formData.state.trim() || null,
-          name: formData.name.trim(),
+          contact_name: formData.contact_name.trim(),
           contact_email: formData.contact_email.trim(),
-          contact_number: formData.contact_number.trim(),
-          role_position: formData.role_position.trim()
+          contact_number: formData.contact_number.trim() || null,
+          role_position: formData.role_position.trim() || null
         });
 
       if (insertError) throw insertError;
@@ -54,7 +54,7 @@ export function BookDemo() {
         institution_name: '',
         country: '',
         state: '',
-        name: '',
+        contact_name: '',
         contact_email: '',
         contact_number: '',
         role_position: ''
@@ -151,14 +151,14 @@ export function BookDemo() {
               </div>
 
               <div>
-                <label htmlFor="name" className="block text-sm font-medium text-slate-700 mb-2">
+                <label htmlFor="contact_name" className="block text-sm font-medium text-slate-700 mb-2">
                   Your Name <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
-                  id="name"
-                  name="name"
-                  value={formData.name}
+                  id="contact_name"
+                  name="contact_name"
+                  value={formData.contact_name}
                   onChange={handleChange}
                   required
                   className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none"
