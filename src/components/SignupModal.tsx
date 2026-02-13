@@ -16,7 +16,8 @@ export function SignupModal({ simulationCount, onContinueAsGuest }: SignupModalP
   };
 
   const handleContinueAsGuest = () => {
-    navigate('/');
+    localStorage.setItem('guestTrial', 'dna-extraction');
+    navigate('/lab');
   };
 
   if (!isVisible) {

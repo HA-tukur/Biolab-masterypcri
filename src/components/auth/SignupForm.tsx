@@ -302,9 +302,16 @@ export function SignupForm() {
               </p>
               <p className="text-sm text-gray-600">
                 Just browsing?{' '}
-                <Link to="/" className="text-cyan-600 hover:text-cyan-700 font-medium inline-flex items-center gap-1">
-                  Back to home →
-                </Link>
+                <button
+                  type="button"
+                  onClick={() => {
+                    localStorage.setItem('guestTrial', 'dna-extraction');
+                    navigate('/lab');
+                  }}
+                  className="text-cyan-600 hover:text-cyan-700 font-medium inline-flex items-center gap-1"
+                >
+                  Continue as guest →
+                </button>
               </p>
             </div>
         </div>
