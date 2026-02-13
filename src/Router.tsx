@@ -30,7 +30,8 @@ function AppContent() {
   const isProfilePage = location.pathname === '/profile';
   const isLeaderboardPage = location.pathname === '/leaderboard';
   const isBrowseSimulationsPage = location.pathname === '/browse';
-  const hasOwnNavigation = isDashboardPage || isProfilePage || isLeaderboardPage || isBrowseSimulationsPage;
+  const isLabPage = location.pathname === '/lab';
+  const hasOwnNavigation = isDashboardPage || isProfilePage || isLeaderboardPage || isBrowseSimulationsPage || isLabPage;
 
   return (
     <>

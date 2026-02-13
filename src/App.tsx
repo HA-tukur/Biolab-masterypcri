@@ -48,6 +48,7 @@ import { AILabAssistant } from "./components/AILabAssistant";
 import { Footer } from "./components/Footer";
 import { ContactSection } from "./components/ContactSection";
 import { SignupBanner } from "./components/SignupBanner";
+import { SharedNavigation } from "./components/SharedNavigation";
 import { SignupModal } from "./components/SignupModal";
 import { useAnonymousUser } from "./hooks/useAnonymousUser";
 import { config } from "./config";
@@ -2167,25 +2168,11 @@ export default function App() {
           )}
 
           {screen === "missions" && (
-            <div className="space-y-8 animate-in slide-in-from-right">
-              {user ? (
-                <button onClick={() => {
-                  localStorage.removeItem('guestTrial');
-                  setScreen("welcome");
-                }} className="flex items-center gap-2 text-slate-400 hover:text-white transition-all text-sm">
-                  <ChevronRight size={16} className="rotate-180" /> Back to Library
-                </button>
-              ) : (
-                <button onClick={() => {
-                  localStorage.removeItem('guestTrial');
-                  navigate('/');
-                }} className="flex items-center gap-2 text-slate-400 hover:text-white transition-all text-sm">
-                  <ChevronRight size={16} className="rotate-180" /> Back to Home
-                </button>
-              )}
-
-              <section className="space-y-6">
-                <h2 className="text-3xl font-black text-slate-50 uppercase tracking-tighter flex items-center gap-3"><Dna size={28} className="text-indigo-400" /> DNA Extraction Missions</h2>
+            <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
+              <SharedNavigation />
+              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-8">
+                <section className="space-y-6">
+                <h2 className="text-4xl font-bold text-slate-900 flex items-center gap-3 mb-8"><Dna size={32} className="text-emerald-600" /> DNA Extraction Missions</h2>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {Object.entries(MISSIONS_DATA.DNA_EXT).map(([key, mission]) => {
@@ -2193,37 +2180,37 @@ export default function App() {
                     const isLocked = isGuestMode && key !== 'A';
 
                     return (
-                      <div key={key} className={`bg-slate-800 border border-slate-700 rounded-3xl overflow-hidden transition-all ${isLocked ? 'opacity-50 cursor-not-allowed' : 'hover:border-indigo-500/50 group'}`}>
+                      <div key={key} className={`bg-white border-2 border-slate-200 rounded-xl overflow-hidden transition-all ${isLocked ? 'opacity-50 cursor-not-allowed' : 'hover:border-emerald-500 hover:shadow-lg group'}`}>
                         <div className="p-8 space-y-4 relative">
                           {isLocked && (
-                            <div className="absolute inset-0 bg-slate-900/70 backdrop-blur-sm z-10 flex items-center justify-center rounded-3xl">
+                            <div className="absolute inset-0 bg-white/90 backdrop-blur-sm z-10 flex items-center justify-center rounded-xl">
                               <div className="text-center space-y-2">
                                 <Lock className="mx-auto text-slate-400" size={32} />
-                                <p className="text-slate-300 font-bold text-sm">Complete Mission 1 First</p>
+                                <p className="text-slate-600 font-bold text-sm">Complete Mission 1 First</p>
                               </div>
                             </div>
                           )}
                           <div className="flex items-start justify-between">
                             <div className="space-y-2">
-                              <h3 className="text-2xl font-black text-slate-50 uppercase tracking-tight">{mission.title}</h3>
-                              <p className="text-sm text-slate-400 leading-relaxed">{mission.brief}</p>
+                              <h3 className="text-2xl font-bold text-slate-900 tracking-tight">{mission.title}</h3>
+                              <p className="text-sm text-slate-600 leading-relaxed">{mission.brief}</p>
                             </div>
                           </div>
-                          <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-700">
-                            <p className="text-xs text-slate-400 font-mono">{mission.summary}</p>
+                          <div className="bg-slate-50 p-4 rounded-lg border border-slate-200">
+                            <p className="text-xs text-slate-700 font-mono">{mission.summary}</p>
                           </div>
-                          <div className="flex items-center justify-between pt-4 border-t border-slate-700">
+                          <div className="flex items-center justify-between pt-4 border-t border-slate-200">
                             <div className="text-left">
-                              <p className="text-[9px] text-slate-500 uppercase font-bold tracking-wider mb-1">Budget</p>
-                              <p className="text-lg font-black text-amber-400 font-mono">{mission.budget} BC</p>
+                              <p className="text-xs text-slate-500 uppercase font-bold tracking-wider mb-1">Budget</p>
+                              <p className="text-lg font-black text-amber-600 font-mono">{mission.budget} BC</p>
                             </div>
                             <button
                               onClick={() => !isLocked && startMission("DNA_EXT", key)}
                               disabled={isLocked}
-                              className={`px-6 py-3 rounded-xl font-black uppercase text-sm transition-all border-0 ${
+                              className={`px-6 py-3 rounded-lg font-bold text-sm transition-all border-0 ${
                                 isLocked
-                                  ? 'bg-slate-700 text-slate-500 cursor-not-allowed'
-                                  : 'bg-indigo-600 hover:bg-indigo-500 text-white group-hover:scale-105 cursor-pointer'
+                                  ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
+                                  : 'bg-emerald-600 hover:bg-emerald-700 text-white group-hover:scale-105 cursor-pointer'
                               }`}
                             >
                               Start Mission
@@ -2235,6 +2222,7 @@ export default function App() {
                   })}
                 </div>
               </section>
+              </div>
             </div>
           )}
 
