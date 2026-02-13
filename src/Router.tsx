@@ -18,6 +18,7 @@ import { NewLeaderboard } from './components/NewLeaderboard';
 import { BrowseSimulations } from './components/BrowseSimulations';
 import { InstructorPortal } from './components/InstructorPortal';
 import { StudentProgressView } from './components/StudentProgressView';
+import { InstructorRequestForm } from './components/InstructorRequestForm';
 
 const App = lazy(() => import('./App'));
 const InstructorDashboard = lazy(() => import('./components/InstructorDashboard').then(m => ({ default: m.InstructorDashboard })));
@@ -57,6 +58,7 @@ function AppContent() {
           <Route path="/lab" element={<ProtectedRoute allowGuestTrial={true}><App /></ProtectedRoute>} />
           <Route path="/leaderboard" element={<NewLeaderboard />} />
           <Route path="/profile" element={<ProtectedRoute><NewProfile /></ProtectedRoute>} />
+          <Route path="/instructor/request" element={<ProtectedRoute><InstructorRequestForm /></ProtectedRoute>} />
           <Route path="/instructor/setup" element={<ProtectedRoute><InstructorPortal /></ProtectedRoute>} />
           <Route path="/instructor/class/:classId" element={<ProtectedRoute><StudentProgressView /></ProtectedRoute>} />
           <Route path="/instructor/:code" element={<ProtectedRoute><InstructorDashboard /></ProtectedRoute>} />

@@ -1,13 +1,11 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Microscope, Play, ChevronRight } from 'lucide-react';
-import { useState, useEffect } from 'react';
-import { InstructorRequestModal } from './dashboard/InstructorRequestModal';
+import { useEffect } from 'react';
 
 export function Homepage() {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [showRequestModal, setShowRequestModal] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -25,11 +23,7 @@ export function Homepage() {
   };
 
   const handleRequestInstructorAccess = () => {
-    if (user) {
-      setShowRequestModal(true);
-    } else {
-      navigate('/signup');
-    }
+    navigate('/signup');
   };
 
   if (user) {
@@ -39,11 +33,6 @@ export function Homepage() {
   return (
     <div className="min-h-screen bg-white">
       <NonAuthenticatedView onStartFree={handleStartFree} onRequestInstructorAccess={handleRequestInstructorAccess} />
-      <InstructorRequestModal
-        isOpen={showRequestModal}
-        onClose={() => setShowRequestModal(false)}
-        onSuccess={() => setShowRequestModal(false)}
-      />
     </div>
   );
 }

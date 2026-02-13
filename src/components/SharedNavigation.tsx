@@ -24,6 +24,15 @@ export function SharedNavigation({ onShowManual }: SharedNavigationProps = {}) {
     return 'User';
   };
 
+  const handleInstructorPortalClick = () => {
+    if (isInstructorRole) {
+      navigate('/instructor/setup');
+    } else {
+      navigate('/instructor/request');
+    }
+    setMobileMenuOpen(false);
+  };
+
   const handleLogout = async () => {
     await signOut();
     navigate('/');
@@ -90,16 +99,14 @@ export function SharedNavigation({ onShowManual }: SharedNavigationProps = {}) {
             >
               Profile
             </button>
-            {isInstructorRole && (
-              <button
-                onClick={() => navigate('/instructor/setup')}
-                className={`hover:text-emerald-600 transition-colors ${
-                  currentPath.startsWith('/instructor') ? 'text-slate-900 font-medium' : 'text-slate-600'
-                }`}
-              >
-                Instructor Portal
-              </button>
-            )}
+            <button
+              onClick={handleInstructorPortalClick}
+              className={`hover:text-emerald-600 transition-colors ${
+                currentPath.startsWith('/instructor') ? 'text-slate-900 font-medium' : 'text-slate-600'
+              }`}
+            >
+              Instructor Portal
+            </button>
           </nav>
 
           <div className="relative">
@@ -200,19 +207,14 @@ export function SharedNavigation({ onShowManual }: SharedNavigationProps = {}) {
             >
               Profile
             </button>
-            {isInstructorRole && (
-              <button
-                onClick={() => {
-                  navigate('/instructor/setup');
-                  setMobileMenuOpen(false);
-                }}
-                className={`w-full text-left px-4 py-2 hover:bg-slate-100 rounded-lg ${
-                  currentPath.startsWith('/instructor') ? 'text-slate-900 font-medium' : 'text-slate-600'
-                }`}
-              >
-                Instructor Portal
-              </button>
-            )}
+            <button
+              onClick={handleInstructorPortalClick}
+              className={`w-full text-left px-4 py-2 hover:bg-slate-100 rounded-lg ${
+                currentPath.startsWith('/instructor') ? 'text-slate-900 font-medium' : 'text-slate-600'
+              }`}
+            >
+              Instructor Portal
+            </button>
           </nav>
         </div>
       )}
