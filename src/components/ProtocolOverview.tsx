@@ -279,38 +279,38 @@ export const ProtocolOverview = ({ missionId, onBack, onStartMission }: Protocol
 
   return (
     <>
-      <div className="max-w-5xl mx-auto space-y-6">
+      <div className="max-w-5xl mx-auto px-4 py-6 space-y-4">
         <div className="flex items-center gap-4">
           <button
             onClick={onBack}
-            className="p-3 bg-gray-200 hover:bg-gray-300 rounded-lg transition-colors text-gray-900 border-0 cursor-pointer"
+            className="p-3 bg-transparent border-2 border-slate-300 hover:border-slate-200 text-slate-300 hover:text-slate-200 rounded-lg transition-colors cursor-pointer"
           >
             <ArrowLeft size={24} />
           </button>
           <div>
-            <h1 className="text-3xl md:text-4xl font-black uppercase tracking-tight text-white">
+            <h1 className="text-2xl md:text-3xl font-black uppercase tracking-tight text-white">
               Mission Protocol
             </h1>
             <p className="text-slate-400 text-sm">Review the complete protocol before starting</p>
           </div>
         </div>
 
-        <div className="bg-slate-800 border border-emerald-500/50 rounded-lg p-8 space-y-6">
-          <div className="space-y-2">
-            <h2 className="text-2xl md:text-3xl font-black uppercase text-white">
+        <div className="bg-slate-800 border border-emerald-500/50 rounded-lg p-6 space-y-4">
+          <div className="space-y-1">
+            <h2 className="text-xl md:text-2xl font-black uppercase text-white">
               {protocol.title}
             </h2>
-            <p className="text-emerald-400 font-bold">{protocol.subtitle}</p>
-            <p className="text-slate-400 text-sm">📍 {protocol.location}</p>
+            <p className="text-emerald-400 font-bold text-sm">{protocol.subtitle}</p>
+            <p className="text-slate-400 text-xs">📍 {protocol.location}</p>
           </div>
 
-          <div className="bg-slate-900/50 border border-slate-700 rounded-xl p-6 space-y-4">
+          <div className="bg-slate-900/50 border border-slate-700 rounded-xl p-4 space-y-2">
             <div>
-              <h3 className="text-lg font-bold text-white mb-2">Scenario</h3>
-              <p className="text-slate-300 leading-relaxed">{protocol.scenario}</p>
+              <h3 className="text-base font-bold text-white mb-1">Scenario</h3>
+              <p className="text-slate-300 text-sm leading-relaxed">{protocol.scenario}</p>
             </div>
 
-            <div className="grid md:grid-cols-2 gap-4 pt-4 border-t border-slate-700">
+            <div className="grid md:grid-cols-2 gap-3 pt-2 border-t border-slate-700">
               <div>
                 <h4 className="text-sm font-bold text-emerald-400 uppercase mb-2">Target Gene</h4>
                 <p className="text-white font-mono">{protocol.targetGene}</p>
@@ -322,64 +322,64 @@ export const ProtocolOverview = ({ missionId, onBack, onStartMission }: Protocol
             </div>
           </div>
 
-          <div className="bg-blue-900/20 border border-blue-500/30 rounded-xl p-6 space-y-3">
-            <h3 className="text-lg font-bold text-blue-300">Protocol Overview</h3>
+          <div className="bg-blue-900/20 border border-blue-500/30 rounded-xl p-4 space-y-2">
+            <h3 className="text-base font-bold text-blue-300">Protocol Overview</h3>
             <p className="text-blue-200 text-sm leading-relaxed">{protocol.overview}</p>
           </div>
 
-          <div className="bg-slate-900/50 border border-slate-700 rounded-xl p-6 space-y-4">
-            <h3 className="text-lg font-bold text-white">Learning Objectives</h3>
-            <ul className="space-y-2">
+          <div className="bg-slate-900/50 border border-slate-700 rounded-xl p-4 space-y-2">
+            <h3 className="text-base font-bold text-white">Learning Objectives</h3>
+            <ul className="space-y-1">
               {protocol.objectives.map((objective, index) => (
-                <li key={index} className="flex items-start gap-3">
-                  <span className="text-emerald-400 font-bold mt-1">✓</span>
+                <li key={index} className="flex items-start gap-2">
+                  <span className="text-emerald-400 font-bold text-xs mt-0.5">✓</span>
                   <span className="text-slate-300 text-sm">{objective}</span>
                 </li>
               ))}
             </ul>
           </div>
 
-          <div className="bg-slate-900/50 border border-slate-700 rounded-xl p-6 space-y-4">
-            <h3 className="text-lg font-bold text-white">Workflow Steps</h3>
-            <div className="grid md:grid-cols-2 gap-4">
+          <div className="bg-slate-900/50 border border-slate-700 rounded-xl p-4 space-y-2">
+            <h3 className="text-base font-bold text-white">Workflow Steps</h3>
+            <div className="grid md:grid-cols-3 gap-3">
               {protocol.steps.map((step, index) => (
-                <div key={index} className="bg-slate-800/50 border border-slate-600 rounded-lg p-4 space-y-2">
-                  <div className="flex items-center gap-3">
-                    <div className="text-emerald-400">{step.icon}</div>
+                <div key={index} className="bg-slate-800/50 border border-slate-600 rounded-lg p-3 space-y-1">
+                  <div className="flex items-center gap-2">
+                    <div className="text-emerald-400 scale-75">{step.icon}</div>
                     <div>
-                      <h4 className="font-bold text-white text-sm">{step.title}</h4>
-                      <p className="text-xs text-slate-500">{step.duration}</p>
+                      <h4 className="font-bold text-white text-xs">{step.title}</h4>
+                      <p className="text-[10px] text-slate-500">{step.duration}</p>
                     </div>
                   </div>
-                  <p className="text-xs text-slate-400">{step.description}</p>
+                  <p className="text-[11px] text-slate-400 leading-tight">{step.description}</p>
                 </div>
               ))}
             </div>
           </div>
 
-          <div className="bg-amber-900/20 border border-amber-500/30 rounded-xl p-6 space-y-3">
-            <h3 className="text-lg font-bold text-amber-300">⏱️ Estimated Total Time</h3>
-            <p className="text-amber-200 text-sm">
+          <div className="bg-amber-900/20 border border-amber-500/30 rounded-xl p-3 space-y-1">
+            <h3 className="text-sm font-bold text-amber-300">⏱️ Estimated Total Time</h3>
+            <p className="text-amber-200 text-xs">
               4-6 hours total (includes 2-3 hours of automated thermal cycling)
             </p>
-            <p className="text-amber-200/70 text-xs">
+            <p className="text-amber-200/70 text-[11px]">
               Note: Primer ordering adds 2-3 business days before you can begin the wet lab work
             </p>
           </div>
 
-          <div className="flex gap-4 pt-4">
+          <div className="flex gap-3 pt-2">
             <button
               onClick={() => setShowFullProtocol(true)}
-              className="flex-1 flex items-center justify-center gap-2 bg-gray-200 hover:bg-gray-300 text-white py-4 rounded-xl font-bold uppercase border-0 cursor-pointer transition-all"
+              className="flex-1 flex items-center justify-center gap-2 bg-transparent border-2 border-slate-300 hover:border-slate-200 text-slate-300 hover:text-slate-200 py-3 rounded-xl font-bold uppercase cursor-pointer transition-all"
             >
-              <FileText size={20} />
+              <FileText size={18} />
               View Full Protocol
             </button>
             <button
               onClick={onStartMission}
-              className="flex-1 flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white py-4 rounded-xl font-bold uppercase border-0 cursor-pointer transition-all"
+              className="flex-1 flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white py-3 rounded-xl font-bold uppercase cursor-pointer transition-all border-0"
             >
-              <Play size={20} />
+              <Play size={18} />
               Start Mission
             </button>
           </div>
