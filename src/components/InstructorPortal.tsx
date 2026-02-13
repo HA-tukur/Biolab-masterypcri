@@ -16,7 +16,7 @@ const AVAILABLE_MODULES = [
 
 interface ClassData {
   id: string;
-  name: string;
+  class_name: string;
   simulation_name: string;
   class_code: string;
   created_at: string;
@@ -79,7 +79,7 @@ export function InstructorPortal() {
     try {
       const { data: classesData, error } = await supabase
         .from('classes')
-        .select('id, name, simulation_name, class_code, created_at')
+        .select('id, class_name, simulation_name, class_code, created_at')
         .eq('instructor_id', user?.id)
         .order('created_at', { ascending: false });
 
@@ -190,7 +190,6 @@ export function InstructorPortal() {
         instructor_name: profile?.full_name || user?.email || 'Instructor',
         instructor_email: user?.email || null,
         class_name: formData.className,
-        name: formData.className,
         simulation_name: formData.module,
         class_code: classCode,
         admin_key: adminKey,
@@ -395,7 +394,7 @@ export function InstructorPortal() {
                   className="border border-slate-200 rounded-lg p-5 hover:shadow-md transition-shadow"
                 >
                   <h3 className="text-lg font-semibold text-slate-900 mb-2">
-                    {cls.name}
+                    {cls.class_name}
                   </h3>
                   <p className="text-sm text-slate-600 mb-3">
                     Module: {cls.simulation_name}
