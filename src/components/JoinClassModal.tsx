@@ -51,7 +51,7 @@ export function JoinClassModal({ onClose, onSuccess }: JoinClassModalProps) {
         .from('class_enrollments')
         .select('id')
         .eq('class_id', classData.id)
-        .eq('user_id', user.id)
+        .eq('student_id', user.id)
         .maybeSingle();
 
       if (existingEnrollment) {
@@ -64,7 +64,7 @@ export function JoinClassModal({ onClose, onSuccess }: JoinClassModalProps) {
         .from('class_enrollments')
         .insert({
           class_id: classData.id,
-          user_id: user.id,
+          student_id: user.id,
         });
 
       if (enrollError) throw enrollError;

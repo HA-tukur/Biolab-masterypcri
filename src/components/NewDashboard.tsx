@@ -167,7 +167,7 @@ export function NewDashboard() {
           class_id,
           enrolled_at
         `)
-        .eq('user_id', user?.id)
+        .eq('student_id', user?.id)
         .order('enrolled_at', { ascending: false });
 
       if (error) throw error;

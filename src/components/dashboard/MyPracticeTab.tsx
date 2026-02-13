@@ -124,7 +124,7 @@ export function MyPracticeTab() {
             )
           )
         `)
-        .eq('user_id', user.id)
+        .eq('student_id', user.id)
         .order('enrolled_at', { ascending: false });
 
       if (error) throw error;
@@ -175,7 +175,7 @@ export function MyPracticeTab() {
         .from('class_enrollments')
         .select('id')
         .eq('class_id', classData.id)
-        .eq('user_id', user?.id)
+        .eq('student_id', user?.id)
         .maybeSingle();
 
       if (checkError) throw checkError;
@@ -190,7 +190,7 @@ export function MyPracticeTab() {
         .from('class_enrollments')
         .insert({
           class_id: classData.id,
-          user_id: user?.id,
+          student_id: user?.id,
           completed: false,
         });
 

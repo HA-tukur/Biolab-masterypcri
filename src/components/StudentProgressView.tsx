@@ -60,7 +60,7 @@ export function StudentProgressView() {
         .from('class_enrollments')
         .select(`
           id,
-          user_id,
+          student_id,
           enrolled_at,
           completed
         `)
@@ -75,13 +75,13 @@ export function StudentProgressView() {
             const { data: profile } = await supabase
               .from('profiles')
               .select('full_name, email')
-              .eq('id', enrollment.user_id)
+              .eq('id', enrollment.student_id)
               .maybeSingle();
 
             const { data: lastActivity } = await supabase
               .from('simulation_usage')
               .select('started_at')
-              .eq('user_id', enrollment.user_id)
+              .eq('user_id', enrollment.student_id)
               .eq('simulation_name', classData.simulation_name)
               .order('started_at', { ascending: false })
               .limit(1)
@@ -90,14 +90,14 @@ export function StudentProgressView() {
             const { data: result } = await supabase
               .from('lab_results')
               .select('score')
-              .eq('student_id', enrollment.user_id)
+              .eq('student_id', enrollment.student_id)
               .order('created_at', { ascending: false })
               .limit(1)
               .maybeSingle();
 
             return {
               id: enrollment.id,
-              user_id: enrollment.user_id,
+              user_id: enrollment.student_id,
               full_name: profile?.full_name || 'Unknown',
               email: profile?.email || '',
               enrolled_at: enrollment.enrolled_at,
