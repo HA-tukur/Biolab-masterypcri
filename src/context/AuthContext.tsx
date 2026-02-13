@@ -17,7 +17,7 @@ interface AuthContextType {
   session: Session | null;
   loading: boolean;
   signUp: (data: SignUpData) => Promise<{ error: AuthError | null }>;
-  signIn: (email: string, password: string) => Promise<{ error: AuthError | null }>;
+  signIn: (email: string, password: string) => Promise<{ error: AuthError | null; user: User | null }>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<{ error: AuthError | null }>;
   updatePassword: (newPassword: string) => Promise<{ error: AuthError | null }>;
@@ -32,12 +32,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log('=== AUTH CONTEXT: Initial Session ===');
+      console.log('User email:', session?.user?.email);
+      console.log('User app_metadata:', session?.user?.app_metadata);
+      console.log('====================================');
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      console.log('=== AUTH CONTEXT: Auth State Changed ===');
+      console.log('Event:', _event);
+      console.log('User email:', session?.user?.email);
+      console.log('User app_metadata:', session?.user?.app_metadata);
+      console.log('========================================');
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
@@ -64,11 +73,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({
+    console.log('=== AUTH CONTEXT: signIn called ===');
+    const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
-    return { error };
+
+    if (error) {
+      console.log('Sign in error:', error.message);
+      return { error, user: null };
+    }
+
+    console.log('Sign in successful, refreshing session...');
+    // Refresh the session to ensure we have the latest user data including app_metadata
+    const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
+
+    if (refreshError) {
+      console.log('Session refresh error:', refreshError.message);
+    } else {
+      console.log('Session refreshed, user app_metadata:', refreshData.user?.app_metadata);
+    }
+
+    const finalUser = refreshData?.user ?? data.user;
+    console.log('Final user after refresh:', finalUser?.email, 'app_metadata:', finalUser?.app_metadata);
+    console.log('===================================');
+
+    return { error: null, user: finalUser };
   };
 
   const signOut = async () => {

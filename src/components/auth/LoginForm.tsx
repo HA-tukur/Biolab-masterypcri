@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { isAdmin } from '../../utils/adminCheck';
 import { Mail, Lock, AlertCircle, Microscope, X } from 'lucide-react';
 
 export function LoginForm() {
@@ -16,14 +17,30 @@ export function LoginForm() {
     setError('');
     setLoading(true);
 
-    const { error } = await signIn(email, password);
+    console.log('=== LOGIN FORM: Attempting login ===');
+    const { error, user } = await signIn(email, password);
 
     if (error) {
+      console.log('Login error:', error.message);
       setError(error.message);
       setLoading(false);
     } else {
-      navigate('/');
+      console.log('Login successful, checking admin status...');
+      console.log('User from signIn:', user?.email);
+      console.log('User app_metadata:', user?.app_metadata);
+
+      const userIsAdmin = isAdmin(user);
+      console.log('Is admin?', userIsAdmin);
+
+      if (userIsAdmin) {
+        console.log('User is admin, navigating to /admin/requests');
+        navigate('/admin/requests');
+      } else {
+        console.log('User is not admin, navigating to /');
+        navigate('/');
+      }
     }
+    console.log('====================================');
   };
 
   return (
