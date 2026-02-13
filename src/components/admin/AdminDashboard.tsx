@@ -46,6 +46,13 @@ export function AdminDashboard() {
             >
               View Instructor Requests
             </Link>
+            <br />
+            <Link
+              to="/admin/demo-requests"
+              className="inline-block px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-medium transition-colors"
+            >
+              View Demo Requests
+            </Link>
           </div>
         </div>
       </div>

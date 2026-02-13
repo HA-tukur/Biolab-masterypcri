@@ -12,6 +12,7 @@ import { ResetPassword } from './components/auth/ResetPassword';
 import { Homepage } from './components/Homepage';
 import { AdminDashboard } from './components/admin/AdminDashboard';
 import { InstructorRequestsAdmin } from './components/admin/InstructorRequestsAdmin';
+import { DemoRequestsAdmin } from './components/admin/DemoRequestsAdmin';
 import { NewDashboard } from './components/NewDashboard';
 import { NewProfile } from './components/NewProfile';
 import { NewLeaderboard } from './components/NewLeaderboard';
@@ -19,6 +20,7 @@ import { BrowseSimulations } from './components/BrowseSimulations';
 import { InstructorPortal } from './components/InstructorPortal';
 import { StudentProgressView } from './components/StudentProgressView';
 import { InstructorRequestForm } from './components/InstructorRequestForm';
+import { BookDemo } from './components/BookDemo';
 
 const App = lazy(() => import('./App'));
 const InstructorDashboard = lazy(() => import('./components/InstructorDashboard').then(m => ({ default: m.InstructorDashboard })));
@@ -53,6 +55,7 @@ function AppContent() {
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/" element={<Homepage />} />
+          <Route path="/book-demo" element={<BookDemo />} />
           <Route path="/dashboard" element={<ProtectedRoute><NewDashboard /></ProtectedRoute>} />
           <Route path="/browse" element={<ProtectedRoute><BrowseSimulations /></ProtectedRoute>} />
           <Route path="/lab" element={<ProtectedRoute allowGuestTrial={true}><App /></ProtectedRoute>} />
@@ -64,6 +67,7 @@ function AppContent() {
           <Route path="/instructor/:code" element={<ProtectedRoute><InstructorDashboard /></ProtectedRoute>} />
           <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
           <Route path="/admin/requests" element={<AdminRoute><InstructorRequestsAdmin /></AdminRoute>} />
+          <Route path="/admin/demo-requests" element={<AdminRoute><DemoRequestsAdmin /></AdminRoute>} />
         </Routes>
       </Suspense>
     </>

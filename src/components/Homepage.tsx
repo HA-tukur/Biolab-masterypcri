@@ -149,9 +149,15 @@ function ValuePropSection() {
           <p className="text-gray-600 mb-6 leading-relaxed">
             Give learners unlimited practice in core biotech techniques with real consequences for mistakes and real-world decision making.
           </p>
-          <p className="text-gray-900 font-medium">
+          <p className="text-gray-900 font-medium mb-6">
             Train more learners without proportional expansion in lab space and manpower.
           </p>
+          <Link
+            to="/book-demo"
+            className="inline-block px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-colors font-medium"
+          >
+            Book a demo
+          </Link>
         </div>
       </div>
     </section>
