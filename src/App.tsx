@@ -1214,6 +1214,18 @@ export default function App() {
       }
     };
     fetchHistory();
+
+    const updateLastSimulation = async () => {
+      try {
+        await supabase
+          .from('profiles')
+          .update({ last_simulation: 'DNA Extraction' })
+          .eq('id', user.id);
+      } catch (error) {
+        console.error("Error updating last simulation:", error);
+      }
+    };
+    updateLastSimulation();
   }, [user]);
 
   useEffect(() => {

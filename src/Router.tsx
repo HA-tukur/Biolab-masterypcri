@@ -25,10 +25,13 @@ function AppContent() {
   const isAuthPage = ['/login', '/signup', '/verify-email', '/forgot-password', '/reset-password'].includes(location.pathname);
   const isAdminPage = location.pathname.startsWith('/admin');
   const isDashboardPage = location.pathname === '/dashboard';
+  const isProfilePage = location.pathname === '/profile';
+  const isLeaderboardPage = location.pathname === '/leaderboard';
+  const hasOwnNavigation = isDashboardPage || isProfilePage || isLeaderboardPage;
 
   return (
     <>
-      {!isAuthPage && !isAdminPage && !isDashboardPage && <Header />}
+      {!isAuthPage && !isAdminPage && !hasOwnNavigation && <Header />}
       <Suspense fallback={
         <div className="flex items-center justify-center h-screen">
           <div className="text-center">
@@ -48,8 +51,8 @@ function AppContent() {
           <Route path="/lab" element={<ProtectedRoute allowGuestTrial={true}><App /></ProtectedRoute>} />
           <Route path="/leaderboard" element={<NewLeaderboard />} />
           <Route path="/profile" element={<ProtectedRoute><NewProfile /></ProtectedRoute>} />
-          <Route path="/instructor/setup" element={<InstructorSetup />} />
-          <Route path="/instructor/:code" element={<InstructorDashboard />} />
+          <Route path="/instructor/setup" element={<ProtectedRoute><InstructorSetup /></ProtectedRoute>} />
+          <Route path="/instructor/:code" element={<ProtectedRoute><InstructorDashboard /></ProtectedRoute>} />
           <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
           <Route path="/admin/requests" element={<AdminRoute><InstructorRequestsAdmin /></AdminRoute>} />
         </Routes>

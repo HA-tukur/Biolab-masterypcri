@@ -1,13 +1,19 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Microscope, Play, ChevronRight } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { InstructorRequestModal } from './dashboard/InstructorRequestModal';
 
 export function Homepage() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [showRequestModal, setShowRequestModal] = useState(false);
+
+  useEffect(() => {
+    if (user) {
+      navigate('/dashboard');
+    }
+  }, [user, navigate]);
 
   const handleStartFree = () => {
     if (user) {
@@ -26,13 +32,13 @@ export function Homepage() {
     }
   };
 
+  if (user) {
+    return null;
+  }
+
   return (
     <div className="min-h-screen bg-white">
-      {user ? (
-        <AuthenticatedView onRequestInstructorAccess={handleRequestInstructorAccess} />
-      ) : (
-        <NonAuthenticatedView onStartFree={handleStartFree} onRequestInstructorAccess={handleRequestInstructorAccess} />
-      )}
+      <NonAuthenticatedView onStartFree={handleStartFree} onRequestInstructorAccess={handleRequestInstructorAccess} />
       <InstructorRequestModal
         isOpen={showRequestModal}
         onClose={() => setShowRequestModal(false)}
@@ -56,23 +62,6 @@ function NonAuthenticatedView({ onStartFree, onRequestInstructorAccess }: { onSt
   );
 }
 
-function AuthenticatedView({ onRequestInstructorAccess }: { onRequestInstructorAccess: () => void }) {
-  const navigate = useNavigate();
-  const { user } = useAuth();
-
-  const firstName = user?.user_metadata?.full_name?.split(' ')[0] || 'there';
-
-  return (
-    <>
-      <DashboardHeader firstName={firstName} onResume={() => navigate('/lab')} />
-      <ValuePropSection />
-      <ForInstructorsSection onRequestInstructorAccess={onRequestInstructorAccess} />
-      <HowItWorksSection />
-      <FAQSection />
-      <FooterSection onStartFree={() => navigate('/lab')} />
-    </>
-  );
-}
 
 function HeroSection({ onStartFree }: { onStartFree: () => void }) {
   return (
@@ -349,119 +338,3 @@ function FooterSection({ onStartFree }: { onStartFree: () => void }) {
   );
 }
 
-function DashboardHeader({ firstName, onResume }: { firstName: string; onResume: () => void }) {
-  return (
-    <section className="max-w-6xl mx-auto px-6 pt-16 pb-24">
-      <h1 className="text-4xl font-bold text-gray-900 mb-8">
-        Welcome back, {firstName}
-      </h1>
-
-      <div className="bg-teal-50 border border-teal-200 rounded-md p-6 mb-8">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <div>
-            <p className="text-sm font-medium text-teal-700 mb-2">Continue where you left off</p>
-            <p className="text-lg font-semibold text-gray-900">DNA Extraction Simulation</p>
-          </div>
-          <button
-            onClick={onResume}
-            className="flex items-center gap-2 px-6 py-2 bg-teal-700 hover:bg-teal-800 text-white font-medium rounded-md transition-colors"
-          >
-            <Play className="w-4 h-4" />
-            Resume
-          </button>
-        </div>
-      </div>
-
-      <div className="bg-white border border-gray-200 rounded-md p-6">
-        <div className="flex justify-between items-center mb-3">
-          <p className="text-sm font-medium text-gray-700">Your Progress</p>
-          <p className="text-sm text-gray-600">1/5 completed</p>
-        </div>
-        <div className="w-full bg-gray-200 rounded-full h-2">
-          <div className="bg-teal-700 h-2 rounded-full" style={{ width: '20%' }}></div>
-        </div>
-      </div>
-
-      <div className="mt-12">
-        <h2 className="text-2xl font-bold text-gray-900 mb-6">Your Simulations</h2>
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          <SimulationCard
-            title="DNA Extraction"
-            status="In Progress"
-            statusColor="teal"
-            onClick={onResume}
-          />
-          <SimulationCard
-            title="PCR"
-            status="Not Started"
-            statusColor="gray"
-          />
-          <SimulationCard
-            title="Western Blot"
-            status="Not Started"
-            statusColor="gray"
-          />
-        </div>
-      </div>
-
-      <div className="mt-12">
-        <h2 className="text-2xl font-bold text-gray-900 mb-6">Recent Activity</h2>
-        <div className="space-y-4">
-          <ActivityItem
-            title="DNA Extraction Simulation"
-            timestamp="2 hours ago"
-          />
-          <ActivityItem
-            title="PCR Mission Viewed"
-            timestamp="Yesterday"
-          />
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function SimulationCard({
-  title,
-  status,
-  statusColor,
-  onClick,
-}: {
-  title: string;
-  status: string;
-  statusColor: 'teal' | 'gray';
-  onClick?: () => void;
-}) {
-  const statusStyles = {
-    teal: 'bg-teal-100 text-teal-800',
-    gray: 'bg-gray-100 text-gray-600',
-  };
-
-  return (
-    <div
-      className={`bg-white border border-gray-200 rounded-md p-6 ${onClick ? 'cursor-pointer hover:border-teal-700 transition-colors' : ''}`}
-      onClick={onClick}
-    >
-      <div className="flex justify-between items-start mb-4">
-        <h3 className="text-lg font-bold text-gray-900">{title}</h3>
-        <span className={`text-xs font-medium px-2 py-1 rounded ${statusStyles[statusColor]}`}>
-          {status}
-        </span>
-      </div>
-      {onClick && (
-        <div className="flex items-center text-teal-700 text-sm font-medium">
-          Continue <ChevronRight className="w-4 h-4 ml-1" />
-        </div>
-      )}
-    </div>
-  );
-}
-
-function ActivityItem({ title, timestamp }: { title: string; timestamp: string }) {
-  return (
-    <div className="flex justify-between items-center py-3 border-b border-gray-200">
-      <p className="text-gray-900">{title}</p>
-      <p className="text-sm text-gray-500">{timestamp}</p>
-    </div>
-  );
-}

@@ -14,6 +14,8 @@ interface Profile {
   program_department: string;
   learning_path: string;
   onboarding_completed: boolean;
+  instructor_verified: boolean;
+  last_simulation: string | null;
 }
 
 interface LastActivity {
@@ -76,7 +78,7 @@ export function NewDashboard() {
       // Load profile
       const { data: profileData } = await supabase
         .from('profiles')
-        .select('full_name, university, program_department, learning_path, onboarding_completed')
+        .select('full_name, university, program_department, learning_path, onboarding_completed, instructor_verified, last_simulation')
         .eq('id', user?.id)
         .maybeSingle();
 
@@ -243,6 +245,14 @@ export function NewDashboard() {
               >
                 Profile
               </button>
+              {profile?.instructor_verified && (
+                <button
+                  onClick={() => navigate('/instructor/setup')}
+                  className="text-slate-600 hover:text-emerald-600 transition-colors"
+                >
+                  Instructor Portal
+                </button>
+              )}
             </nav>
 
             <div className="relative">
@@ -316,6 +326,17 @@ export function NewDashboard() {
               >
                 Profile
               </button>
+              {profile?.instructor_verified && (
+                <button
+                  onClick={() => {
+                    navigate('/instructor/setup');
+                    setMobileMenuOpen(false);
+                  }}
+                  className="w-full text-left px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg"
+                >
+                  Instructor Portal
+                </button>
+              )}
             </nav>
           </div>
         )}
@@ -332,21 +353,26 @@ export function NewDashboard() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Last Activity Card */}
-            {lastActivity && (
+            {(lastActivity || profile?.last_simulation) && (
               <div className="bg-white p-6 rounded-lg border border-slate-200">
                 <h3 className="text-lg font-semibold text-slate-900 mb-4">
                   Last Activity
                 </h3>
                 <div className="mb-4">
-                  <p className="text-slate-900 font-medium">{lastActivity.simulation_name}</p>
-                  <p className="text-sm text-slate-600">
-                    Started {formatTimeAgo(lastActivity.started_at)}
+                  <p className="text-slate-900 font-medium">
+                    {lastActivity?.simulation_name || profile?.last_simulation || 'DNA Extraction'}
                   </p>
+                  {lastActivity && (
+                    <p className="text-sm text-slate-600">
+                      Started {formatTimeAgo(lastActivity.started_at)}
+                    </p>
+                  )}
                 </div>
                 <button
                   onClick={() => navigate('/lab')}
-                  className="w-full bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2 rounded-lg transition-colors font-medium"
+                  className="w-full bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2 rounded-lg transition-colors font-medium flex items-center justify-center gap-2"
                 >
+                  <Play size={16} />
                   Resume
                 </button>
               </div>
