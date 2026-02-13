@@ -2124,7 +2124,7 @@ export default function App() {
           {screen === "pcr-missions" && (
             <div className="animate-in slide-in-from-right">
               <PCRMissions
-                onBack={() => setScreen("category-techniques")}
+                onBack={() => navigate("/browse")}
                 onSelectMission={(missionId) => {
                   setSelectedMissionId(missionId);
                   setShowProtocolOverview(true);
