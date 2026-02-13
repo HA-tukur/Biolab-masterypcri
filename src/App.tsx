@@ -1833,13 +1833,10 @@ export default function App() {
           onComplete={() => {
             localStorage.setItem('biosim_class_prompt_shown', 'true');
             setShowClassCodePrompt(false);
-            if (user) {
-              navigate('/browse');
-            } else {
-              setScreen("welcome");
-            }
           }}
           onJoinMission={(techniqueId, missionId) => {
+            localStorage.setItem('biosim_class_prompt_shown', 'true');
+            setShowClassCodePrompt(false);
             if (techniqueId === 'PCR') {
               if (missionId === 'pcr-missions') {
                 setScreen('pcr-missions');

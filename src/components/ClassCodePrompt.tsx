@@ -55,33 +55,41 @@ export default function ClassCodePrompt({ onComplete, onJoinMission }: ClassCode
 
       if (sessionError) throw sessionError;
 
-      onComplete();
-
       if (data.mission_id && onJoinMission) {
         const parts = data.mission_id.split('_');
         if (parts[0] === 'PCR' && parts.length >= 2) {
           const techniqueId = 'PCR';
           const missionId = parts.slice(1).join('_');
+          onComplete();
           setTimeout(() => {
             onJoinMission(techniqueId, missionId);
           }, 100);
         } else if (parts.length >= 3) {
           const techniqueId = `${parts[0]}_${parts[1]}`;
           const missionId = parts[2];
+          onComplete();
           setTimeout(() => {
             onJoinMission(techniqueId, missionId);
           }, 100);
+        } else {
+          onComplete();
         }
       } else if (data.simulation_name && onJoinMission) {
         if (data.simulation_name === 'PCR') {
+          onComplete();
           setTimeout(() => {
             onJoinMission('PCR', 'pcr-missions');
           }, 100);
         } else if (data.simulation_name === 'DNA Extraction') {
+          onComplete();
           setTimeout(() => {
             onJoinMission('DNA_EXT', 'missions');
           }, 100);
+        } else {
+          onComplete();
         }
+      } else {
+        onComplete();
       }
     } catch (err) {
       setError('Failed to validate code. Please try again.');
