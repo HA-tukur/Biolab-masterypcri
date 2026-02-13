@@ -214,8 +214,8 @@ export const PCRModule = ({ onClose, onComplete, onBackToLibrary, missionId = "l
   };
 
   return (
-    <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md overflow-y-auto">
-      <div className="bg-slate-800 border border-emerald-500/50 w-full max-w-4xl rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col my-8">
+    <div className="fixed inset-0 z-[150] flex items-start justify-center p-4 bg-slate-950/80 backdrop-blur-md overflow-y-auto">
+      <div className="bg-slate-800 border border-emerald-500/50 w-full max-w-4xl rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col my-4 lg:my-8">
         <div className="p-6 border-b border-slate-700 flex justify-between items-center bg-slate-900/50">
           <div className="flex items-center gap-3 text-emerald-400">
             <Dna size={24} />
@@ -255,7 +255,7 @@ export const PCRModule = ({ onClose, onComplete, onBackToLibrary, missionId = "l
           ))}
         </div>
 
-        <div className="p-8 space-y-6 text-white max-h-[600px] overflow-y-auto">
+        <div className="p-8 space-y-6 text-white max-h-[calc(100vh-16rem)] overflow-y-auto">
           {showFinalPage ? (
             validationResult?.isValid ? (
               <PrimerValidatedPage onTryAgain={handleTryAgain} onBackToLibrary={handleBackToLibrary} />

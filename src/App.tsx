@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { createClient } from "@supabase/supabase-js";
 import {
   FlaskConical,
@@ -31,6 +31,8 @@ import {
   Glasses,
   Computer,
   Trophy,
+  Microscope,
+  Lock,
   X
 } from "lucide-react";
 import { SupabaseHistoryStore, HistoryStore } from "./services/historyStore";
@@ -44,8 +46,11 @@ import { AntibodyIcon } from "./components/AntibodyIcon";
 import ClassCodePrompt from "./components/ClassCodePrompt";
 import { AILabAssistant } from "./components/AILabAssistant";
 import { Footer } from "./components/Footer";
-import { FeedbackButton } from "./components/FeedbackButton";
 import { ContactSection } from "./components/ContactSection";
+import { SignupBanner } from "./components/SignupBanner";
+import { SharedNavigation } from "./components/SharedNavigation";
+import { SignupModal } from "./components/SignupModal";
+import { useAnonymousUser } from "./hooks/useAnonymousUser";
 import { config } from "./config";
 import { getOrCreateStudentId } from "./utils/studentId";
 import { upsertCertificate } from "./utils/certificateManager";
@@ -763,7 +768,7 @@ const BiologicalPopup = ({ type, onClose }) => {
 
 const ReadinessOverlay = ({ onClose }) => (
   <div className="fixed inset-0 z-[140] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md">
-    <div className="bg-slate-800 border border-amber-500/50 w-full max-w-lg rounded-[2.5rem] p-8 space-y-6 text-white shadow-2xl">
+    <div className="bg-slate-800 border border-amber-500/50 w-full max-w-[650px] max-h-[550px] overflow-y-auto rounded-[2.5rem] p-8 space-y-6 text-white shadow-2xl">
 
       {/* Icon */}
       <ShieldCheck size={48} className="mx-auto text-amber-500" />
@@ -1171,17 +1176,36 @@ export default function App() {
   console.log('App component rendering');
 
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [user, setUser] = useState(null);
   const [historyRecords, setHistoryRecords] = useState([]);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [savedRecordId, setSavedRecordId] = useState(null);
   const [showClassCodePrompt, setShowClassCodePrompt] = useState(false);
+  const [showGuestSignupModal, setShowGuestSignupModal] = useState(false);
   const [screen, setScreen] = useState("welcome");
   const [selectedCategory, setSelectedCategory] = useState(null);
 
   useEffect(() => {
     console.log('App mounted, screen:', screen);
-  }, []);
+    const sim = searchParams.get('sim');
+    if (sim) {
+      const simulationMap: Record<string, string> = {
+        'dna-extraction': 'missions',
+        'pcr-setup': 'pcr-missions',
+        'western-blot': 'welcome',
+        'gel-electrophoresis': 'welcome',
+        'confocal-microscopy': 'welcome'
+      };
+      const targetScreen = simulationMap[sim] || 'welcome';
+      const missionFlowScreens = ['briefing', 'procurement', 'lab', 'workspace', 'result'];
+      if (!missionFlowScreens.includes(screen)) {
+        setScreen(targetScreen);
+      }
+    } else if (user && screen === 'welcome') {
+      navigate('/browse');
+    }
+  }, [searchParams, user, screen, navigate]);
 
   useEffect(() => {
     const setupAuth = async () => {
@@ -1208,28 +1232,54 @@ export default function App() {
       }
     };
     fetchHistory();
+
+    const updateLastSimulation = async () => {
+      try {
+        await supabase
+          .from('profiles')
+          .update({ last_simulation: 'DNA Extraction' })
+          .eq('id', user.id);
+      } catch (error) {
+        console.error("Error updating last simulation:", error);
+      }
+    };
+    updateLastSimulation();
   }, [user]);
 
   useEffect(() => {
     try {
+      const guestTrial = localStorage.getItem('guestTrial');
+      if (guestTrial === 'dna-extraction' && !user) {
+        setScreen('missions');
+        return;
+      }
+
       const hasSeenPrompt = localStorage.getItem('biosim_class_prompt_shown');
-      if (!hasSeenPrompt) {
+      if (!hasSeenPrompt && user) {
         setShowClassCodePrompt(true);
       }
     } catch (error) {
       console.error("LocalStorage error:", error);
     }
-  }, []);
+  }, [user]);
 
   useEffect(() => {
     const handleHeaderTabClick = (e: CustomEvent) => {
       const tab = e.detail.tab;
       if (tab === 'home') {
-        setScreen('welcome');
+        if (user) {
+          navigate('/browse');
+        } else {
+          setScreen('welcome');
+        }
       } else if (tab === 'manual') {
         setShowManual(true);
       } else if (tab === 'contact') {
-        setScreen('welcome');
+        if (user) {
+          navigate('/browse');
+        } else {
+          setScreen('welcome');
+        }
         setTimeout(() => {
           const contactElement = document.getElementById('contact');
           if (contactElement) {
@@ -1317,6 +1367,9 @@ export default function App() {
   const [difficultyMode, setDifficultyMode] = useState("learning");
   const [challengeModeErrors, setChallengeModeErrors] = useState([]);
   const [showProtocolGuide, setShowProtocolGuide] = useState(false);
+  const [guestModeDismissed, setGuestModeDismissed] = useState(false);
+
+  const anonymousUser = useAnonymousUser();
 
   const has = (itemId) => inventory.includes(itemId);
 
@@ -1695,7 +1748,13 @@ export default function App() {
 
       if (data) {
         setSavedRecordId(data.id);
-        setShowSuccessModal(true);
+        if (!user && techniqueId === 'DNA_EXT') {
+          localStorage.removeItem('guestTrial');
+          setShowGuestSignupModal(true);
+        } else {
+          setShowSuccessModal(true);
+        }
+        anonymousUser.recordSimulation(missionTitle);
       }
 
       await upsertCertificate(studentId, missionTitle, parseFloat(localPurity));
@@ -1749,20 +1808,44 @@ export default function App() {
   const isFaint = !finalConc || finalConc < 100;
 
   return (
-    <div className="min-h-screen text-slate-100 font-sans bg-[#0f172a]">
+    <div className="min-h-screen text-slate-100 font-sans bg-[#0f172a]" style={screen === "welcome" ? {background: '#f9fafb'} : {}}>
       {console.log('Rendering App, screen state:', screen)}
+
+      {anonymousUser.shouldShowBanner && !guestModeDismissed && (
+        <SignupBanner
+          isLastChance={anonymousUser.isLastChance}
+          onDismiss={anonymousUser.dismissBanner}
+        />
+      )}
+
+      {anonymousUser.shouldShowModal && !guestModeDismissed && (
+        <SignupModal
+          simulationCount={anonymousUser.simulationCount}
+          onContinueAsGuest={() => {
+            setGuestModeDismissed(true);
+            setScreen("welcome");
+          }}
+        />
+      )}
 
       {showClassCodePrompt && (
         <ClassCodePrompt
           onComplete={() => {
             localStorage.setItem('biosim_class_prompt_shown', 'true');
             setShowClassCodePrompt(false);
-            setScreen("welcome");
           }}
           onJoinMission={(techniqueId, missionId) => {
+            localStorage.setItem('biosim_class_prompt_shown', 'true');
+            setShowClassCodePrompt(false);
             if (techniqueId === 'PCR') {
-              setSelectedMissionId(missionId);
-              setShowPCRModal(true);
+              if (missionId === 'pcr-missions') {
+                setScreen('pcr-missions');
+              } else {
+                setSelectedMissionId(missionId);
+                setShowPCRModal(true);
+              }
+            } else if (techniqueId === 'DNA_EXT' && missionId === 'missions') {
+              setScreen('missions');
             } else {
               startMission(techniqueId, missionId);
             }
@@ -1772,10 +1855,13 @@ export default function App() {
       {showManual && <LabManualOverlay onClose={() => setShowManual(false)} />}
       {showProtocol && <ProtocolBookOverlay onClose={() => setShowProtocol(false)} />}
       {showProtocolGuide && <ProtocolGuideOverlay onClose={() => setShowProtocolGuide(false)} missionId={missionId} />}
-      {showReadinessModal && <ReadinessOverlay onClose={() => setShowReadinessModal(false)} />}
+      {showReadinessModal && <ReadinessOverlay onClose={() => {
+        setShowReadinessModal(false);
+        setScreen("briefing");
+      }} />}
       {showProtocolOverview && (
-        <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md overflow-y-auto">
-          <div className="w-full py-8">
+        <div className="fixed inset-0 z-[150] flex items-start justify-center bg-slate-950/80 backdrop-blur-md overflow-y-auto">
+          <div className="w-full">
             <ProtocolOverview
               missionId={selectedMissionId}
               onBack={() => setShowProtocolOverview(false)}
@@ -1787,160 +1873,226 @@ export default function App() {
           </div>
         </div>
       )}
-      {showPCRModal && <PCRModule onClose={() => setShowPCRModal(false)} onComplete={() => setShowPCRModal(false)} onBackToLibrary={() => { setShowPCRModal(false); setScreen("welcome"); }} missionId={selectedMissionId} />}
+      {showPCRModal && <PCRModule onClose={() => setShowPCRModal(false)} onComplete={() => setShowPCRModal(false)} onBackToLibrary={() => { setShowPCRModal(false); if (user) { navigate('/browse'); } else { setScreen("welcome"); } }} missionId={selectedMissionId} />}
       {showBioPopup && <BiologicalPopup type={showBioPopup} onClose={() => setShowBioPopup(null)} />}
 
-      <div className="px-4">
+      {guestModeDismissed && anonymousUser.shouldShowModal && (
+        <div className="fixed top-0 left-0 right-0 z-40 bg-amber-50 border-b border-amber-200 py-3 px-4">
+          <p className="text-sm text-amber-900 text-center font-medium">
+            Unlock all modules — <button onClick={() => navigate('/signup')} className="underline hover:text-amber-950">Sign up free</button>
+          </p>
+        </div>
+      )}
+
+      <div className={`px-4 ${anonymousUser.shouldShowBanner && !guestModeDismissed ? 'pt-[60px] md:pt-[70px]' : ''} ${guestModeDismissed && anonymousUser.shouldShowModal ? 'pt-[48px]' : ''}`}>
         <main>
           {screen === "welcome" && (
-            <div className="space-y-12 animate-in fade-in py-8">
-              <section className="text-center space-y-6 max-w-4xl mx-auto">
-                <h1 className="text-3xl md:text-5xl font-black text-slate-50 uppercase tracking-tighter">
-                  Practice Lab Protocols Before Your First Real Experiment
-                </h1>
-
-                <p className="text-lg text-slate-300 leading-relaxed max-w-3xl mx-auto">
-                  Built for students who lack equipment access—fail safely,
-                  learn consequences, build confidence before touching real reagents.
-                </p>
-
-                <div className="bg-emerald-600/20 border border-emerald-400/30 p-4 rounded-2xl">
-                  <p className="text-white font-bold text-lg flex items-center justify-center gap-6 flex-wrap">
-                    <span className="flex items-center gap-2">
-                      <span className="text-emerald-400">✅</span> Free to Use
-                    </span>
-                    <span>•</span>
-                    <span className="flex items-center gap-2">
-                      <span className="text-emerald-400">✅</span> No Download Required
-                    </span>
-                    <span>•</span>
-                    <span className="flex items-center gap-2">
-                      <span className="text-emerald-400">✅</span> Works on Any Device
-                    </span>
-                  </p>
-                </div>
-                <div className="bg-gradient-to-r from-emerald-900/20 to-indigo-900/20 border-l-4 border-emerald-500 rounded-xl p-4 mx-auto max-w-4xl my-12 text-center">
-  <h3 className="text-emerald-400 text-xl font-semibold mb-1">
-    🚀 Practice & Learn
-  </h3>
-  <p className="text-slate-300 text-base leading-relaxed">
-    Make mistakes safely. Get instant feedback. Build confidence. 
-    Start with <strong className="text-emerald-400 font-semibold">DNA Extraction (15 mins)</strong>. More techniques soon.
-  </p>
-</div>
-                <button
-                  onClick={() => setScreen("categories")}
-                  className="bg-indigo-600 hover:bg-indigo-500 text-white px-8 py-4 rounded-xl font-black uppercase text-lg transition-all border-0 cursor-pointer"
-                >
-                  Start Practicing Now
-                </button>
-
-                
-                <section className="max-w-4xl mx-auto space-y-6">
-                  <h3 className="text-2xl font-black text-slate-50 uppercase text-center mb-8">
-                    Choose Your Learning Path
-                  </h3>
-
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div
-                      onClick={() => setShowClassCodePrompt(true)}
-                      className="bg-gradient-to-br from-emerald-900/40 to-emerald-800/20 border-2 border-emerald-500/50 p-6 rounded-2xl cursor-pointer hover:scale-105 transition-transform hover:border-emerald-400"
-                    >
-                      <div className="bg-emerald-600 w-14 h-14 rounded-xl flex items-center justify-center mb-4 shadow-lg">
-                        <GraduationCap size={28} className="text-white" />
+            <div className="space-y-12 animate-in fade-in">
+              {!user && (
+                <>
+                  <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
+                    <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Microscope className="w-6 h-6 text-teal-700" />
+                        <span className="text-xl font-bold text-gray-900">BioSimLab</span>
                       </div>
-                      <h4 className="text-white font-black text-xl mb-2">University Student</h4>
-                      <p className="text-slate-300 text-sm mb-3 leading-relaxed">
-                        Join your instructor's class. Enter code to sync with your faculty dashboard.
-                      </p>
-                      <div className="flex items-center gap-2 text-emerald-400 font-bold text-sm mt-4">
-                        <span>Enter Class Code</span>
-                        <ChevronRight size={16} />
+                      <div className="flex items-center gap-3">
+                        <button
+                          onClick={() => navigate('/login')}
+                          className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors"
+                        >
+                          Log In
+                        </button>
+                        <button
+                          onClick={() => navigate('/signup')}
+                          className="px-6 py-2 bg-teal-700 hover:bg-teal-800 text-white text-sm font-medium rounded-md transition-colors"
+                        >
+                          Sign Up
+                        </button>
                       </div>
                     </div>
+                  </header>
+                  <section className="text-center space-y-6 max-w-4xl mx-auto px-6 pt-8">
+                    <h1 className="text-3xl md:text-5xl font-bold text-gray-900 leading-tight">
+                      Practice Lab Protocols Before Your First Real Experiment
+                    </h1>
 
-                    <div
-                      onClick={() => setScreen("categories")}
-                      className="bg-gradient-to-br from-indigo-900/40 to-indigo-800/20 border-2 border-indigo-500/50 p-6 rounded-2xl cursor-pointer hover:scale-105 transition-transform hover:border-indigo-400"
-                    >
-                      <div className="bg-indigo-600 w-14 h-14 rounded-xl flex items-center justify-center mb-4 shadow-lg">
-                        <Target size={28} className="text-white" />
-                      </div>
-                      <h4 className="text-white font-black text-xl mb-2">Independent Learner</h4>
-                      <p className="text-slate-300 text-sm mb-3 leading-relaxed">
-                        Master lab techniques at your own pace. Build your digital lab resume.
-                      </p>
-                      <div className="flex items-center gap-2 text-indigo-400 font-bold text-sm mt-4">
-                        <span>Start Learning</span>
-                        <ChevronRight size={16} />
-                      </div>
-                    </div>
-
-                    <div
-                      onClick={() => setScreen("categories")}
-                      className="bg-gradient-to-br from-amber-900/40 to-amber-800/20 border-2 border-amber-500/50 p-6 rounded-2xl cursor-pointer hover:scale-105 transition-transform hover:border-amber-400"
-                    >
-                      <div className="bg-amber-600 w-14 h-14 rounded-xl flex items-center justify-center mb-4 shadow-lg">
-                        <Sparkles size={28} className="text-white" />
-                      </div>
-                      <h4 className="text-white font-black text-xl mb-2">Pre-university</h4>
-                      <p className="text-slate-300 text-sm mb-3 leading-relaxed">
-                        Get a head start on college science. Explore molecular biology basics.
-                      </p>
-                      <div className="flex items-center gap-2 text-amber-400 font-bold text-sm mt-4">
-                        <span>Start Learning</span>
-                        <ChevronRight size={16} />
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="bg-slate-800/50 border border-slate-700 p-5 rounded-2xl">
-                    <p className="text-slate-400 text-sm text-center leading-relaxed">
-                      All paths access the same high-quality simulations. Choose based on whether you need instructor tracking or prefer independent progress monitoring.
+                    <p className="text-xl text-gray-600 leading-relaxed max-w-3xl mx-auto">
+                      Built for students who lack equipment access—fail safely,
+                      learn consequences, build confidence before touching real reagents.
                     </p>
-                  </div>
-                </section>
 
-                <section className="max-w-4xl mx-auto py-3">
-                  <div
-                    onClick={() => navigate('/leaderboard')}
-                    className="bg-gradient-to-r from-amber-900/40 via-yellow-900/30 to-amber-900/40 border-2 border-amber-400/60 rounded-2xl p-5 cursor-pointer hover:scale-[1.02] transition-transform hover:border-amber-300 hover:shadow-2xl hover:shadow-amber-500/20"
-                  >
-                    <div className="flex items-center justify-between flex-wrap gap-4">
-                      <div className="flex items-center gap-4">
-                        <div className="bg-gradient-to-br from-amber-500 to-yellow-600 p-3 rounded-2xl shadow-xl">
-                          <Trophy size={28} className="text-white" />
+                    <div className="bg-gray-50 border border-gray-200 p-4 rounded-md">
+                      <p className="text-gray-700 font-medium text-base flex items-center justify-center gap-6 flex-wrap">
+                        <span className="flex items-center gap-2">
+                          <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                          </svg>
+                          Free to Use
+                        </span>
+                        <span className="text-gray-400">•</span>
+                        <span className="flex items-center gap-2">
+                          <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                          </svg>
+                          No Download Required
+                        </span>
+                        <span className="text-gray-400">•</span>
+                        <span className="flex items-center gap-2">
+                          <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                          </svg>
+                          Works on Any Device
+                        </span>
+                      </p>
+                    </div>
+                    <div className="bg-teal-50 border-l-4 border-teal-700 rounded-md p-6 mx-auto max-w-4xl my-12 text-left">
+                      <h3 className="text-teal-900 text-xl font-bold mb-2">
+                        Practice & Learn
+                      </h3>
+                      <p className="text-gray-700 text-base leading-relaxed">
+                        Make mistakes safely. Get instant feedback. Build confidence.
+                        Start with <strong className="text-teal-900 font-semibold">DNA Extraction (15 mins)</strong>. More techniques soon.
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => setScreen("categories")}
+                      className="bg-teal-700 hover:bg-teal-800 text-white px-8 py-3 rounded-md font-medium text-lg transition-colors border-0 cursor-pointer"
+                    >
+                      Start Practicing Now
+                    </button>
+                  </section>
+                </>
+              )}
+              <section className="max-w-6xl mx-auto px-6 pt-8">
+                {!user && (
+                  <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 md:p-12 mb-8">
+                    <div className="text-center mb-8">
+                      <h2 className="text-3xl font-bold text-gray-900 mb-3">
+                        Choose your learning path
+                      </h2>
+                      <p className="text-gray-600 text-lg">
+                        All paths access the same high-quality simulations.
+                      </p>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                      <div
+                        onClick={() => setShowClassCodePrompt(true)}
+                        className="bg-white border-2 border-gray-200 p-6 rounded-md cursor-pointer hover:border-teal-700 transition-colors group"
+                      >
+                        <div className="bg-teal-50 w-14 h-14 rounded-md flex items-center justify-center mb-4">
+                          <GraduationCap size={28} className="text-teal-700" />
                         </div>
-                        <div>
-                          <h3 className="text-xl font-black text-white mb-1.5 flex items-center gap-3">
-                            Global Rankings
-                            <span className="text-xs bg-amber-500 px-2.5 py-0.5 rounded-full font-bold animate-pulse">NEW</span>
-                          </h3>
-                          <p className="text-slate-300 text-sm leading-snug">
-                            Compete with learners worldwide. Track your progress. Build verifiable competency records. From students to researchers—see where you rank.
-                          </p>
+                        <h3 className="text-gray-900 font-bold text-xl mb-2">University Student</h3>
+                        <p className="text-gray-600 text-sm mb-4 leading-relaxed">
+                          Join your instructor's class. Enter code to sync with your faculty dashboard.
+                        </p>
+                        <div className="flex items-center gap-2 text-teal-700 font-medium text-sm mt-4">
+                          <span>Enter Class Code</span>
+                          <ChevronRight size={16} />
                         </div>
                       </div>
-                      <div className="flex items-center gap-2 text-amber-400 font-black text-base">
-                        <span>View Rankings</span>
-                        <ChevronRight size={20} />
+
+                      <div
+                        onClick={() => setScreen("categories")}
+                        className="bg-white border-2 border-gray-200 p-6 rounded-md cursor-pointer hover:border-teal-700 transition-colors group"
+                      >
+                        <div className="bg-blue-50 w-14 h-14 rounded-md flex items-center justify-center mb-4">
+                          <Target size={28} className="text-blue-700" />
+                        </div>
+                        <h3 className="text-gray-900 font-bold text-xl mb-2">Independent Learner</h3>
+                        <p className="text-gray-600 text-sm mb-4 leading-relaxed">
+                          Master lab techniques at your own pace. Build your digital lab resume.
+                        </p>
+                        <div className="flex items-center gap-2 text-blue-700 font-medium text-sm mt-4">
+                          <span>Start Learning</span>
+                          <ChevronRight size={16} />
+                        </div>
+                      </div>
+
+                      <div
+                        onClick={() => setScreen("categories")}
+                        className="bg-white border-2 border-gray-200 p-6 rounded-md cursor-pointer hover:border-teal-700 transition-colors group"
+                      >
+                        <div className="bg-gray-50 w-14 h-14 rounded-md flex items-center justify-center mb-4">
+                          <Sparkles size={28} className="text-gray-700" />
+                        </div>
+                        <h3 className="text-gray-900 font-bold text-xl mb-2">Pre-university</h3>
+                        <p className="text-gray-600 text-sm mb-4 leading-relaxed">
+                          Get a head start on college science. Explore molecular biology basics.
+                        </p>
+                        <div className="flex items-center gap-2 text-gray-700 font-medium text-sm mt-4">
+                          <span>Start Learning</span>
+                          <ChevronRight size={16} />
+                        </div>
                       </div>
                     </div>
                   </div>
+                )}
+
+                {!user && (
+                  <div className="py-3">
+                    <div
+                      onClick={() => navigate('/leaderboard')}
+                      className="bg-white border-2 border-gray-200 rounded-md p-6 cursor-pointer hover:border-teal-700 transition-colors"
+                    >
+                      <div className="flex items-center justify-between flex-wrap gap-4">
+                        <div className="flex items-center gap-4">
+                          <div className="bg-amber-50 p-3 rounded-md">
+                            <Trophy size={28} className="text-amber-600" />
+                          </div>
+                          <div>
+                            <h3 className="text-xl font-bold text-gray-900 mb-1.5 flex items-center gap-3">
+                              Global Rankings
+                              <span className="text-xs bg-amber-100 text-amber-800 px-2.5 py-0.5 rounded-full font-semibold">NEW</span>
+                            </h3>
+                            <p className="text-gray-600 text-sm leading-relaxed">
+                              Compete with learners worldwide. Track your progress. Build verifiable competency records. From students to researchers—see where you rank.
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 text-teal-700 font-semibold text-base">
+                          <span>View Rankings</span>
+                          <ChevronRight size={20} />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </section>
+
+              {!user && (
+                <section className="space-y-8 px-6">
+                  <TechniqueLibrary
+                    data={TECHNIQUE_LIBRARY}
+                    onTechniqueClick={(tech) => {
+                      if (tech.id === "DNA_EXT") setScreen("missions");
+                      if (tech.id === "PCR") setShowPCRModal(true);
+                    }}
+                    lockedTechniqueIds={
+                      guestModeDismissed && anonymousUser.shouldShowModal
+                        ? TECHNIQUE_LIBRARY.flatMap(cat => cat.items)
+                            .filter(item => item.id !== 'DNA_EXT')
+                            .map(item => item.id)
+                        : []
+                    }
+                  />
                 </section>
+              )}
 
-                <ContactSection />
-              </section>
-
-              <section className="space-y-8">
-                <TechniqueLibrary
-                  data={TECHNIQUE_LIBRARY}
-                  onTechniqueClick={(tech) => {
-                    if (tech.id === "DNA_EXT") setScreen("missions");
-                    if (tech.id === "PCR") setShowPCRModal(true);
-                  }}
-                />
-              </section>
+              {user && (
+                <section className="space-y-8 px-6">
+                  <TechniqueLibrary
+                    data={TECHNIQUE_LIBRARY}
+                    onTechniqueClick={(tech) => {
+                      if (tech.id === "DNA_EXT") setScreen("missions");
+                      if (tech.id === "PCR") setShowPCRModal(true);
+                    }}
+                    lockedTechniqueIds={[]}
+                  />
+                </section>
+              )}
             </div>
           )}
 
@@ -1975,7 +2127,7 @@ export default function App() {
           {screen === "pcr-missions" && (
             <div className="animate-in slide-in-from-right">
               <PCRMissions
-                onBack={() => setScreen("category-techniques")}
+                onBack={() => navigate("/browse")}
                 onSelectMission={(missionId) => {
                   setSelectedMissionId(missionId);
                   setShowProtocolOverview(true);
@@ -1985,46 +2137,68 @@ export default function App() {
           )}
 
           {screen === "missions" && (
-            <div className="space-y-8 animate-in slide-in-from-right">
-              <button onClick={() => setScreen("welcome")} className="flex items-center gap-2 text-slate-400 hover:text-white transition-all text-sm">
-                <ChevronRight size={16} className="rotate-180" /> Back to Library
-              </button>
-
-              <section className="space-y-6">
-                <h2 className="text-3xl font-black text-slate-50 uppercase tracking-tighter flex items-center gap-3"><Dna size={28} className="text-indigo-400" /> DNA Extraction Missions</h2>
+            <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
+              <SharedNavigation onShowManual={() => setShowManual(true)} />
+              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-8">
+                <section className="space-y-6">
+                <h2 className="text-4xl font-bold text-slate-900 flex items-center gap-3 mb-8"><Dna size={32} className="text-emerald-600" /> DNA Extraction Missions</h2>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {Object.entries(MISSIONS_DATA.DNA_EXT).map(([key, mission]) => (
-                    <div key={key} className="bg-slate-800 border border-slate-700 rounded-3xl overflow-hidden hover:border-indigo-500/50 transition-all group">
-                      <div className="p-8 space-y-4">
-                        <div className="flex items-start justify-between">
-                          <div className="space-y-2">
-                            <h3 className="text-2xl font-black text-slate-50 uppercase tracking-tight">{mission.title}</h3>
-                            <p className="text-sm text-slate-400 leading-relaxed">{mission.brief}</p>
+                  {Object.entries(MISSIONS_DATA.DNA_EXT).map(([key, mission]) => {
+                    const isGuestMode = !user && localStorage.getItem('guestTrial') === 'dna-extraction';
+                    const isLocked = isGuestMode && key !== 'A';
+
+                    return (
+                      <div key={key} className={`bg-white border-2 border-slate-200 rounded-xl overflow-hidden transition-all ${isLocked ? 'opacity-50 cursor-not-allowed' : 'hover:border-emerald-500 hover:shadow-lg group'}`}>
+                        <div className="p-8 space-y-4 relative">
+                          {isLocked && (
+                            <div className="absolute inset-0 bg-white/90 backdrop-blur-sm z-10 flex items-center justify-center rounded-xl">
+                              <div className="text-center space-y-2">
+                                <Lock className="mx-auto text-slate-400" size={32} />
+                                <p className="text-slate-600 font-bold text-sm">Complete Mission 1 First</p>
+                              </div>
+                            </div>
+                          )}
+                          <div className="flex items-start justify-between">
+                            <div className="space-y-2">
+                              <h3 className="text-2xl font-bold text-slate-900 tracking-tight">{mission.title}</h3>
+                              <p className="text-sm text-slate-600 leading-relaxed">{mission.brief}</p>
+                            </div>
                           </div>
-                        </div>
-                        <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-700">
-                          <p className="text-xs text-slate-400 font-mono">{mission.summary}</p>
-                        </div>
-                        <div className="flex items-center justify-between pt-4 border-t border-slate-700">
-                          <div className="text-left">
-                            <p className="text-[9px] text-slate-500 uppercase font-bold tracking-wider mb-1">Budget</p>
-                            <p className="text-lg font-black text-amber-400 font-mono">{mission.budget} BC</p>
+                          <div className="bg-slate-50 p-4 rounded-lg border border-slate-200">
+                            <p className="text-xs text-slate-700 font-mono">{mission.summary}</p>
                           </div>
-                          <button onClick={() => startMission("DNA_EXT", key)} className="bg-indigo-600 hover:bg-indigo-500 text-white px-6 py-3 rounded-xl font-black uppercase text-sm transition-all group-hover:scale-105 cursor-pointer border-0">
-                            Start Mission
-                          </button>
+                          <div className="flex items-center justify-between pt-4 border-t border-slate-200">
+                            <div className="text-left">
+                              <p className="text-xs text-slate-500 uppercase font-bold tracking-wider mb-1">Budget</p>
+                              <p className="text-lg font-black text-amber-600 font-mono">{mission.budget} BC</p>
+                            </div>
+                            <button
+                              onClick={() => !isLocked && startMission("DNA_EXT", key)}
+                              disabled={isLocked}
+                              className={`px-6 py-3 rounded-lg font-bold text-sm transition-all border-0 ${
+                                isLocked
+                                  ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
+                                  : 'bg-emerald-600 hover:bg-emerald-700 text-white group-hover:scale-105 cursor-pointer'
+                              }`}
+                            >
+                              Start Mission
+                            </button>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </section>
+              </div>
             </div>
           )}
 
           {screen === "briefing" && (
-            <div className="space-y-8 animate-in slide-in-from-right">
+            <div className="min-h-screen bg-[#0f172a]">
+              <SharedNavigation onShowManual={() => setShowManual(true)} />
+              <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-8">
               <div className="bg-gradient-to-br from-indigo-900/20 to-slate-800 border border-indigo-500/30 p-8 rounded-3xl">
                 <div className="space-y-6">
                   <div className="flex items-center gap-4">
@@ -2077,15 +2251,30 @@ export default function App() {
               </div>
 
               <div className="flex gap-4">
+                <button
+                  onClick={() => {
+                    if (user) {
+                      navigate('/browse');
+                    } else {
+                      setScreen("missions");
+                    }
+                  }}
+                  className="px-6 py-4 bg-slate-700 hover:bg-slate-600 text-white rounded-2xl font-bold uppercase tracking-wider transition-all cursor-pointer border-0"
+                >
+                  ← Exit Lab
+                </button>
                 <button onClick={() => setScreen("procurement")} className="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white py-4 px-6 rounded-2xl font-black uppercase tracking-wider transition-all cursor-pointer border-0 text-lg">
                   Proceed to Procurement
                 </button>
+              </div>
               </div>
             </div>
           )}
 
           {screen === "procurement" && (
-            <div className="space-y-8 animate-in slide-in-from-right">
+            <div className="min-h-screen bg-[#0f172a]">
+              <SharedNavigation onShowManual={() => setShowManual(true)} />
+              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-8">
               <div className="bg-slate-800 border border-slate-700 p-6 rounded-2xl flex justify-between items-center">
                 <div>
                   <h2 className="text-2xl font-black text-slate-50 uppercase tracking-tight">Laboratory Procurement</h2>
@@ -2262,11 +2451,14 @@ export default function App() {
                   Enter Lab
                 </button>
               </div>
+              </div>
             </div>
           )}
 
           {screen === "lab" && status === "idle" && currentStep && (
-            <div className="space-y-8 animate-in fade-in">
+            <div className="min-h-screen bg-[#0f172a]">
+              <SharedNavigation onShowManual={() => setShowManual(true)} />
+              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-8">
               <div className="bg-slate-800 border border-slate-700 p-6 rounded-2xl">
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="text-xl font-black text-slate-50 uppercase tracking-tight">Step {protocolIndex + 1}: {currentStep.title}</h2>
@@ -2665,11 +2857,14 @@ export default function App() {
                   )}
                 </div>
               </div>
+              </div>
             </div>
           )}
 
           {screen === "lab" && status === "verification" && !showQuant && (
-            <div className="space-y-8 animate-in fade-in">
+            <div className="min-h-screen bg-[#0f172a]">
+              <SharedNavigation onShowManual={() => setShowManual(true)} />
+              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-8">
               <div className="flex justify-end mb-4">
                 <button
                   onClick={() => setShowProtocolGuide(true)}
@@ -2803,11 +2998,14 @@ export default function App() {
               <button onClick={finalizeCalculations} disabled={!isVerificationSatisfied} className={`w-full py-4 rounded-2xl font-black uppercase tracking-wider transition-all cursor-pointer border-0 ${isVerificationSatisfied ? "bg-emerald-600 hover:bg-emerald-500 text-white" : "bg-slate-700 text-slate-500 cursor-not-allowed"}`}>
                 Analyze Results
               </button>
+              </div>
             </div>
           )}
 
           {screen === "lab" && showQuant && (
-            <div className="space-y-6 animate-in fade-in max-w-5xl mx-auto">
+            <div className="min-h-screen bg-[#0f172a]">
+              <SharedNavigation onShowManual={() => setShowManual(true)} />
+              <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-6">
               <div className={`bg-gradient-to-br ${status === "mastery" ? "from-emerald-900/20 to-slate-800 border-emerald-500/30" : "from-rose-900/20 to-slate-800 border-rose-500/30"} border p-6 rounded-3xl text-center space-y-5`}>
                 {status === "mastery" && <MasteryBadge />}
                 {status !== "mastery" && (
@@ -2871,7 +3069,11 @@ export default function App() {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 <button
                   onClick={() => {
-                    setScreen("welcome");
+                    if (user) {
+                      navigate('/browse');
+                    } else {
+                      setScreen("welcome");
+                    }
                     window.scrollTo({ top: 0, behavior: 'smooth' });
                   }}
                   className="w-full bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-indigo-400 text-white py-4 rounded-xl font-black uppercase tracking-wide cursor-pointer border-0 shadow-lg transition-all hover:scale-[1.02] hover:shadow-indigo-500/50"
@@ -2911,17 +3113,16 @@ export default function App() {
                 </button>
               </div>
 
-              <button onClick={() => setScreen("welcome")} className="w-full bg-slate-900/50 py-3 rounded-xl font-bold uppercase text-slate-400 border border-slate-700 cursor-pointer text-xs tracking-wide transition-all hover:bg-slate-900/70">
-                Return to Bench
+              <button onClick={() => { if (user) { navigate('/browse'); } else { setScreen("welcome"); } }} className="w-full bg-slate-900/50 py-3 rounded-xl font-bold uppercase text-slate-400 border border-slate-700 cursor-pointer text-xs tracking-wide transition-all hover:bg-slate-900/70">
+                Return to Browse
               </button>
+              </div>
             </div>
           )}
         </main>
 
-        <Footer />
+        {screen === "welcome" && <Footer />}
       </div>
-
-      <FeedbackButton />
 
       {showSuccessModal && (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
@@ -2969,6 +3170,71 @@ export default function App() {
                 className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-4 rounded-xl transition-all uppercase tracking-wider text-sm"
               >
                 Continue
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showGuestSignupModal && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 relative animate-in fade-in duration-300">
+            <div className="text-center space-y-6">
+              <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-green-100 mb-4">
+                <Trophy size={40} className="text-green-600" />
+              </div>
+
+              <div>
+                <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                  Nice work!
+                </h2>
+                <p className="text-gray-600 text-base">
+                  You've completed the DNA Extraction trial. Sign up free to unlock all simulations and track your progress.
+                </p>
+              </div>
+
+              <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 space-y-2">
+                <div className="flex items-center gap-3">
+                  <svg className="w-5 h-5 text-green-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                  <span className="text-sm text-gray-700">Access 10+ lab simulations</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <svg className="w-5 h-5 text-green-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                  <span className="text-sm text-gray-700">Track your progress</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <svg className="w-5 h-5 text-green-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                  <span className="text-sm text-gray-700">Join your class</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <svg className="w-5 h-5 text-green-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                  <span className="text-sm text-gray-700">100% free forever</span>
+                </div>
+              </div>
+
+              <button
+                onClick={() => navigate('/signup')}
+                className="w-full bg-teal-700 hover:bg-teal-800 text-white font-bold py-4 rounded-xl transition-all uppercase tracking-wider text-sm"
+              >
+                Create Free Account
+              </button>
+
+              <button
+                onClick={() => {
+                  setShowGuestSignupModal(false);
+                  navigate('/browse');
+                }}
+                className="text-sm text-gray-500 hover:text-gray-700 transition-colors"
+              >
+                Maybe later
               </button>
             </div>
           </div>

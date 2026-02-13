@@ -44,7 +44,7 @@ export const PCRMissions = ({ onBack, onSelectMission }: PCRMissionsProps) => {
   };
 
   return (
-    <div className="max-w-5xl mx-auto space-y-8">
+    <div className="max-w-5xl mx-auto px-4 py-4 lg:py-6 space-y-4 lg:space-y-5">
       <div className="flex items-center gap-4">
         <button
           onClick={onBack}
@@ -53,32 +53,41 @@ export const PCRMissions = ({ onBack, onSelectMission }: PCRMissionsProps) => {
           <ArrowLeft size={24} />
         </button>
         <div>
-          <h1 className="text-3xl md:text-4xl font-black uppercase tracking-tight text-white">
+          <h1 className="text-2xl md:text-3xl lg:text-3xl font-black uppercase tracking-tight text-white">
             PCR Missions
           </h1>
           <p className="text-slate-400 text-sm">Choose a mission to begin your PCR workflow</p>
         </div>
       </div>
 
-      <div className="space-y-6">
+      <div className="bg-blue-900/20 border border-blue-500/30 p-4 lg:p-5 rounded-2xl">
+        <h4 className="font-bold text-blue-400 mb-2 text-sm lg:text-base">About These Missions</h4>
+        <p className="text-xs lg:text-sm text-blue-200 leading-relaxed">
+          Each mission walks you through the complete PCR workflow: primer design, reagent ordering and reconstitution,
+          reaction setup, thermal cycling, and result verification. These scenarios are based on real challenges
+          facing African communities and showcase how molecular biology addresses health and agriculture problems.
+        </p>
+      </div>
+
+      <div className="space-y-4 lg:space-y-5">
         {missions.map((mission) => {
           const colors = getColorClasses(mission.color);
           return (
             <button
               key={mission.id}
               onClick={() => onSelectMission(mission.id)}
-              className={`border ${colors.border} ${colors.bg} ${colors.hover} p-8 rounded-3xl transition-all cursor-pointer text-left group w-full`}
+              className={`border ${colors.border} ${colors.bg} ${colors.hover} p-5 lg:p-6 rounded-2xl transition-all cursor-pointer text-left group w-full`}
             >
-              <div className="grid md:grid-cols-[auto_1fr] gap-6">
+              <div className="grid md:grid-cols-[auto_1fr] gap-4 lg:gap-5">
                 <div className={`${colors.text} group-hover:scale-110 transition-transform`}>
                   {mission.icon}
                 </div>
 
-                <div className="space-y-4">
+                <div className="space-y-3 lg:space-y-3">
                   <div>
-                    <div className="flex items-start justify-between mb-2">
+                    <div className="flex items-start justify-between mb-1.5 lg:mb-2">
                       <div>
-                        <h3 className="text-2xl font-black uppercase text-white">
+                        <h3 className="text-xl lg:text-2xl font-black uppercase text-white">
                           {mission.title}
                         </h3>
                         <p className={`text-sm font-bold ${colors.text}`}>
@@ -90,18 +99,18 @@ export const PCRMissions = ({ onBack, onSelectMission }: PCRMissionsProps) => {
                       </span>
                     </div>
 
-                    <div className="flex items-center gap-2 text-slate-400 text-sm mb-3">
+                    <div className="flex items-center gap-2 text-slate-400 text-sm mb-2">
                       <MapPin size={16} />
                       <span>{mission.location}</span>
                     </div>
                   </div>
 
-                  <div className="bg-slate-900/50 border border-slate-700 rounded-lg p-4 space-y-3">
+                  <div className="bg-slate-900/50 border border-slate-700 rounded-lg p-3 lg:p-4 space-y-2 lg:space-y-3">
                     <p className="text-slate-300 text-sm leading-relaxed">
                       {mission.scenario}
                     </p>
 
-                    <div className="grid md:grid-cols-2 gap-4 pt-2">
+                    <div className="grid md:grid-cols-2 gap-3 lg:gap-4 pt-1.5 lg:pt-2">
                       <div>
                         <div className="flex items-center gap-2 mb-1">
                           <Dna size={16} className="text-emerald-400" />
@@ -124,7 +133,7 @@ export const PCRMissions = ({ onBack, onSelectMission }: PCRMissionsProps) => {
                     {mission.tags.map((tag) => (
                       <span
                         key={tag}
-                        className="px-3 py-1 bg-slate-800 border border-slate-600 rounded-full text-xs font-bold text-slate-300"
+                        className="px-2.5 py-1 bg-slate-800 border border-slate-600 rounded-full text-xs font-bold text-slate-300"
                       >
                         {tag}
                       </span>
@@ -135,15 +144,6 @@ export const PCRMissions = ({ onBack, onSelectMission }: PCRMissionsProps) => {
             </button>
           );
         })}
-      </div>
-
-      <div className="bg-blue-900/20 border border-blue-500/30 p-6 rounded-2xl">
-        <h4 className="font-bold text-blue-400 mb-2">About These Missions</h4>
-        <p className="text-sm text-blue-200 leading-relaxed">
-          Each mission walks you through the complete PCR workflow: primer design, reagent ordering and reconstitution,
-          reaction setup, thermal cycling, and result verification. These scenarios are based on real challenges
-          facing African communities and showcase how molecular biology addresses health and agriculture problems.
-        </p>
       </div>
     </div>
   );

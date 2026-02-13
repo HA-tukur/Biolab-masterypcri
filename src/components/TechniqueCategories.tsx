@@ -42,10 +42,10 @@ export const TechniqueCategories = ({ onSelectCategory }: TechniqueCategoriesPro
 
   const getColorClasses = (color: string) => {
     const colorMap: Record<string, { border: string, bg: string, text: string, hover: string }> = {
-      emerald: { border: "border-emerald-500/50", bg: "bg-emerald-900/20", text: "text-emerald-400", hover: "hover:bg-emerald-900/40" },
-      blue: { border: "border-blue-500/50", bg: "bg-blue-900/20", text: "text-blue-400", hover: "hover:bg-blue-900/40" },
-      purple: { border: "border-purple-500/50", bg: "bg-purple-900/20", text: "text-purple-400", hover: "hover:bg-purple-900/40" },
-      amber: { border: "border-amber-500/50", bg: "bg-amber-900/20", text: "text-amber-400", hover: "hover:bg-amber-900/40" }
+      emerald: { border: "border-teal-500", bg: "bg-white", text: "text-teal-600", hover: "hover:bg-teal-50" },
+      blue: { border: "border-primary-500", bg: "bg-white", text: "text-primary-600", hover: "hover:bg-primary-50" },
+      purple: { border: "border-primary-500", bg: "bg-white", text: "text-primary-600", hover: "hover:bg-primary-50" },
+      amber: { border: "border-accent-500", bg: "bg-white", text: "text-accent-600", hover: "hover:bg-accent-50" }
     };
     return colorMap[color] || colorMap.emerald;
   };
@@ -53,10 +53,10 @@ export const TechniqueCategories = ({ onSelectCategory }: TechniqueCategoriesPro
   return (
     <div className="max-w-5xl mx-auto space-y-8">
       <div className="text-center space-y-4">
-        <h1 className="text-4xl md:text-5xl font-black uppercase tracking-tight text-white">
+        <h1 className="text-3xl md:text-4xl font-bold text-gray-900">
           Technique Categories
         </h1>
-        <p className="text-lg text-slate-400">
+        <p className="text-base text-gray-600">
           Choose a category to explore available techniques
         </p>
       </div>
@@ -68,19 +68,19 @@ export const TechniqueCategories = ({ onSelectCategory }: TechniqueCategoriesPro
             <button
               key={category.id}
               onClick={() => onSelectCategory(category.id)}
-              className={`border ${colors.border} ${colors.bg} ${colors.hover} p-8 rounded-3xl transition-all cursor-pointer text-left group`}
+              className={`border ${colors.border} ${colors.bg} ${colors.hover} p-8 rounded-lg transition-all cursor-pointer text-left group shadow-sm`}
             >
-              <div className={`${colors.text} mb-4 group-hover:scale-110 transition-transform`}>
+              <div className={`${colors.text} mb-4`}>
                 {category.icon}
               </div>
-              <h3 className="text-2xl font-black uppercase text-white mb-2">
+              <h3 className="text-xl font-bold text-gray-900 mb-2">
                 {category.title}
               </h3>
-              <p className="text-slate-400 text-sm mb-4">
+              <p className="text-gray-600 text-sm mb-4">
                 {category.description}
               </p>
               <div className="space-y-2">
-                <p className="text-xs font-bold text-slate-500 uppercase">Includes:</p>
+                <p className="text-xs font-semibold text-gray-700">Includes:</p>
                 <div className="flex flex-wrap gap-2">
                   {category.techniques.map((tech) => (
                     <span

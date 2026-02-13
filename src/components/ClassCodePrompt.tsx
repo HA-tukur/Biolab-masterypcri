@@ -13,14 +13,9 @@ interface ClassCodePromptProps {
 }
 
 export default function ClassCodePrompt({ onComplete, onJoinMission }: ClassCodePromptProps) {
-  const [step, setStep] = useState<'initial' | 'enterCode'>('initial');
   const [classCode, setClassCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-
-  const handleSkip = () => {
-    onComplete();
-  };
 
   const handleValidateCode = async () => {
     if (!classCode.trim()) {
@@ -34,7 +29,7 @@ export default function ClassCodePrompt({ onComplete, onJoinMission }: ClassCode
     try {
       const { data, error: fetchError } = await supabase
         .from('classes')
-        .select('id, class_name, instructor_name, mission_id')
+        .select('id, class_name, instructor_name, mission_id, simulation_name')
         .eq('class_code', classCode.trim().toUpperCase())
         .maybeSingle();
 
@@ -60,23 +55,41 @@ export default function ClassCodePrompt({ onComplete, onJoinMission }: ClassCode
 
       if (sessionError) throw sessionError;
 
-      onComplete();
-
       if (data.mission_id && onJoinMission) {
         const parts = data.mission_id.split('_');
         if (parts[0] === 'PCR' && parts.length >= 2) {
           const techniqueId = 'PCR';
           const missionId = parts.slice(1).join('_');
+          onComplete();
           setTimeout(() => {
             onJoinMission(techniqueId, missionId);
           }, 100);
         } else if (parts.length >= 3) {
           const techniqueId = `${parts[0]}_${parts[1]}`;
           const missionId = parts[2];
+          onComplete();
           setTimeout(() => {
             onJoinMission(techniqueId, missionId);
           }, 100);
+        } else {
+          onComplete();
         }
+      } else if (data.simulation_name && onJoinMission) {
+        if (data.simulation_name === 'PCR') {
+          onComplete();
+          setTimeout(() => {
+            onJoinMission('PCR', 'pcr-missions');
+          }, 100);
+        } else if (data.simulation_name === 'DNA Extraction') {
+          onComplete();
+          setTimeout(() => {
+            onJoinMission('DNA_EXT', 'missions');
+          }, 100);
+        } else {
+          onComplete();
+        }
+      } else {
+        onComplete();
       }
     } catch (err) {
       setError('Failed to validate code. Please try again.');
@@ -85,63 +98,6 @@ export default function ClassCodePrompt({ onComplete, onJoinMission }: ClassCode
       setLoading(false);
     }
   };
-
-  if (step === 'enterCode') {
-    return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-        <div className="bg-white rounded-lg shadow-xl p-8 max-w-md w-full relative">
-          <button
-            onClick={onComplete}
-            className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors"
-            aria-label="Close"
-          >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">
-            Enter Your Class Code
-          </h2>
-          <p className="text-gray-600 mb-6">
-            Ask your instructor for the class code to join.
-          </p>
-
-          <div className="mb-6">
-            <input
-              type="text"
-              value={classCode}
-              onChange={(e) => setClassCode(e.target.value.toUpperCase())}
-              placeholder="ABC123"
-              className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg text-center text-lg font-semibold uppercase focus:ring-2 focus:ring-blue-500 focus:border-transparent text-[#111827] placeholder:text-gray-400"
-              maxLength={6}
-            />
-          </div>
-
-          {error && (
-            <div className="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
-              {error}
-            </div>
-          )}
-
-          <div className="flex gap-3">
-            <button
-              onClick={() => setStep('initial')}
-              className="flex-1 px-4 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
-            >
-              Back
-            </button>
-            <button
-              onClick={handleValidateCode}
-              disabled={loading || !classCode.trim()}
-              className="flex-1 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed font-medium"
-            >
-              {loading ? 'Validating...' : 'Join Class'}
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
@@ -155,46 +111,44 @@ export default function ClassCodePrompt({ onComplete, onJoinMission }: ClassCode
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
           </svg>
         </button>
-        <div className="text-center mb-6">
-          <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-            </svg>
+        <h2 className="text-2xl font-bold text-gray-900 mb-4">
+          Join a Class
+        </h2>
+        <p className="text-gray-600 mb-6">
+          Enter the class code provided by your instructor
+        </p>
+
+        <div className="mb-6">
+          <input
+            type="text"
+            value={classCode}
+            onChange={(e) => setClassCode(e.target.value.toUpperCase())}
+            placeholder="ABC123"
+            className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg text-center text-lg font-semibold uppercase focus:ring-2 focus:ring-blue-500 focus:border-transparent text-[#111827] placeholder:text-gray-400"
+            maxLength={6}
+          />
+        </div>
+
+        {error && (
+          <div className="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+            {error}
           </div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">
-            Welcome to BioSim Lab
-          </h2>
-          <p className="text-gray-600">
-            Are you part of a university class?
-          </p>
-        </div>
+        )}
 
-        <div className="space-y-3">
+        <div className="flex gap-3">
           <button
-            onClick={() => setStep('enterCode')}
-            className="w-full px-6 py-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium text-left flex items-center justify-between"
+            onClick={onComplete}
+            className="flex-1 px-4 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
           >
-            <span>Yes - I have a class code</span>
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-            </svg>
+            Cancel
           </button>
-
           <button
-            onClick={handleSkip}
-            className="w-full px-6 py-4 border-2 border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium text-left flex items-center justify-between"
+            onClick={handleValidateCode}
+            disabled={loading || !classCode.trim()}
+            className="flex-1 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed font-medium"
           >
-            <span>No - Practice on my own</span>
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-            </svg>
+            {loading ? 'Joining...' : 'Join'}
           </button>
-        </div>
-
-        <div className="mt-6 pt-6 border-t border-gray-200 text-center">
-          <p className="text-sm text-gray-500">
-            You can always practice without joining a class
-          </p>
         </div>
       </div>
     </div>

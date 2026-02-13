@@ -18,11 +18,13 @@ interface TechniqueCategory {
 interface TechniqueLibraryProps {
   data: TechniqueCategory[];
   onTechniqueClick?: (tech: TechniqueItem) => void;
+  lockedTechniqueIds?: string[];
 }
 
 export const TechniqueLibrary: React.FC<TechniqueLibraryProps> = ({
   data,
-  onTechniqueClick
+  onTechniqueClick,
+  lockedTechniqueIds = []
 }) => {
   const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
 
@@ -69,16 +71,14 @@ export const TechniqueLibrary: React.FC<TechniqueLibraryProps> = ({
               >
                 <button
                   onClick={() => toggleCategory(categoryData.category)}
-                  className={`relative rounded-xl p-4 transition-all duration-300 overflow-hidden group ${
+                  className={`relative rounded-lg p-4 transition-all duration-300 overflow-hidden group ${
                     expanded
-                      ? "bg-gradient-to-br from-indigo-600/40 to-indigo-700/30 border-indigo-400 shadow-lg shadow-indigo-500/25 z-20"
+                      ? "bg-primary-500 border-primary-500 shadow-sm text-white z-20"
                       : expandedCategory
-                        ? "bg-slate-800/40 border-slate-700 opacity-60"
-                        : "bg-slate-800 border-slate-700 hover:border-slate-600 hover:shadow-lg hover:shadow-slate-900/50"
+                        ? "bg-gray-100 border-gray-200 opacity-60"
+                        : "bg-white border-gray-200 hover:border-gray-300 hover:bg-gray-50"
                   } border cursor-pointer`}
                 >
-                  <div className="absolute inset-0 bg-gradient-to-t from-indigo-600/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-
                   <div className="relative flex flex-col items-start gap-2.5">
                     <div className="flex items-start justify-between w-full">
                       <div className="text-2xl leading-none">
@@ -91,16 +91,16 @@ export const TechniqueLibrary: React.FC<TechniqueLibraryProps> = ({
                       >
                         <ChevronRight
                           size={16}
-                          className={expanded ? "text-indigo-400" : "text-slate-500"}
+                          className={expanded ? "text-white" : "text-gray-500"}
                         />
                       </div>
                     </div>
 
                     <div className="flex-1">
-                      <h4 className="text-sm font-bold text-white leading-tight">
+                      <h4 className={`text-sm font-bold leading-tight ${expanded ? 'text-white' : 'text-gray-900'}`}>
                         {categoryData.category}
                       </h4>
-                      <p className="text-[10px] text-slate-400 mt-1">
+                      <p className={`text-[10px] mt-1 ${expanded ? 'text-white/80' : 'text-gray-600'}`}>
                         {categoryData.items.length} technique
                         {categoryData.items.length !== 1 ? "s" : ""}
                       </p>
@@ -114,15 +114,16 @@ export const TechniqueLibrary: React.FC<TechniqueLibraryProps> = ({
                   </div>
 
                   {expanded && (
-                    <div className="absolute bottom-1.5 right-1.5 w-1 h-1 bg-indigo-400 rounded-full animate-pulse" />
+                    <div className="absolute bottom-1.5 right-1.5 w-1 h-1 bg-primary-500 rounded-full" />
                   )}
                 </button>
 
                 {expanded && (
-                  <div className="mt-3 space-y-2 animate-in slide-in-from-top-2 duration-300 relative z-20">
+                  <div className="mt-3 space-y-2 relative z-20">
                     {categoryData.items.map((tech) => {
-                      const isActive = tech.status === "ACTIVE";
-                      const isLocked = tech.status === "LOCKED";
+                      const isGuestLocked = lockedTechniqueIds.includes(tech.id);
+                      const isActive = tech.status === "ACTIVE" && !isGuestLocked;
+                      const isLocked = tech.status === "LOCKED" || isGuestLocked;
 
                       return (
                         <button
@@ -136,7 +137,7 @@ export const TechniqueLibrary: React.FC<TechniqueLibraryProps> = ({
                           className={`w-full rounded-lg p-3 border transition-all duration-200 text-left group/tech ${
                             isActive
                               ? "bg-slate-800/60 border-indigo-500/40 hover:border-indigo-400/60 hover:bg-slate-800/80 hover:shadow-md hover:shadow-indigo-500/15 cursor-pointer"
-                              : "bg-slate-800/40 border-slate-700/50 opacity-50 cursor-not-allowed"
+                              : "bg-gray-100 border-gray-200/50 opacity-50 cursor-not-allowed"
                           }`}
                         >
                           <div className="flex items-start justify-between gap-2">
@@ -190,7 +191,7 @@ export const TechniqueLibrary: React.FC<TechniqueLibraryProps> = ({
 
                           {isLocked && (
                             <p className="text-[10px] text-amber-500/70 font-bold uppercase mt-1.5 ml-8">
-                              Coming Soon
+                              {isGuestLocked ? 'Sign up to unlock' : 'Coming Soon'}
                             </p>
                           )}
                         </button>

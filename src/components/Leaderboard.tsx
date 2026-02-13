@@ -206,24 +206,24 @@ export default function Leaderboard() {
   };
 
   const getRankBadge = (rank: number) => {
-    if (rank === 1) return 'bg-gradient-to-r from-yellow-600 to-amber-500 border-yellow-400';
-    if (rank === 2) return 'bg-gradient-to-r from-gray-400 to-slate-400 border-gray-300';
+    if (rank === 1) return 'bg-yellow-500 border-yellow-500';
+    if (rank === 2) return 'bg-gray-400 border-gray-400';
     if (rank === 3) return 'bg-gradient-to-r from-amber-700 to-orange-600 border-amber-500';
     if (rank <= 10) return 'bg-gradient-to-r from-indigo-900/40 to-purple-900/40 border-indigo-500/30';
     return 'bg-slate-800 border-slate-700';
   };
 
   return (
-    <div className="min-h-screen bg-slate-900 text-white">
+    <div className="min-h-screen bg-white text-gray-900">
       <div className="max-w-7xl mx-auto px-4 py-8">
-        <div className="bg-gradient-to-br from-amber-900/40 via-slate-800 to-indigo-900/40 border-2 border-amber-500/50 rounded-2xl p-8 mb-8">
+        <div className="bg-white border border-gray-200 rounded-lg p-8 mb-8">
           <div className="flex items-center justify-between flex-wrap gap-4">
             <div className="flex items-center gap-4">
               <div className="bg-amber-600 p-4 rounded-xl">
-                <Trophy size={40} className="text-white" />
+                <Trophy size={40} className="text-gray-900" />
               </div>
               <div>
-                <h1 className="text-4xl font-black text-white mb-2">Global Rankings</h1>
+                <h1 className="text-4xl font-black text-gray-900 mb-2">Global Rankings</h1>
                 <p className="text-slate-300 text-lg">Compete with students worldwide. Track your ranking. Share your achievements.</p>
               </div>
             </div>
@@ -232,7 +232,7 @@ export default function Leaderboard() {
               <select
                 value={smartFilter}
                 onChange={(e) => setSmartFilter(e.target.value as any)}
-                className="bg-slate-900/80 border-2 border-amber-500/50 rounded-lg px-4 py-2 text-white font-medium focus:border-amber-500 focus:outline-none"
+                className="bg-slate-900/80 border-2 border-amber-500/50 rounded-lg px-4 py-2 text-gray-900 font-medium focus:border-amber-500 focus:outline-none"
               >
                 <option value="country">My Country</option>
                 <option value="university">My University</option>
@@ -257,7 +257,7 @@ export default function Leaderboard() {
                     #{userProfile.rank || '?'}
                   </div>
                   <div>
-                    <h3 className="text-xl font-bold text-white">{userProfile.display_name}</h3>
+                    <h3 className="text-xl font-bold text-gray-900">{userProfile.display_name}</h3>
                     <p className="text-slate-400 text-sm">
                       {userProfile.school_name} • {userProfile.country}
                     </p>
@@ -265,15 +265,15 @@ export default function Leaderboard() {
                 </div>
                 <div className="flex gap-6">
                   <div className="text-center">
-                    <div className="text-2xl font-bold text-white">{userProfile.total_score.toFixed(1)}</div>
+                    <div className="text-2xl font-bold text-gray-900">{userProfile.total_score.toFixed(1)}</div>
                     <div className="text-xs text-slate-400">Total Score</div>
                   </div>
                   <div className="text-center">
-                    <div className="text-2xl font-bold text-white">{userProfile.missions_completed}</div>
+                    <div className="text-2xl font-bold text-gray-900">{userProfile.missions_completed}</div>
                     <div className="text-xs text-slate-400">Missions</div>
                   </div>
                   <div className="text-center">
-                    <div className="text-2xl font-bold text-white">{userProfile.best_purity_score.toFixed(2)}</div>
+                    <div className="text-2xl font-bold text-gray-900">{userProfile.best_purity_score.toFixed(2)}</div>
                     <div className="text-xs text-slate-400">Best Score</div>
                   </div>
                 </div>
@@ -298,11 +298,11 @@ export default function Leaderboard() {
           ) : (
             <div className="mt-6 bg-slate-900/60 border border-amber-500/30 rounded-xl p-6 text-center">
               <Sparkles className="w-12 h-12 text-amber-400 mx-auto mb-3" />
-              <h3 className="text-xl font-bold text-white mb-2">Join the Competition!</h3>
+              <h3 className="text-xl font-bold text-gray-900 mb-2">Join the Competition!</h3>
               <p className="text-slate-300 mb-4">Register to see your rank and compete with students worldwide.</p>
               <button
                 onClick={() => setShowRegistration(true)}
-                className="bg-amber-600 hover:bg-amber-500 px-6 py-3 rounded-lg font-bold text-white transition-colors"
+                className="bg-amber-600 hover:bg-amber-500 px-6 py-3 rounded-lg font-bold text-gray-900 transition-colors"
               >
                 Register for Leaderboard
               </button>
@@ -312,13 +312,13 @@ export default function Leaderboard() {
 
         <div className="bg-slate-800 border border-slate-700 rounded-2xl p-6 mb-6">
           <div className="flex items-center justify-between flex-wrap gap-4 mb-6">
-            <h2 className="text-2xl font-bold text-white">Rankings</h2>
+            <h2 className="text-2xl font-bold text-gray-900">Rankings</h2>
             <div className="flex gap-2">
               <button
                 onClick={() => setFilter('all')}
                 className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors ${
                   filter === 'all'
-                    ? 'bg-indigo-600 text-white'
+                    ? 'bg-indigo-600 text-gray-900'
                     : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
                 }`}
               >
@@ -329,7 +329,7 @@ export default function Leaderboard() {
                 onClick={() => setFilter('high_school')}
                 className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors ${
                   filter === 'high_school'
-                    ? 'bg-amber-600 text-white'
+                    ? 'bg-amber-600 text-gray-900'
                     : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
                 }`}
               >
@@ -340,7 +340,7 @@ export default function Leaderboard() {
                 onClick={() => setFilter('university')}
                 className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors ${
                   filter === 'university'
-                    ? 'bg-emerald-600 text-white'
+                    ? 'bg-emerald-600 text-gray-900'
                     : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
                 }`}
               >
@@ -351,7 +351,7 @@ export default function Leaderboard() {
                 onClick={() => setFilter('independent')}
                 className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors ${
                   filter === 'independent'
-                    ? 'bg-purple-600 text-white'
+                    ? 'bg-purple-600 text-gray-900'
                     : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
                 }`}
               >
@@ -375,7 +375,7 @@ export default function Leaderboard() {
             <div className="space-y-3">
               {profiles.map((profile) => {
                 const isGoldOrSilver = profile.rank! <= 2;
-                const textColor = isGoldOrSilver ? 'text-[#111827]' : 'text-white';
+                const textColor = isGoldOrSilver ? 'text-[#111827]' : 'text-gray-900';
                 const subTextColor = isGoldOrSilver ? 'text-[#374151]' : 'text-slate-300';
                 const metaTextColor = isGoldOrSilver ? 'text-[#6B7280]' : 'text-slate-400';
 
@@ -395,7 +395,7 @@ export default function Leaderboard() {
                           <h3 className={`font-bold text-lg flex items-center gap-2 ${textColor}`}>
                             {profile.display_name}
                             {profile.student_id === studentId && (
-                              <span className="text-xs bg-amber-500 px-2 py-0.5 rounded-full text-white">YOU</span>
+                              <span className="text-xs bg-amber-500 px-2 py-0.5 rounded-full text-gray-900">YOU</span>
                             )}
                           </h3>
                           <p className={`text-sm ${subTextColor}`}>
@@ -436,7 +436,7 @@ export default function Leaderboard() {
       {showRegistration && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50">
           <div className="bg-slate-800 border-2 border-amber-500/50 rounded-2xl p-8 max-w-lg w-full">
-            <h2 className="text-2xl font-black text-white mb-6">Join the Leaderboard</h2>
+            <h2 className="text-2xl font-black text-gray-900 mb-6">Join the Leaderboard</h2>
 
             <div className="space-y-4">
               <div>
@@ -448,7 +448,7 @@ export default function Leaderboard() {
                   value={registrationData.display_name}
                   onChange={(e) => setRegistrationData({ ...registrationData, display_name: e.target.value })}
                   placeholder="Your name or nickname"
-                  className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 text-white focus:border-amber-500 focus:outline-none"
+                  className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 text-gray-900 focus:border-amber-500 focus:outline-none"
                 />
               </div>
 
@@ -461,7 +461,7 @@ export default function Leaderboard() {
                   value={registrationData.school_name}
                   onChange={(e) => setRegistrationData({ ...registrationData, school_name: e.target.value })}
                   placeholder="Your school or institution"
-                  className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 text-white focus:border-amber-500 focus:outline-none"
+                  className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 text-gray-900 focus:border-amber-500 focus:outline-none"
                 />
               </div>
 
@@ -474,7 +474,7 @@ export default function Leaderboard() {
                   value={registrationData.country}
                   onChange={(e) => setRegistrationData({ ...registrationData, country: e.target.value })}
                   placeholder="Your country"
-                  className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 text-white focus:border-amber-500 focus:outline-none"
+                  className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 text-gray-900 focus:border-amber-500 focus:outline-none"
                 />
               </div>
 
@@ -485,7 +485,7 @@ export default function Leaderboard() {
                 <select
                   value={registrationData.user_type}
                   onChange={(e) => setRegistrationData({ ...registrationData, user_type: e.target.value as any })}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 text-white focus:border-amber-500 focus:outline-none"
+                  className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 text-gray-900 focus:border-amber-500 focus:outline-none"
                 >
                   <option value="high_school">High School Student</option>
                   <option value="university">University Student</option>
@@ -498,14 +498,14 @@ export default function Leaderboard() {
               <button
                 onClick={() => setShowRegistration(false)}
                 disabled={isRegistering}
-                className="flex-1 bg-slate-700 hover:bg-slate-600 px-4 py-3 rounded-lg font-bold text-white transition-colors disabled:opacity-50"
+                className="flex-1 bg-slate-700 hover:bg-slate-600 px-4 py-3 rounded-lg font-bold text-gray-900 transition-colors disabled:opacity-50"
               >
                 Cancel
               </button>
               <button
                 onClick={handleRegister}
                 disabled={isRegistering}
-                className="flex-1 bg-amber-600 hover:bg-amber-500 px-4 py-3 rounded-lg font-bold text-white transition-colors disabled:opacity-50"
+                className="flex-1 bg-amber-600 hover:bg-amber-500 px-4 py-3 rounded-lg font-bold text-gray-900 transition-colors disabled:opacity-50"
               >
                 {isRegistering ? 'Registering...' : 'Register'}
               </button>
