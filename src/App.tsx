@@ -1198,7 +1198,7 @@ export default function App() {
         'confocal-microscopy': 'welcome'
       };
       const targetScreen = simulationMap[sim] || 'welcome';
-      const missionFlowScreens = ['briefing', 'procurement', 'workspace', 'result'];
+      const missionFlowScreens = ['briefing', 'procurement', 'lab', 'workspace', 'result'];
       if (!missionFlowScreens.includes(screen)) {
         setScreen(targetScreen);
       }
