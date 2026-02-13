@@ -118,12 +118,20 @@ export function InstructorRequestsAdmin() {
       setProcessing(requestId);
       setError(null);
 
+      console.log('=== PROCESSING INSTRUCTOR REQUEST ===');
+      console.log('Request ID:', requestId);
+      console.log('Action:', action);
+
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
+        console.error('No session found');
         throw new Error('Not authenticated');
       }
 
+      console.log('Session user:', session.user.email);
+
       const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-instructor-decision`;
+      console.log('Calling edge function:', apiUrl);
 
       const response = await fetch(apiUrl, {
         method: 'POST',
@@ -134,15 +142,31 @@ export function InstructorRequestsAdmin() {
         body: JSON.stringify({ requestId, action }),
       });
 
+      console.log('Response status:', response.status);
+      console.log('Response ok:', response.ok);
+
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to process request');
+        const errorText = await response.text();
+        console.error('Error response text:', errorText);
+        try {
+          const errorData = JSON.parse(errorText);
+          throw new Error(errorData.error || `Failed to ${action} request (${response.status})`);
+        } catch (parseError) {
+          throw new Error(`Failed to ${action} request: ${response.status} - ${errorText}`);
+        }
       }
+
+      const result = await response.json();
+      console.log('Success:', result);
 
       await fetchRequests();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to process request');
-      console.error('Error processing request:', err);
+      console.error('=== ERROR PROCESSING REQUEST ===');
+      console.error('Error object:', err);
+      console.error('Error message:', err instanceof Error ? err.message : 'Unknown error');
+
+      const errorMessage = err instanceof Error ? err.message : 'Failed to process request';
+      setError(errorMessage);
     } finally {
       setProcessing(null);
     }
