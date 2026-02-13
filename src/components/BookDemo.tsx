@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { ArrowLeft, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
-import Header from './Header';
 import { Footer } from './Footer';
 
 export function BookDemo() {
@@ -69,8 +68,6 @@ export function BookDemo() {
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col">
-      <Header />
-
       <main className="flex-grow">
         <div className="max-w-2xl mx-auto px-4 py-16">
           <button
