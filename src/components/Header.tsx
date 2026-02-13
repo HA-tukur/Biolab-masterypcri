@@ -13,6 +13,9 @@ export default function Header() {
   const isInstructor = currentPath.startsWith('/instructor');
   const [activeTab, setActiveTab] = useState('home');
 
+  // Check if user is an instructor
+  const isInstructorRole = user?.app_metadata?.role === 'instructor' || user?.app_metadata?.role === 'admin';
+
   useEffect(() => {
     const handleTabChange = (e: CustomEvent) => {
       setActiveTab(e.detail.tab);
@@ -51,7 +54,7 @@ export default function Header() {
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-8">
             <button
-              onClick={() => handleNavigation(user ? '/dashboard' : '/')}
+              onClick={() => handleNavigation('/')}
               className="flex items-center gap-2 hover:opacity-80 transition-opacity"
             >
               <Microscope className="w-6 h-6 text-teal-700" />
@@ -127,7 +130,7 @@ export default function Header() {
       <div className="flex items-center justify-between h-full px-4">
         <div className="flex items-center gap-6">
           <button
-            onClick={() => handleNavigation(user ? '/dashboard' : '/')}
+            onClick={() => handleNavigation('/')}
             className="flex items-center gap-2 hover:opacity-80 transition-opacity"
           >
             <Microscope className="w-5 h-5 text-[#22d3ee]" />
@@ -192,17 +195,19 @@ export default function Header() {
                 <User className="w-4 h-4" />
                 Profile
               </button>
-              <button
-                onClick={() => handleNavigation('/instructor/setup')}
-                title="Instructor Portal"
-                className={`px-4 py-2 rounded-full text-sm font-medium transition-all whitespace-nowrap ${
-                  isInstructor
-                    ? 'bg-[#0891b2] text-white'
-                    : 'bg-transparent text-gray-600 hover:text-gray-700'
-                }`}
-              >
-                Instructor Portal
-              </button>
+              {isInstructorRole && (
+                <button
+                  onClick={() => handleNavigation('/instructor/setup')}
+                  title="Instructor Portal"
+                  className={`px-4 py-2 rounded-full text-sm font-medium transition-all whitespace-nowrap ${
+                    isInstructor
+                      ? 'bg-[#0891b2] text-white'
+                      : 'bg-transparent text-gray-600 hover:text-gray-700'
+                  }`}
+                >
+                  Instructor Portal
+                </button>
+              )}
               <button
                 onClick={handleSignOut}
                 title="Sign Out"

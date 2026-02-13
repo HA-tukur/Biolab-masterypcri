@@ -22,6 +22,7 @@ export function InstructorRequestsAdmin() {
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   console.log('InstructorRequestsAdmin component rendered');
 
@@ -117,6 +118,7 @@ export function InstructorRequestsAdmin() {
     try {
       setProcessing(requestId);
       setError(null);
+      setSuccessMessage(null);
 
       const functionName = action === 'approve'
         ? 'approve_instructor_request'
@@ -132,6 +134,14 @@ export function InstructorRequestsAdmin() {
 
       if (data && data.error) {
         throw new Error(data.error);
+      }
+
+      console.log('Decision processed:', data);
+
+      if (action === 'approve') {
+        setSuccessMessage(`Request approved for ${data.user_email}! The user will need to log out and log back in to access instructor features.`);
+      } else {
+        setSuccessMessage(`Request rejected for ${data.user_email}.`);
       }
 
       await fetchRequests();
@@ -190,6 +200,12 @@ export function InstructorRequestsAdmin() {
             Refresh
           </button>
         </div>
+
+        {successMessage && (
+          <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
+            <p className="text-green-800 font-semibold">{successMessage}</p>
+          </div>
+        )}
 
         {error && (
           <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
@@ -301,12 +317,13 @@ export function InstructorRequestsAdmin() {
           </div>
         )}
 
-        <div className="mt-6 p-4 bg-gray-50 border border-gray-200 rounded-lg">
-          <h3 className="text-sm font-medium text-gray-900 mb-2">Admin Actions</h3>
-          <ul className="text-sm text-gray-600 space-y-1">
-            <li>• Approve: Grants instructor role and dashboard access</li>
-            <li>• Reject: Denies request without notifying user</li>
-            <li>• All decisions are logged with admin ID and timestamp</li>
+        <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+          <h3 className="text-sm font-medium text-blue-900 mb-2">Important Notes</h3>
+          <ul className="text-sm text-blue-800 space-y-1">
+            <li>• <strong>Approve:</strong> Grants instructor role immediately. User must log out and log back in to see the Instructor Portal in navigation.</li>
+            <li>• <strong>Reject:</strong> Denies the request. The decision is recorded in the database.</li>
+            <li>• All decisions are logged with admin ID and timestamp for audit purposes.</li>
+            <li>• <strong>Note:</strong> Email notifications require additional SMTP configuration in Supabase settings.</li>
           </ul>
         </div>
       </div>

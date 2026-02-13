@@ -161,7 +161,14 @@ export function NewDashboard() {
   };
 
   const getFirstName = () => {
-    return profile?.full_name?.split(' ')[0] || 'there';
+    if (profile?.full_name) {
+      return profile.full_name.split(' ')[0];
+    }
+    // Fallback to user metadata if profile doesn't have name yet
+    if (user?.user_metadata?.full_name) {
+      return user.user_metadata.full_name.split(' ')[0];
+    }
+    return 'there';
   };
 
   const getDifficultyColor = (difficulty: string) => {
