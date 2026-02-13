@@ -131,6 +131,33 @@ export function InstructorPortal() {
     throw new Error('Failed to generate unique class code');
   };
 
+  const generateAdminKey = async (): Promise<string> => {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    let attempts = 0;
+    const maxAttempts = 10;
+
+    while (attempts < maxAttempts) {
+      let code = 'ADM-';
+      for (let i = 0; i < 4; i++) {
+        code += chars.charAt(Math.floor(Math.random() * chars.length));
+      }
+
+      const { data } = await supabase
+        .from('classes')
+        .select('admin_key')
+        .eq('admin_key', code)
+        .maybeSingle();
+
+      if (!data) {
+        return code;
+      }
+
+      attempts++;
+    }
+
+    throw new Error('Failed to generate unique admin key');
+  };
+
   const handleCreateClass = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -147,29 +174,57 @@ export function InstructorPortal() {
     setCreating(true);
 
     try {
+      console.log('=== CREATE CLASS DEBUG ===');
+      console.log('User ID:', user?.id);
+      console.log('User role:', user?.app_metadata?.role);
+      console.log('Profile:', profile);
+
       const classCode = await generateClassCode();
+      console.log('Generated class code:', classCode);
+
+      const adminKey = await generateAdminKey();
+      console.log('Generated admin key:', adminKey);
+
+      const insertData = {
+        instructor_id: user?.id,
+        name: formData.className,
+        class_name: formData.className,
+        simulation_name: formData.module,
+        class_code: classCode,
+        admin_key: adminKey,
+        instructor_name: profile?.full_name || '',
+        instructor_email: user?.email || '',
+      };
+      console.log('Insert data:', insertData);
 
       const { data, error } = await supabase
         .from('classes')
-        .insert({
-          instructor_id: user?.id,
-          name: formData.className,
-          simulation_name: formData.module,
-          class_code: classCode,
-          instructor_name: profile?.full_name || '',
-          instructor_email: user?.email || '',
-        })
+        .insert(insertData)
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('=== SUPABASE ERROR ===');
+        console.error('Full error object:', error);
+        console.error('Error message:', error.message);
+        console.error('Error details:', error.details);
+        console.error('Error hint:', error.hint);
+        console.error('Error code:', error.code);
+        throw error;
+      }
+
+      console.log('=== CLASS CREATED SUCCESSFULLY ===');
+      console.log('Created class data:', data);
 
       alert(`Class created successfully! Code: ${classCode}`);
       setFormData({ className: '', module: '' });
       await loadClasses();
-    } catch (error) {
-      console.error('Error creating class:', error);
-      alert('Failed to create class. Please try again.');
+    } catch (error: any) {
+      console.error('=== CATCH BLOCK ERROR ===');
+      console.error('Full error:', error);
+      console.error('Error message:', error?.message);
+      console.error('Error details:', error?.details);
+      alert(`Failed to create class: ${error?.message || 'Unknown error'}`);
     } finally {
       setCreating(false);
     }
