@@ -768,7 +768,7 @@ const BiologicalPopup = ({ type, onClose }) => {
 
 const ReadinessOverlay = ({ onClose }) => (
   <div className="fixed inset-0 z-[140] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md">
-    <div className="bg-slate-800 border border-amber-500/50 w-full max-w-lg rounded-[2.5rem] p-8 space-y-6 text-white shadow-2xl">
+    <div className="bg-slate-800 border border-amber-500/50 w-full max-w-[650px] max-h-[550px] overflow-y-auto rounded-[2.5rem] p-8 space-y-6 text-white shadow-2xl">
 
       {/* Icon */}
       <ShieldCheck size={48} className="mx-auto text-amber-500" />
@@ -1851,6 +1851,7 @@ export default function App() {
       {showProtocolGuide && <ProtocolGuideOverlay onClose={() => setShowProtocolGuide(false)} missionId={missionId} />}
       {showReadinessModal && <ReadinessOverlay onClose={() => {
         setShowReadinessModal(false);
+        setScreen("briefing");
       }} />}
       {showProtocolOverview && (
         <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md overflow-y-auto">
