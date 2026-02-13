@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { createClient } from "@supabase/supabase-js";
 import {
   FlaskConical,
@@ -1175,6 +1175,7 @@ export default function App() {
   console.log('App component rendering');
 
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [user, setUser] = useState(null);
   const [historyRecords, setHistoryRecords] = useState([]);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
@@ -1186,7 +1187,19 @@ export default function App() {
 
   useEffect(() => {
     console.log('App mounted, screen:', screen);
-  }, []);
+    const sim = searchParams.get('sim');
+    if (sim) {
+      const simulationMap: Record<string, string> = {
+        'dna-extraction': 'missions',
+        'pcr-setup': 'pcr-missions',
+        'western-blot': 'welcome',
+        'gel-electrophoresis': 'welcome',
+        'confocal-microscopy': 'welcome'
+      };
+      const targetScreen = simulationMap[sim] || 'welcome';
+      setScreen(targetScreen);
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     const setupAuth = async () => {

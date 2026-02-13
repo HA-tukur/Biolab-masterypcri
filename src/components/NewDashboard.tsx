@@ -201,8 +201,19 @@ export function NewDashboard() {
     }
   };
 
-  const handleStartSimulation = (simName: string) => {
-    navigate('/lab');
+  const handleStartSimulation = (simId: string) => {
+    navigate(`/lab?sim=${simId}`);
+  };
+
+  const getSimulationId = (simName: string): string => {
+    const nameToIdMap: Record<string, string> = {
+      'DNA Extraction': 'dna-extraction',
+      'PCR Setup': 'pcr-setup',
+      'Western Blot': 'western-blot',
+      'Gel Electrophoresis': 'gel-electrophoresis',
+      'Confocal Microscopy': 'confocal-microscopy'
+    };
+    return nameToIdMap[simName] || 'dna-extraction';
   };
 
   const getFirstName = () => {
@@ -286,7 +297,10 @@ export function NewDashboard() {
                   )}
                 </div>
                 <button
-                  onClick={() => navigate('/lab')}
+                  onClick={() => {
+                    const simId = lastActivity ? getSimulationId(lastActivity.simulation_name) : (profile?.last_simulation ? getSimulationId(profile.last_simulation) : 'dna-extraction');
+                    handleStartSimulation(simId);
+                  }}
                   className="w-full bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2 rounded-lg transition-colors font-medium flex items-center justify-center gap-2"
                 >
                   <Play size={16} />
@@ -368,7 +382,7 @@ export function NewDashboard() {
                   </div>
 
                   <button
-                    onClick={() => navigate('/lab')}
+                    onClick={() => handleStartSimulation(getSimulationId(cls.simulation_name))}
                     className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-medium transition-colors"
                   >
                     {cls.completed ? 'Practice Again' : 'Start Module'}
@@ -396,7 +410,7 @@ export function NewDashboard() {
                   </span>
                 </div>
                 <button
-                  onClick={() => handleStartSimulation(sim.name)}
+                  onClick={() => handleStartSimulation(sim.id)}
                   className="w-full bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2 rounded-lg transition-colors font-medium flex items-center justify-center gap-2"
                 >
                   <Play size={16} />
