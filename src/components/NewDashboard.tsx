@@ -207,6 +207,7 @@ export function NewDashboard() {
   const getSimulationId = (simName: string): string => {
     const nameToIdMap: Record<string, string> = {
       'DNA Extraction': 'dna-extraction',
+      'PCR': 'pcr-setup',
       'PCR Setup': 'pcr-setup',
       'Western Blot': 'western-blot',
       'Gel Electrophoresis': 'gel-electrophoresis',
