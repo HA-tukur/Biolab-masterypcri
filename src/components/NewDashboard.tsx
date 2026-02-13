@@ -5,7 +5,6 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
-import { OnboardingModal } from './OnboardingModal';
 import { SharedNavigation } from './SharedNavigation';
 import { JoinClassModal } from './JoinClassModal';
 
@@ -13,8 +12,7 @@ interface Profile {
   full_name: string;
   university: string;
   program_department: string;
-  learning_path: string;
-  onboarding_completed: boolean;
+  learning_type: string;
   instructor_verified: boolean;
   last_simulation: string | null;
 }
@@ -74,7 +72,6 @@ export function NewDashboard() {
   const [leaderboardPreview, setLeaderboardPreview] = useState<LeaderboardEntry[]>([]);
   const [recentSessions, setRecentSessions] = useState<RecentSession[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showOnboarding, setShowOnboarding] = useState(false);
   const [enrolledClasses, setEnrolledClasses] = useState<EnrolledClass[]>([]);
   const [showJoinModal, setShowJoinModal] = useState(false);
 
@@ -89,16 +86,12 @@ export function NewDashboard() {
       // Load profile
       const { data: profileData } = await supabase
         .from('profiles')
-        .select('full_name, university, program_department, learning_path, onboarding_completed, instructor_verified, last_simulation')
+        .select('full_name, university, program_department, learning_type, instructor_verified, last_simulation')
         .eq('id', user?.id)
         .maybeSingle();
 
       if (profileData) {
         setProfile(profileData);
-        // Show onboarding modal if not completed
-        if (!profileData.onboarding_completed) {
-          setShowOnboarding(true);
-        }
       }
 
       // Load last activity
@@ -185,14 +178,14 @@ export function NewDashboard() {
           enrollments.map(async (enrollment) => {
             const { data: classData } = await supabase
               .from('classes')
-              .select('name, simulation_name, instructor_name')
+              .select('class_name, simulation_name, instructor_name')
               .eq('id', enrollment.class_id)
               .maybeSingle();
 
             return {
               id: enrollment.id,
               class_id: enrollment.class_id,
-              class_name: classData?.name || 'Unknown Class',
+              class_name: classData?.class_name || 'Unknown Class',
               simulation_name: classData?.simulation_name || '',
               instructor_name: classData?.instructor_name || '',
               completed: enrollment.completed,
@@ -245,11 +238,6 @@ export function NewDashboard() {
     if (seconds < 3600) return `${Math.floor(seconds / 60)} min ago`;
     if (seconds < 86400) return `${Math.floor(seconds / 3600)} hours ago`;
     return `${Math.floor(seconds / 86400)} days ago`;
-  };
-
-  const handleOnboardingComplete = () => {
-    setShowOnboarding(false);
-    loadDashboardData(); // Reload data after onboarding
   };
 
   const handleJoinClassSuccess = () => {
@@ -332,67 +320,65 @@ export function NewDashboard() {
         </section>
 
         {/* Enrolled Classes Section */}
-        {profile?.learning_path === 'university' && (
-          <section className="mb-16">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold text-slate-900">Enrolled Classes</h2>
+        <section className="mb-16">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-2xl font-bold text-slate-900">Enrolled Classes</h2>
+            <button
+              onClick={() => setShowJoinModal(true)}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-medium transition-colors"
+            >
+              <Plus className="w-4 h-4" />
+              Join a Class
+            </button>
+          </div>
+
+          {enrolledClasses.length === 0 ? (
+            <div className="bg-white border border-slate-200 rounded-lg p-8 text-center">
+              <Users className="w-16 h-16 text-slate-300 mx-auto mb-4" />
+              <p className="text-slate-600 mb-4">No classes joined yet. Enter a class code to join your instructor's class.</p>
               <button
                 onClick={() => setShowJoinModal(true)}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-medium transition-colors"
+                className="inline-flex items-center gap-2 px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-medium transition-colors"
               >
-                <Plus className="w-4 h-4" />
-                Join a Class
+                <Plus className="w-5 h-5" />
+                Join Your First Class
               </button>
             </div>
-
-            {enrolledClasses.length === 0 ? (
-              <div className="bg-white border border-slate-200 rounded-lg p-8 text-center">
-                <Users className="w-16 h-16 text-slate-300 mx-auto mb-4" />
-                <p className="text-slate-600 mb-4">No classes joined yet. Enter a class code to join your instructor's class.</p>
-                <button
-                  onClick={() => setShowJoinModal(true)}
-                  className="inline-flex items-center gap-2 px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-medium transition-colors"
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {enrolledClasses.map((cls) => (
+                <div
+                  key={cls.id}
+                  className="bg-white p-6 rounded-lg border border-slate-200 hover:border-emerald-300 transition-colors"
                 >
-                  <Plus className="w-5 h-5" />
-                  Join Your First Class
-                </button>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {enrolledClasses.map((cls) => (
-                  <div
-                    key={cls.id}
-                    className="bg-white p-6 rounded-lg border border-slate-200 hover:border-emerald-300 transition-colors"
-                  >
-                    <div className="mb-4">
-                      <h3 className="text-lg font-semibold text-slate-900 mb-1">{cls.class_name}</h3>
-                      <p className="text-sm text-slate-600">Instructor: {cls.instructor_name}</p>
-                      <p className="text-sm text-slate-600">Module: {cls.simulation_name}</p>
-                    </div>
-
-                    <div className="mb-4">
-                      <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
-                        cls.completed
-                          ? 'bg-emerald-100 text-emerald-800'
-                          : 'bg-amber-100 text-amber-800'
-                      }`}>
-                        {cls.completed ? 'Completed' : 'In Progress'}
-                      </span>
-                    </div>
-
-                    <button
-                      onClick={() => navigate('/lab')}
-                      className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-medium transition-colors"
-                    >
-                      {cls.completed ? 'Practice Again' : 'Start Module'}
-                      <ChevronRight className="w-4 h-4" />
-                    </button>
+                  <div className="mb-4">
+                    <h3 className="text-lg font-semibold text-slate-900 mb-1">{cls.class_name}</h3>
+                    <p className="text-sm text-slate-600">Instructor: {cls.instructor_name}</p>
+                    <p className="text-sm text-slate-600">Module: {cls.simulation_name}</p>
                   </div>
-                ))}
-              </div>
-            )}
-          </section>
-        )}
+
+                  <div className="mb-4">
+                    <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
+                      cls.completed
+                        ? 'bg-emerald-100 text-emerald-800'
+                        : 'bg-amber-100 text-amber-800'
+                    }`}>
+                      {cls.completed ? 'Completed' : 'In Progress'}
+                    </span>
+                  </div>
+
+                  <button
+                    onClick={() => navigate('/lab')}
+                    className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-medium transition-colors"
+                  >
+                    {cls.completed ? 'Practice Again' : 'Start Module'}
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
 
         {/* Your Simulations */}
         <section className="mb-16">
@@ -522,11 +508,6 @@ export function NewDashboard() {
           </section>
         )}
       </main>
-
-      {/* Onboarding Modal */}
-      {showOnboarding && user && (
-        <OnboardingModal userId={user.id} onComplete={handleOnboardingComplete} />
-      )}
 
       {/* Join Class Modal */}
       {showJoinModal && (

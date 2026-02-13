@@ -11,7 +11,7 @@ interface ProfileData {
   full_name: string;
   university: string;
   program_department: string;
-  learning_path: string;
+  learning_type: string;
   leaderboard_visible: boolean;
   display_name_preference: 'real_name' | 'student_id' | 'custom_nickname';
   custom_nickname: string | null;
@@ -85,7 +85,7 @@ export function NewProfile() {
           full_name: editedData.full_name,
           university: editedData.university,
           program_department: editedData.program_department,
-          learning_path: editedData.learning_path,
+          learning_type: editedData.learning_type,
           leaderboard_visible: editedData.leaderboard_visible,
           display_name_preference: editedData.display_name_preference,
           custom_nickname: editedData.custom_nickname,
@@ -167,13 +167,13 @@ export function NewProfile() {
     try {
       const { error } = await supabase
         .from('profiles')
-        .update({ learning_path: newPath })
+        .update({ learning_type: newPath })
         .eq('id', user.id);
 
       if (error) throw error;
 
-      setProfile({ ...profile!, learning_path: newPath });
-      setEditedData({ ...editedData, learning_path: newPath });
+      setProfile({ ...profile!, learning_type: newPath });
+      setEditedData({ ...editedData, learning_type: newPath });
       alert('Learning path updated successfully!');
     } catch (error) {
       console.error('Error updating learning path:', error);
@@ -389,35 +389,27 @@ export function NewProfile() {
 
           <div className="mb-6">
             <p className="text-slate-600 mb-4">
-              Current Path:{' '}
+              I am a:{' '}
               <span className="font-semibold text-slate-900">
-                {profile.learning_path === 'university'
+                {profile.learning_type === 'university_student'
                   ? 'University Student'
-                  : profile.learning_path === 'pre_university'
+                  : profile.learning_type === 'pre_university'
                   ? 'Pre-university'
                   : 'Independent Learner'}
               </span>
             </p>
 
             <select
-              value={profile.learning_path}
+              value={profile.learning_type}
               onChange={(e) => handleChangeLearningPath(e.target.value)}
               className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none"
             >
-              <option value="university">University Student</option>
-              <option value="independent">Independent Learner</option>
+              <option value="university_student">University Student</option>
+              <option value="independent_learner">Independent Learner</option>
               <option value="pre_university">Pre-university</option>
             </select>
+            <p className="text-sm text-slate-500 mt-2">This is for analytics only - all users have access to all features</p>
           </div>
-
-          {profile.learning_path === 'university' && (
-            <button
-              onClick={() => navigate('/dashboard')}
-              className="px-4 py-2 border-2 border-slate-300 text-slate-700 rounded-lg hover:border-slate-400 transition-colors font-medium"
-            >
-              Join a Class
-            </button>
-          )}
         </div>
 
         {/* Account Actions */}

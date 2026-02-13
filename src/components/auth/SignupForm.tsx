@@ -10,6 +10,7 @@ export function SignupForm() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [fullName, setFullName] = useState('');
+  const [learningType, setLearningType] = useState('');
   const [university, setUniversity] = useState('');
   const [universityOther, setUniversityOther] = useState('');
   const [programDepartment, setProgramDepartment] = useState('');
@@ -32,7 +33,7 @@ export function SignupForm() {
       return;
     }
 
-    if (!fullName.trim() || !university.trim() || !programDepartment.trim() || !yearOfStudy.trim() || !referralSource.trim()) {
+    if (!fullName.trim() || !learningType.trim() || !university.trim() || !programDepartment.trim() || !yearOfStudy.trim() || !referralSource.trim()) {
       setError('Please fill in all required fields');
       return;
     }
@@ -50,6 +51,7 @@ export function SignupForm() {
       email,
       password,
       fullName,
+      learningType,
       university: finalUniversity,
       programDepartment,
       yearOfStudy,
@@ -162,6 +164,24 @@ export function SignupForm() {
                     placeholder="John Doe"
                   />
                 </div>
+              </div>
+
+              <div>
+                <label htmlFor="learningType" className="block text-sm font-medium text-gray-700 mb-2">
+                  I am a: <span className="text-red-500">*</span>
+                </label>
+                <select
+                  id="learningType"
+                  value={learningType}
+                  onChange={(e) => setLearningType(e.target.value)}
+                  required
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 outline-none transition-colors"
+                >
+                  <option value="">Select your learning type</option>
+                  <option value="university_student">University Student</option>
+                  <option value="independent_learner">Independent Learner</option>
+                  <option value="pre_university">Pre-university</option>
+                </select>
               </div>
 
               <div>

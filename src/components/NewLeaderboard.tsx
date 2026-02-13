@@ -21,7 +21,7 @@ interface LeaderboardProfile {
 
 interface UserProfile {
   id: string;
-  learning_path: string;
+  learning_type: string;
   leaderboard_visible: boolean;
   display_name_preference: 'real_name' | 'student_id' | 'custom_nickname';
   custom_nickname: string | null;
@@ -50,7 +50,7 @@ export function NewLeaderboard() {
     try {
       const { data, error } = await supabase
         .from('profiles')
-        .select('id, learning_path, leaderboard_visible, display_name_preference, custom_nickname, full_name')
+        .select('id, learning_type, leaderboard_visible, display_name_preference, custom_nickname, full_name')
         .eq('id', user.id)
         .maybeSingle();
 

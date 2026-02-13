@@ -6,6 +6,7 @@ import { supabase } from '../../lib/supabase';
 interface Profile {
   full_name: string;
   email: string;
+  learning_type: string;
   university: string;
   program_department: string;
   year_of_study: string;
@@ -53,6 +54,7 @@ export function SettingsTab() {
         .from('profiles')
         .update({
           full_name: profile.full_name,
+          learning_type: profile.learning_type,
           university: profile.university,
           program_department: profile.program_department,
           year_of_study: profile.year_of_study,
@@ -127,6 +129,22 @@ export function SettingsTab() {
               className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 outline-none"
             />
           </div>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            I am a:
+          </label>
+          <select
+            value={profile.learning_type}
+            onChange={(e) => setProfile({ ...profile, learning_type: e.target.value })}
+            className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 outline-none"
+          >
+            <option value="university_student">University Student</option>
+            <option value="independent_learner">Independent Learner</option>
+            <option value="pre_university">Pre-university</option>
+          </select>
+          <p className="text-sm text-gray-500 mt-1">This is for analytics only - all users have access to all features</p>
         </div>
 
         <div>

@@ -6,6 +6,7 @@ export interface SignUpData {
   email: string;
   password: string;
   fullName: string;
+  learningType: string;
   university: string;
   programDepartment: string;
   yearOfStudy: string;
@@ -62,6 +63,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       options: {
         data: {
           full_name: data.fullName,
+          learning_type: data.learningType,
           university: data.university,
           program_department: data.programDepartment,
           year_of_study: data.yearOfStudy,
