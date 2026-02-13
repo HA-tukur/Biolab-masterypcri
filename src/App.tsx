@@ -1199,8 +1199,10 @@ export default function App() {
       };
       const targetScreen = simulationMap[sim] || 'welcome';
       setScreen(targetScreen);
+    } else if (user && screen === 'welcome') {
+      navigate('/browse');
     }
-  }, [searchParams]);
+  }, [searchParams, user, screen, navigate]);
 
   useEffect(() => {
     const setupAuth = async () => {
@@ -1262,11 +1264,19 @@ export default function App() {
     const handleHeaderTabClick = (e: CustomEvent) => {
       const tab = e.detail.tab;
       if (tab === 'home') {
-        setScreen('welcome');
+        if (user) {
+          navigate('/browse');
+        } else {
+          setScreen('welcome');
+        }
       } else if (tab === 'manual') {
         setShowManual(true);
       } else if (tab === 'contact') {
-        setScreen('welcome');
+        if (user) {
+          navigate('/browse');
+        } else {
+          setScreen('welcome');
+        }
         setTimeout(() => {
           const contactElement = document.getElementById('contact');
           if (contactElement) {
@@ -1820,7 +1830,11 @@ export default function App() {
           onComplete={() => {
             localStorage.setItem('biosim_class_prompt_shown', 'true');
             setShowClassCodePrompt(false);
-            setScreen("welcome");
+            if (user) {
+              navigate('/browse');
+            } else {
+              setScreen("welcome");
+            }
           }}
           onJoinMission={(techniqueId, missionId) => {
             if (techniqueId === 'PCR') {
@@ -1850,7 +1864,7 @@ export default function App() {
           </div>
         </div>
       )}
-      {showPCRModal && <PCRModule onClose={() => setShowPCRModal(false)} onComplete={() => setShowPCRModal(false)} onBackToLibrary={() => { setShowPCRModal(false); setScreen("welcome"); }} missionId={selectedMissionId} />}
+      {showPCRModal && <PCRModule onClose={() => setShowPCRModal(false)} onComplete={() => setShowPCRModal(false)} onBackToLibrary={() => { setShowPCRModal(false); if (user) { navigate('/browse'); } else { setScreen("welcome"); } }} missionId={selectedMissionId} />}
       {showBioPopup && <BiologicalPopup type={showBioPopup} onClose={() => setShowBioPopup(null)} />}
 
       {guestModeDismissed && anonymousUser.shouldShowModal && (
@@ -2003,60 +2017,6 @@ export default function App() {
                           <span>Start Learning</span>
                           <ChevronRight size={16} />
                         </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {user && (
-                  <div className="mb-8">
-                    <div className="text-center mb-8">
-                      <h1 className="text-3xl font-bold text-gray-900 mb-3">
-                        Choose Your Learning Path
-                      </h1>
-                      <p className="text-gray-600 text-lg">
-                        Select how you'd like to practice
-                      </p>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                      <div
-                        onClick={() => setShowClassCodePrompt(true)}
-                        className="bg-white border border-gray-200 p-6 rounded-lg cursor-pointer hover:shadow-md transition-shadow"
-                      >
-                        <div className="bg-teal-50 w-14 h-14 rounded-md flex items-center justify-center mb-4">
-                          <GraduationCap size={28} className="text-teal-700" />
-                        </div>
-                        <h3 className="text-gray-900 font-bold text-xl mb-2">University Student</h3>
-                        <p className="text-gray-600 text-sm mb-4 leading-relaxed">
-                          Join your instructor's class with a code
-                        </p>
-                      </div>
-
-                      <div
-                        onClick={() => setScreen("categories")}
-                        className="bg-white border border-gray-200 p-6 rounded-lg cursor-pointer hover:shadow-md transition-shadow"
-                      >
-                        <div className="bg-blue-50 w-14 h-14 rounded-md flex items-center justify-center mb-4">
-                          <Target size={28} className="text-blue-700" />
-                        </div>
-                        <h3 className="text-gray-900 font-bold text-xl mb-2">Independent Learner</h3>
-                        <p className="text-gray-600 text-sm mb-4 leading-relaxed">
-                          Practice at your own pace
-                        </p>
-                      </div>
-
-                      <div
-                        onClick={() => setScreen("categories")}
-                        className="bg-white border border-gray-200 p-6 rounded-lg cursor-pointer hover:shadow-md transition-shadow"
-                      >
-                        <div className="bg-gray-50 w-14 h-14 rounded-md flex items-center justify-center mb-4">
-                          <Sparkles size={28} className="text-gray-700" />
-                        </div>
-                        <h3 className="text-gray-900 font-bold text-xl mb-2">Pre-university</h3>
-                        <p className="text-gray-600 text-sm mb-4 leading-relaxed">
-                          Explore molecular biology basics
-                        </p>
                       </div>
                     </div>
                   </div>
@@ -3074,7 +3034,11 @@ export default function App() {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 <button
                   onClick={() => {
-                    setScreen("welcome");
+                    if (user) {
+                      navigate('/browse');
+                    } else {
+                      setScreen("welcome");
+                    }
                     window.scrollTo({ top: 0, behavior: 'smooth' });
                   }}
                   className="w-full bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-indigo-400 text-white py-4 rounded-xl font-black uppercase tracking-wide cursor-pointer border-0 shadow-lg transition-all hover:scale-[1.02] hover:shadow-indigo-500/50"
@@ -3114,8 +3078,8 @@ export default function App() {
                 </button>
               </div>
 
-              <button onClick={() => setScreen("welcome")} className="w-full bg-slate-900/50 py-3 rounded-xl font-bold uppercase text-slate-400 border border-slate-700 cursor-pointer text-xs tracking-wide transition-all hover:bg-slate-900/70">
-                Return to Bench
+              <button onClick={() => { if (user) { navigate('/browse'); } else { setScreen("welcome"); } }} className="w-full bg-slate-900/50 py-3 rounded-xl font-bold uppercase text-slate-400 border border-slate-700 cursor-pointer text-xs tracking-wide transition-all hover:bg-slate-900/70">
+                Return to Browse
               </button>
             </div>
           )}
