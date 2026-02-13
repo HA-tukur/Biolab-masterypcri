@@ -30,89 +30,80 @@ export function InstructorRequestsAdmin() {
       setLoading(true);
       setError(null);
 
+      console.log('=== FETCHING INSTRUCTOR REQUESTS ===');
+
+      // Get current session
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
+        console.error('No session found');
         throw new Error('Not authenticated');
       }
 
-      console.log('=== FETCHING INSTRUCTOR REQUESTS ===');
       console.log('Session user:', session.user.email);
+      console.log('Session user ID:', session.user.id);
       console.log('Session app_metadata:', session.user.app_metadata);
 
-      const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/get-instructor-requests`;
-      console.log('Fetching from:', apiUrl);
+      // Check if user has admin role
+      const isAdmin = session.user.app_metadata?.role === 'admin';
+      console.log('User is admin:', isAdmin);
 
-      const response = await fetch(apiUrl, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${session.access_token}`,
-          'Content-Type': 'application/json',
-        },
-      });
-
-      console.log('Response status:', response.status);
-      console.log('Response ok:', response.ok);
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Error response text:', errorText);
-        try {
-          const errorData = JSON.parse(errorText);
-          throw new Error(errorData.error || `Failed to fetch requests (${response.status})`);
-        } catch (parseError) {
-          throw new Error(`Failed to fetch requests: ${response.status} - ${errorText}`);
-        }
+      if (!isAdmin) {
+        console.error('User does not have admin role');
+        setError('Access denied. Admin role required.');
+        setLoading(false);
+        return;
       }
 
-      const responseData = await response.json();
-      console.log('Response data:', responseData);
+      // Direct query to instructor_requests table
+      console.log('Querying instructor_requests table...');
+      const { data: directRequests, error: directError } = await supabase
+        .from('instructor_requests')
+        .select('*')
+        .eq('status', 'pending')
+        .order('created_at', { ascending: false });
 
-      const { requests: fetchedRequests } = responseData;
-      console.log('Fetched requests count:', fetchedRequests?.length || 0);
-      setRequests(fetchedRequests);
+      if (directError) {
+        console.error('Supabase query error:', directError);
+        throw new Error(`Database error: ${directError.message} (Code: ${directError.code})`);
+      }
+
+      console.log('Direct query successful! Requests found:', directRequests?.length || 0);
+      console.log('Raw requests data:', directRequests);
+
+      // Get emails from profiles table for each request
+      const requestsWithEmails = await Promise.all(
+        (directRequests || []).map(async (request) => {
+          console.log(`Fetching profile for user_id: ${request.user_id}`);
+          const { data: profileData, error: profileError } = await supabase
+            .from('profiles')
+            .select('email')
+            .eq('id', request.user_id)
+            .maybeSingle();
+
+          if (profileError) {
+            console.error(`Error fetching profile for ${request.user_id}:`, profileError);
+          }
+
+          const email = profileData?.email || request.university_email || 'Unknown';
+          console.log(`User ${request.user_id} email: ${email}`);
+
+          return {
+            ...request,
+            email,
+          };
+        })
+      );
+
+      console.log('Requests with emails:', requestsWithEmails);
+      setRequests(requestsWithEmails);
+      setError(null);
     } catch (err) {
-      console.error('=== ERROR FETCHING REQUESTS (trying fallback) ===');
-      console.error('Error:', err);
+      console.error('=== ERROR FETCHING REQUESTS ===');
+      console.error('Error object:', err);
+      console.error('Error message:', err instanceof Error ? err.message : 'Unknown error');
 
-      // Fallback: try direct query (requires RLS policy for admins)
-      try {
-        console.log('Attempting direct query fallback...');
-        const { data: directRequests, error: directError } = await supabase
-          .from('instructor_requests')
-          .select('*')
-          .eq('status', 'pending')
-          .order('created_at', { ascending: false });
-
-        if (directError) {
-          throw directError;
-        }
-
-        console.log('Direct query successful! Requests found:', directRequests?.length || 0);
-
-        // Try to get emails from profiles table
-        const requestsWithEmails = await Promise.all(
-          (directRequests || []).map(async (request) => {
-            const { data: profileData } = await supabase
-              .from('profiles')
-              .select('email')
-              .eq('id', request.user_id)
-              .maybeSingle();
-
-            return {
-              ...request,
-              email: profileData?.email || request.university_email || 'Unknown',
-            };
-          })
-        );
-
-        setRequests(requestsWithEmails);
-        setError(null);
-      } catch (fallbackErr) {
-        const errorMessage = err instanceof Error ? err.message : 'Failed to fetch requests';
-        setError(`${errorMessage} (Fallback also failed: ${fallbackErr instanceof Error ? fallbackErr.message : 'Unknown error'})`);
-        console.error('=== FALLBACK ALSO FAILED ===');
-        console.error('Fallback error:', fallbackErr);
-      }
+      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch requests';
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -206,16 +197,24 @@ export function InstructorRequestsAdmin() {
 
         {error && (
           <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-            <p className="text-red-800 text-sm font-semibold mb-2">Error: {error}</p>
-            <div className="text-red-700 text-sm space-y-2 mt-3">
-              <p className="font-medium">Troubleshooting steps:</p>
-              <ol className="list-decimal list-inside space-y-1 ml-2">
-                <li>Check the browser console for detailed error logs</li>
-                <li>Verify your admin email ({import.meta.env.VITE_ADMIN_EMAILS}) matches your logged-in email</li>
-                <li>If using RLS policies, ensure your user has app_metadata.role = 'admin' in Supabase Dashboard</li>
-                <li>Check that the get-instructor-requests edge function is deployed and ADMIN_EMAILS env var is set</li>
-              </ol>
-            </div>
+            <p className="text-red-800 font-semibold mb-2">Error: {error}</p>
+            {error.includes('Access denied') && (
+              <div className="text-red-700 text-sm space-y-2 mt-3">
+                <p className="font-medium">To gain admin access:</p>
+                <ol className="list-decimal list-inside space-y-1 ml-2">
+                  <li>Go to your Supabase Dashboard</li>
+                  <li>Navigate to Authentication → Users</li>
+                  <li>Find your user and click to edit</li>
+                  <li>In the "User Metadata" section, add to app_metadata: <code className="bg-red-100 px-1 rounded">{`{"role": "admin"}`}</code></li>
+                  <li>Save and refresh this page</li>
+                </ol>
+              </div>
+            )}
+            {!error.includes('Access denied') && (
+              <div className="text-red-700 text-sm mt-2">
+                <p className="font-medium mb-1">Check the browser console for detailed error information.</p>
+              </div>
+            )}
           </div>
         )}
 
