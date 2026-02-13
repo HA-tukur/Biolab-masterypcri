@@ -41,7 +41,7 @@ export function StudentProgressView() {
     try {
       const { data: classData, error: classError } = await supabase
         .from('classes')
-        .select('id, name, simulation_name, class_code')
+        .select('id, class_name, simulation_name, class_code')
         .eq('id', classId)
         .eq('instructor_id', user.id)
         .maybeSingle();
@@ -175,7 +175,7 @@ export function StudentProgressView() {
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `${classInfo.name.replace(/[^a-z0-9]/gi, '_')}_students.csv`;
+    a.download = `${classInfo.class_name.replace(/[^a-z0-9]/gi, '_')}_students.csv`;
     a.click();
     window.URL.revokeObjectURL(url);
   };
@@ -221,7 +221,7 @@ export function StudentProgressView() {
         <div className="bg-white border border-slate-200 rounded-lg p-6 mb-8">
           <div className="flex items-start justify-between mb-4">
             <div>
-              <h1 className="text-3xl font-bold text-slate-900 mb-2">{classInfo.name}</h1>
+              <h1 className="text-3xl font-bold text-slate-900 mb-2">{classInfo.class_name}</h1>
               <p className="text-slate-600">Module: {classInfo.simulation_name}</p>
               <p className="text-sm text-slate-500">Class Code: {classInfo.class_code}</p>
             </div>

@@ -115,7 +115,7 @@ export function MyPracticeTab() {
           enrolled_at,
           classes!inner (
             id,
-            name,
+            class_name,
             class_code,
             simulation_name,
             instructor_id,
@@ -131,7 +131,7 @@ export function MyPracticeTab() {
 
       const classes = data?.map((enrollment: any) => ({
         id: enrollment.classes.id,
-        class_name: enrollment.classes.name,
+        class_name: enrollment.classes.class_name,
         class_code: enrollment.classes.class_code,
         simulation_name: enrollment.classes.simulation_name,
         instructor_name: enrollment.classes.profiles.full_name,

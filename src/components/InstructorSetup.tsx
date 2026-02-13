@@ -137,7 +137,7 @@ export function InstructorSetup() {
         .from('classes')
         .insert({
           instructor_id: user?.id,
-          name: className.trim(),
+          class_name: className.trim(),
           class_code: classCode,
           simulation_name: selectedSimulation,
         });
