@@ -1,178 +1,135 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Microscope, X } from 'lucide-react';
-
-interface Simulation {
-  id: string;
-  name: string;
-  difficulty: 'Beginner' | 'Intermediate' | 'Advanced';
-  description: string;
-}
-
-const simulations: Simulation[] = [
-  {
-    id: 'dna-extraction',
-    name: 'DNA Extraction',
-    difficulty: 'Beginner',
-    description: 'Learn to isolate DNA from cells',
-  },
-  {
-    id: 'pcr-setup',
-    name: 'PCR Setup',
-    difficulty: 'Intermediate',
-    description: 'Master polymerase chain reaction',
-  },
-  {
-    id: 'western-blot',
-    name: 'Western Blot',
-    difficulty: 'Advanced',
-    description: 'Detect specific proteins',
-  },
-  {
-    id: 'gel-electrophoresis',
-    name: 'Gel Electrophoresis',
-    difficulty: 'Intermediate',
-    description: 'Separate DNA fragments',
-  },
-  {
-    id: 'confocal-microscopy',
-    name: 'Confocal Microscopy',
-    difficulty: 'Advanced',
-    description: 'High-resolution cell imaging',
-  },
-];
+import { ChevronDown, ChevronRight, Play } from 'lucide-react';
+import { SharedNavigation } from './SharedNavigation';
+import { TECHNIQUE_LIBRARY } from '../data/techniqueLibrary';
 
 export function BrowseSimulations() {
   const navigate = useNavigate();
-  const [showSignupModal, setShowSignupModal] = useState(false);
+  const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
 
-  const handleSimulationClick = (simId: string) => {
-    if (simId === 'dna-extraction') {
-      localStorage.setItem('guestTrial', 'dna-extraction');
-      navigate('/lab');
-    } else {
-      setShowSignupModal(true);
+  const getCategoryIcon = (category: string) => {
+    const firstItem = TECHNIQUE_LIBRARY.find(cat => cat.category === category)?.items[0];
+    return firstItem?.icon || null;
+  };
+
+  const getDifficultyColor = (level: string) => {
+    switch (level) {
+      case 'Foundation':
+        return 'bg-emerald-100 text-emerald-800';
+      case 'Applied':
+        return 'bg-amber-100 text-amber-800';
+      case 'Advanced':
+        return 'bg-rose-100 text-rose-800';
+      default:
+        return 'bg-slate-100 text-slate-800';
     }
   };
 
-  const getDifficultyColor = (difficulty: string) => {
-    switch (difficulty) {
-      case 'Beginner':
-        return 'bg-green-100 text-green-800';
-      case 'Intermediate':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'Advanced':
-        return 'bg-red-100 text-red-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
+  const handleStartPracticing = (techniqueId: string) => {
+    const simMap: Record<string, string> = {
+      'DNA_EXT': 'dna-extraction',
+      'PCR': 'pcr-setup',
+    };
+
+    const simId = simMap[techniqueId];
+    if (simId) {
+      navigate(`/lab?sim=${simId}`);
     }
+  };
+
+  const toggleCategory = (category: string) => {
+    setExpandedCategory(expandedCategory === category ? null : category);
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-          <button
-            onClick={() => navigate('/')}
-            className="flex items-center gap-2 hover:opacity-80 transition-opacity"
-          >
-            <Microscope className="w-6 h-6 text-teal-700" />
-            <span className="text-xl font-bold text-gray-900">BioSimLab</span>
-          </button>
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => navigate('/login')}
-              className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors"
-            >
-              Log In
-            </button>
-            <button
-              onClick={() => navigate('/signup')}
-              className="px-6 py-2 bg-teal-700 hover:bg-teal-800 text-white text-sm font-medium rounded-md transition-colors"
-            >
-              Sign Up
-            </button>
-          </div>
-        </div>
-      </header>
+    <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
+      <SharedNavigation />
 
-      <main className="max-w-7xl mx-auto px-6 py-12">
-        <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">
-            Browse Available Simulations
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div className="mb-12">
+          <h1 className="text-4xl font-bold text-slate-900 mb-3">
+            Browse All Simulations
           </h1>
-          <p className="text-xl text-gray-600">
-            Sign up free to start practicing
+          <p className="text-lg text-slate-600">
+            Explore techniques and choose what to practice
           </p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {simulations.map((sim) => (
+          {TECHNIQUE_LIBRARY.map((category) => (
             <div
-              key={sim.id}
-              className="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow relative"
+              key={category.category}
+              className="bg-white rounded-lg border border-slate-200 overflow-hidden hover:shadow-lg transition-shadow"
             >
-              {sim.id === 'dna-extraction' && (
-                <div className="absolute -top-3 -right-3 bg-green-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg">
-                  Try Free
+              <button
+                onClick={() => toggleCategory(category.category)}
+                className="w-full p-6 flex items-center justify-between hover:bg-slate-50 transition-colors"
+              >
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-emerald-100 rounded-lg flex items-center justify-center text-emerald-600">
+                    {getCategoryIcon(category.category)}
+                  </div>
+                  <div className="text-left">
+                    <h3 className="text-lg font-semibold text-slate-900">
+                      {category.category}
+                    </h3>
+                    <p className="text-sm text-slate-500">
+                      {category.items.length} {category.items.length === 1 ? 'technique' : 'techniques'}
+                    </p>
+                  </div>
+                </div>
+                {expandedCategory === category.category ? (
+                  <ChevronDown className="w-5 h-5 text-slate-400" />
+                ) : (
+                  <ChevronRight className="w-5 h-5 text-slate-400" />
+                )}
+              </button>
+
+              {expandedCategory === category.category && (
+                <div className="border-t border-slate-200 bg-slate-50">
+                  {category.items.map((technique) => (
+                    <div
+                      key={technique.id}
+                      className="p-4 border-b border-slate-200 last:border-b-0 hover:bg-white transition-colors"
+                    >
+                      <div className="flex items-start justify-between gap-4 mb-3">
+                        <div className="flex items-start gap-3 flex-1">
+                          <div className="text-slate-600 mt-1">
+                            {technique.icon}
+                          </div>
+                          <div>
+                            <h4 className="font-medium text-slate-900 mb-1">
+                              {technique.title}
+                            </h4>
+                            <span className={`inline-block px-2 py-1 rounded text-xs font-medium ${getDifficultyColor(technique.level)}`}>
+                              {technique.level}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {technique.status === 'ACTIVE' ? (
+                        <button
+                          onClick={() => handleStartPracticing(technique.id)}
+                          className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-medium transition-colors"
+                        >
+                          <Play size={16} />
+                          Start Practicing
+                        </button>
+                      ) : (
+                        <div className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-slate-100 text-slate-400 rounded-lg font-medium cursor-not-allowed">
+                          Coming Soon
+                        </div>
+                      )}
+                    </div>
+                  ))}
                 </div>
               )}
-              <div className="flex items-start justify-between mb-3">
-                <h3 className="text-lg font-semibold text-gray-900">{sim.name}</h3>
-                <span className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${getDifficultyColor(sim.difficulty)}`}>
-                  {sim.difficulty}
-                </span>
-              </div>
-              <p className="text-sm text-gray-600 mb-4">{sim.description}</p>
-              <button
-                onClick={() => handleSimulationClick(sim.id)}
-                className={`w-full px-4 py-2 rounded-md transition-colors ${
-                  sim.id === 'dna-extraction'
-                    ? 'bg-green-600 hover:bg-green-700 text-white'
-                    : 'bg-teal-700 hover:bg-teal-800 text-white'
-                }`}
-              >
-                {sim.id === 'dna-extraction' ? 'Try Now' : 'Sign Up to Start'}
-              </button>
             </div>
           ))}
         </div>
-      </main>
-
-      {showSignupModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-md w-full p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-xl font-semibold text-gray-900">Create a free account to start practicing</h3>
-              <button
-                onClick={() => setShowSignupModal(false)}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <p className="text-gray-600 mb-6">
-              Create a free account to access all simulations and track your progress.
-            </p>
-
-            <div className="flex flex-col gap-3">
-              <button
-                onClick={() => navigate('/signup')}
-                className="w-full px-4 py-2 bg-teal-700 hover:bg-teal-800 text-white rounded-md transition-colors"
-              >
-                Create Account
-              </button>
-              <button
-                onClick={() => navigate('/login')}
-                className="w-full px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors"
-              >
-                Log In
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      </div>
     </div>
   );
 }

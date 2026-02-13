@@ -15,6 +15,7 @@ import { InstructorRequestsAdmin } from './components/admin/InstructorRequestsAd
 import { NewDashboard } from './components/NewDashboard';
 import { NewProfile } from './components/NewProfile';
 import { NewLeaderboard } from './components/NewLeaderboard';
+import { BrowseSimulations } from './components/BrowseSimulations';
 import { InstructorPortal } from './components/InstructorPortal';
 import { StudentProgressView } from './components/StudentProgressView';
 
@@ -28,7 +29,8 @@ function AppContent() {
   const isDashboardPage = location.pathname === '/dashboard';
   const isProfilePage = location.pathname === '/profile';
   const isLeaderboardPage = location.pathname === '/leaderboard';
-  const hasOwnNavigation = isDashboardPage || isProfilePage || isLeaderboardPage;
+  const isBrowseSimulationsPage = location.pathname === '/browse';
+  const hasOwnNavigation = isDashboardPage || isProfilePage || isLeaderboardPage || isBrowseSimulationsPage;
 
   return (
     <>
@@ -49,6 +51,7 @@ function AppContent() {
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/" element={<Homepage />} />
           <Route path="/dashboard" element={<ProtectedRoute><NewDashboard /></ProtectedRoute>} />
+          <Route path="/browse" element={<ProtectedRoute><BrowseSimulations /></ProtectedRoute>} />
           <Route path="/lab" element={<ProtectedRoute allowGuestTrial={true}><App /></ProtectedRoute>} />
           <Route path="/leaderboard" element={<NewLeaderboard />} />
           <Route path="/profile" element={<ProtectedRoute><NewProfile /></ProtectedRoute>} />

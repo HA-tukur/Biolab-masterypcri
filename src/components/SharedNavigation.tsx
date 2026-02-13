@@ -55,6 +55,14 @@ export function SharedNavigation() {
               Dashboard
             </button>
             <button
+              onClick={() => navigate('/browse')}
+              className={`hover:text-emerald-600 transition-colors ${
+                currentPath === '/browse' ? 'text-slate-900 font-medium' : 'text-slate-600'
+              }`}
+            >
+              Browse Simulations
+            </button>
+            <button
               onClick={() => navigate('/leaderboard')}
               className={`hover:text-emerald-600 transition-colors ${
                 currentPath === '/leaderboard' ? 'text-slate-900 font-medium' : 'text-slate-600'
@@ -135,6 +143,17 @@ export function SharedNavigation() {
               }`}
             >
               Dashboard
+            </button>
+            <button
+              onClick={() => {
+                navigate('/browse');
+                setMobileMenuOpen(false);
+              }}
+              className={`w-full text-left px-4 py-2 hover:bg-slate-100 rounded-lg ${
+                currentPath === '/browse' ? 'text-slate-900 font-medium' : 'text-slate-600'
+              }`}
+            >
+              Browse Simulations
             </button>
             <button
               onClick={() => {
