@@ -1860,8 +1860,8 @@ export default function App() {
         setScreen("briefing");
       }} />}
       {showProtocolOverview && (
-        <div className="fixed inset-0 z-[150] flex items-start lg:items-center justify-center p-2 lg:p-4 bg-slate-950/80 backdrop-blur-md overflow-y-auto">
-          <div className="w-full py-4 lg:py-6">
+        <div className="fixed inset-0 z-[150] flex items-start justify-center bg-slate-950/80 backdrop-blur-md overflow-y-auto">
+          <div className="w-full">
             <ProtocolOverview
               missionId={selectedMissionId}
               onBack={() => setShowProtocolOverview(false)}

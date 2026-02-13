@@ -279,7 +279,7 @@ export const ProtocolOverview = ({ missionId, onBack, onStartMission }: Protocol
 
   return (
     <>
-      <div className="max-w-5xl mx-auto px-4 py-3 lg:py-4 space-y-3 lg:space-y-4">
+      <div className="max-w-5xl mx-auto px-4 py-4 lg:py-6 space-y-3 lg:space-y-4">
         <div className="flex items-center gap-3">
           <button
             onClick={onBack}
@@ -388,8 +388,8 @@ export const ProtocolOverview = ({ missionId, onBack, onStartMission }: Protocol
       </div>
 
       {showFullProtocol && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-950/90 backdrop-blur-md overflow-y-auto">
-          <div className="bg-slate-800 border border-emerald-500/50 w-full max-w-4xl rounded-lg shadow-2xl overflow-hidden my-8">
+        <div className="fixed inset-0 z-[200] flex items-start justify-center p-4 bg-slate-950/90 backdrop-blur-md overflow-y-auto">
+          <div className="bg-slate-800 border border-emerald-500/50 w-full max-w-4xl rounded-lg shadow-2xl overflow-hidden my-4 lg:my-8">
             <div className="p-6 border-b border-slate-700 flex justify-between items-center bg-slate-900/50 sticky top-0 z-10">
               <h3 className="text-xl font-black uppercase text-emerald-400">Full Protocol Details</h3>
               <button
