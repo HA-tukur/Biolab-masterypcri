@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  Play, Trophy, TrendingUp, Award, Calendar
+  Play, Trophy, TrendingUp, Award, Calendar, Users, Plus, ChevronRight
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
 import { OnboardingModal } from './OnboardingModal';
 import { SharedNavigation } from './SharedNavigation';
+import { JoinClassModal } from './JoinClassModal';
 
 interface Profile {
   full_name: string;
@@ -45,6 +46,16 @@ interface RecentSession {
   started_at: string;
 }
 
+interface EnrolledClass {
+  id: string;
+  class_id: string;
+  class_name: string;
+  simulation_name: string;
+  instructor_name: string;
+  completed: boolean;
+  enrolled_at: string;
+}
+
 const availableSimulations = [
   { id: 'dna-extraction', name: 'DNA Extraction', difficulty: 'Beginner', completed: false },
   { id: 'pcr-setup', name: 'PCR Setup', difficulty: 'Intermediate', completed: false },
@@ -64,6 +75,8 @@ export function NewDashboard() {
   const [recentSessions, setRecentSessions] = useState<RecentSession[]>([]);
   const [loading, setLoading] = useState(true);
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [enrolledClasses, setEnrolledClasses] = useState<EnrolledClass[]>([]);
+  const [showJoinModal, setShowJoinModal] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -142,10 +155,56 @@ export function NewDashboard() {
         ...entry,
         rank: index + 1
       })));
+
+      // Load enrolled classes
+      await loadEnrolledClasses();
     } catch (error) {
       console.error('Error loading dashboard data:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadEnrolledClasses = async () => {
+    try {
+      const { data: enrollments, error } = await supabase
+        .from('class_enrollments')
+        .select(`
+          id,
+          class_id,
+          completed,
+          enrolled_at
+        `)
+        .eq('user_id', user?.id)
+        .order('enrolled_at', { ascending: false });
+
+      if (error) throw error;
+
+      if (enrollments && enrollments.length > 0) {
+        const classesWithDetails = await Promise.all(
+          enrollments.map(async (enrollment) => {
+            const { data: classData } = await supabase
+              .from('classes')
+              .select('name, simulation_name, instructor_name')
+              .eq('id', enrollment.class_id)
+              .maybeSingle();
+
+            return {
+              id: enrollment.id,
+              class_id: enrollment.class_id,
+              class_name: classData?.name || 'Unknown Class',
+              simulation_name: classData?.simulation_name || '',
+              instructor_name: classData?.instructor_name || '',
+              completed: enrollment.completed,
+              enrolled_at: enrollment.enrolled_at,
+            };
+          })
+        );
+
+        setEnrolledClasses(classesWithDetails);
+      }
+    } catch (error) {
+      console.error('Error loading enrolled classes:', error);
     }
   };
 
@@ -191,6 +250,10 @@ export function NewDashboard() {
   const handleOnboardingComplete = () => {
     setShowOnboarding(false);
     loadDashboardData(); // Reload data after onboarding
+  };
+
+  const handleJoinClassSuccess = () => {
+    loadEnrolledClasses(); // Reload enrolled classes after joining
   };
 
   if (loading) {
@@ -267,6 +330,69 @@ export function NewDashboard() {
             </div>
           </div>
         </section>
+
+        {/* Enrolled Classes Section */}
+        {profile?.learning_path === 'university' && (
+          <section className="mb-16">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-bold text-slate-900">Enrolled Classes</h2>
+              <button
+                onClick={() => setShowJoinModal(true)}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-medium transition-colors"
+              >
+                <Plus className="w-4 h-4" />
+                Join a Class
+              </button>
+            </div>
+
+            {enrolledClasses.length === 0 ? (
+              <div className="bg-white border border-slate-200 rounded-lg p-8 text-center">
+                <Users className="w-16 h-16 text-slate-300 mx-auto mb-4" />
+                <p className="text-slate-600 mb-4">No classes joined yet. Enter a class code to join your instructor's class.</p>
+                <button
+                  onClick={() => setShowJoinModal(true)}
+                  className="inline-flex items-center gap-2 px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-medium transition-colors"
+                >
+                  <Plus className="w-5 h-5" />
+                  Join Your First Class
+                </button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {enrolledClasses.map((cls) => (
+                  <div
+                    key={cls.id}
+                    className="bg-white p-6 rounded-lg border border-slate-200 hover:border-emerald-300 transition-colors"
+                  >
+                    <div className="mb-4">
+                      <h3 className="text-lg font-semibold text-slate-900 mb-1">{cls.class_name}</h3>
+                      <p className="text-sm text-slate-600">Instructor: {cls.instructor_name}</p>
+                      <p className="text-sm text-slate-600">Module: {cls.simulation_name}</p>
+                    </div>
+
+                    <div className="mb-4">
+                      <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
+                        cls.completed
+                          ? 'bg-emerald-100 text-emerald-800'
+                          : 'bg-amber-100 text-amber-800'
+                      }`}>
+                        {cls.completed ? 'Completed' : 'In Progress'}
+                      </span>
+                    </div>
+
+                    <button
+                      onClick={() => navigate('/lab')}
+                      className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-medium transition-colors"
+                    >
+                      {cls.completed ? 'Practice Again' : 'Start Module'}
+                      <ChevronRight className="w-4 h-4" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
+        )}
 
         {/* Your Simulations */}
         <section className="mb-16">
@@ -400,6 +526,14 @@ export function NewDashboard() {
       {/* Onboarding Modal */}
       {showOnboarding && user && (
         <OnboardingModal userId={user.id} onComplete={handleOnboardingComplete} />
+      )}
+
+      {/* Join Class Modal */}
+      {showJoinModal && (
+        <JoinClassModal
+          onClose={() => setShowJoinModal(false)}
+          onSuccess={handleJoinClassSuccess}
+        />
       )}
     </div>
   );
