@@ -45,87 +45,86 @@ export const PCRMissions = ({ onBack, onSelectMission }: PCRMissionsProps) => {
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-4 lg:py-6 space-y-4 lg:space-y-5">
-      <div className="flex items-center gap-3 sm:gap-4">
+      <div className="flex items-center gap-4">
         <button
           onClick={onBack}
-          className="p-2 sm:p-3 bg-slate-700 hover:bg-slate-600 rounded-lg transition-colors text-white border-0 cursor-pointer"
+          className="p-3 bg-slate-700 hover:bg-slate-600 rounded-lg transition-colors text-white border-0 cursor-pointer"
         >
-          <ArrowLeft size={20} className="sm:hidden" />
-          <ArrowLeft size={24} className="hidden sm:block" />
+          <ArrowLeft size={24} />
         </button>
         <div>
-          <h1 className="text-xl sm:text-2xl md:text-3xl font-black uppercase tracking-tight text-white leading-tight">
+          <h1 className="text-2xl md:text-3xl lg:text-3xl font-black uppercase tracking-tight text-white">
             PCR Missions
           </h1>
-          <p className="text-slate-400 text-sm sm:text-base">Choose a mission to begin your PCR workflow</p>
+          <p className="text-slate-400 text-sm">Choose a mission to begin your PCR workflow</p>
         </div>
       </div>
 
-      <div className="bg-blue-900/20 border border-blue-500/30 p-4 sm:p-5 rounded-2xl">
-        <h4 className="font-bold text-blue-400 mb-2 text-base sm:text-lg leading-tight">About These Missions</h4>
-        <p className="text-sm sm:text-base text-blue-200 leading-relaxed">
+      <div className="bg-blue-900/20 border border-blue-500/30 p-4 lg:p-5 rounded-2xl">
+        <h4 className="font-bold text-blue-400 mb-2 text-sm lg:text-base">About These Missions</h4>
+        <p className="text-xs lg:text-sm text-blue-200 leading-relaxed">
           Each mission walks you through the complete PCR workflow: primer design, reagent ordering and reconstitution,
           reaction setup, thermal cycling, and result verification. These scenarios are based on real challenges
           facing African communities and showcase how molecular biology addresses health and agriculture problems.
         </p>
       </div>
 
-      <div className="space-y-4 sm:space-y-5">
+      <div className="space-y-4 lg:space-y-5">
         {missions.map((mission) => {
           const colors = getColorClasses(mission.color);
           return (
             <button
               key={mission.id}
               onClick={() => onSelectMission(mission.id)}
-              className={`border ${colors.border} ${colors.bg} ${colors.hover} p-4 sm:p-5 lg:p-6 rounded-2xl transition-all cursor-pointer text-left group w-full`}
+              className={`border ${colors.border} ${colors.bg} ${colors.hover} p-5 lg:p-6 rounded-2xl transition-all cursor-pointer text-left group w-full`}
             >
-              <div className="grid grid-cols-1 md:grid-cols-[auto_1fr] gap-4 sm:gap-5">
-                <div className={`${colors.text} group-hover:scale-110 transition-transform flex justify-center md:justify-start`}>
+              <div className="grid md:grid-cols-[auto_1fr] gap-4 lg:gap-5">
+                <div className={`${colors.text} group-hover:scale-110 transition-transform`}>
                   {mission.icon}
                 </div>
 
-                <div className="space-y-3">
+                <div className="space-y-3 lg:space-y-3">
                   <div>
-                    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 mb-2">
+                    <div className="flex items-start justify-between mb-1.5 lg:mb-2">
                       <div>
-                        <h3 className="text-lg sm:text-xl lg:text-2xl font-black uppercase text-white leading-tight">
+                        <h3 className="text-xl lg:text-2xl font-black uppercase text-white">
                           {mission.title}
                         </h3>
-                        <p className={`text-sm sm:text-base font-bold ${colors.text}`}>
+                        <p className={`text-sm font-bold ${colors.text}`}>
                           {mission.subtitle}
                         </p>
                       </div>
-                      <span className={`px-3 py-1 ${colors.bg} border ${colors.border} rounded-full text-xs sm:text-sm font-bold ${colors.text} uppercase inline-block w-fit`}>
+                      <span className={`px-3 py-1 ${colors.bg} border ${colors.border} rounded-full text-xs font-bold ${colors.text} uppercase`}>
                         {mission.difficulty}
                       </span>
                     </div>
 
-                    <div className="flex items-center gap-2 text-slate-400 text-sm sm:text-base mb-2">
+                    <div className="flex items-center gap-2 text-slate-400 text-sm mb-2">
                       <MapPin size={16} />
                       <span>{mission.location}</span>
                     </div>
                   </div>
 
-                  <div className="bg-slate-900/50 border border-slate-700 rounded-lg p-3 sm:p-4 space-y-2 sm:space-y-3">
-                    <p className="text-slate-300 text-sm sm:text-base leading-relaxed">
+                  <div className="bg-slate-900/50 border border-slate-700 rounded-lg p-3 lg:p-4 space-y-2 lg:space-y-3">
+                    <p className="text-slate-300 text-sm leading-relaxed">
                       {mission.scenario}
                     </p>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 pt-2">
+                    <div className="grid md:grid-cols-2 gap-3 lg:gap-4 pt-1.5 lg:pt-2">
                       <div>
                         <div className="flex items-center gap-2 mb-1">
                           <Dna size={16} className="text-emerald-400" />
-                          <span className="text-xs sm:text-sm font-bold text-emerald-400 uppercase">Target Gene</span>
+                          <span className="text-xs font-bold text-emerald-400 uppercase">Target Gene</span>
                         </div>
-                        <p className="text-white text-sm sm:text-base font-mono">{mission.targetGene}</p>
+                        <p className="text-white text-sm font-mono">{mission.targetGene}</p>
                       </div>
 
                       <div>
                         <div className="flex items-center gap-2 mb-1">
                           <Target size={16} className="text-amber-400" />
-                          <span className="text-xs sm:text-sm font-bold text-amber-400 uppercase">Goal</span>
+                          <span className="text-xs font-bold text-amber-400 uppercase">Goal</span>
                         </div>
-                        <p className="text-slate-300 text-sm sm:text-base">{mission.goal}</p>
+                        <p className="text-slate-300 text-sm">{mission.goal}</p>
                       </div>
                     </div>
                   </div>
@@ -134,7 +133,7 @@ export const PCRMissions = ({ onBack, onSelectMission }: PCRMissionsProps) => {
                     {mission.tags.map((tag) => (
                       <span
                         key={tag}
-                        className="px-2.5 py-1 bg-slate-800 border border-slate-600 rounded-full text-xs sm:text-sm font-bold text-slate-300"
+                        className="px-2.5 py-1 bg-slate-800 border border-slate-600 rounded-full text-xs font-bold text-slate-300"
                       >
                         {tag}
                       </span>
