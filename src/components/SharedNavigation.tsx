@@ -45,7 +45,7 @@ export function SharedNavigation({ onShowManual }: SharedNavigationProps = {}) {
           <div className="flex items-center gap-3">
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="lg:hidden p-2 rounded-lg hover:bg-slate-100"
+              className="lg:hidden p-2 rounded-lg hover:bg-slate-100 text-slate-900"
             >
               {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
             </button>

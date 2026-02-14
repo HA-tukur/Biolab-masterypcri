@@ -1,4 +1,4 @@
-import { Microscope, User, LogOut } from 'lucide-react';
+import { Microscope, User, LogOut, Menu, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -12,6 +12,7 @@ export default function Header() {
   const isLabBench = currentPath === '/lab';
   const isInstructor = currentPath.startsWith('/instructor');
   const [activeTab, setActiveTab] = useState('home');
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // Check if user is an instructor
   const isInstructorRole = user?.app_metadata?.role === 'instructor' || user?.app_metadata?.role === 'admin';
@@ -52,7 +53,13 @@ export default function Header() {
     return (
       <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-8">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="md:hidden p-2 rounded-lg hover:bg-gray-100 text-gray-900"
+            >
+              {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+            </button>
             <button
               onClick={() => handleNavigation('/')}
               className="flex items-center gap-2 hover:opacity-80 transition-opacity"
@@ -121,6 +128,49 @@ export default function Header() {
             )}
           </div>
         </div>
+
+        {mobileMenuOpen && (
+          <div className="md:hidden border-t border-gray-200 bg-white">
+            <nav className="px-4 py-4 space-y-2">
+              <button
+                onClick={() => {
+                  scrollToSection('how-it-works');
+                  setMobileMenuOpen(false);
+                }}
+                className="w-full text-left px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition-colors"
+              >
+                How It Works
+              </button>
+              <button
+                onClick={() => {
+                  scrollToSection('for-instructors');
+                  setMobileMenuOpen(false);
+                }}
+                className="w-full text-left px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition-colors"
+              >
+                For Instructors
+              </button>
+              <button
+                onClick={() => {
+                  scrollToSection('for-universities');
+                  setMobileMenuOpen(false);
+                }}
+                className="w-full text-left px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition-colors"
+              >
+                For Universities
+              </button>
+              <button
+                onClick={() => {
+                  scrollToSection('faq');
+                  setMobileMenuOpen(false);
+                }}
+                className="w-full text-left px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition-colors"
+              >
+                FAQ
+              </button>
+            </nav>
+          </div>
+        )}
       </header>
     );
   }
@@ -136,7 +186,7 @@ export default function Header() {
             <Microscope className="w-5 h-5 text-[#22d3ee]" />
             <span className="text-lg" style={{ fontFamily: 'sans-serif' }}>
               <span className="font-bold text-[#22d3ee]">BioSim</span>
-              <span className="font-normal text-gray-900"> Lab</span>
+              <span className="font-normal text-white"> Lab</span>
             </span>
           </button>
 
@@ -146,8 +196,8 @@ export default function Header() {
                 onClick={() => handleTabClick('home')}
                 className={`text-sm transition-colors pb-0.5 whitespace-nowrap ${
                   activeTab === 'home'
-                    ? 'text-gray-900 font-semibold border-b-3'
-                    : 'text-gray-600 hover:text-gray-700 font-medium'
+                    ? 'text-white font-semibold border-b-3'
+                    : 'text-gray-300 hover:text-white font-medium'
                 }`}
                 style={activeTab === 'home' ? { borderBottom: '3px solid #22d3ee' } : {}}
               >
@@ -155,13 +205,13 @@ export default function Header() {
               </button>
               <button
                 onClick={() => handleTabClick('manual')}
-                className="text-sm font-medium text-gray-600 hover:text-gray-700 transition-colors whitespace-nowrap"
+                className="text-sm font-medium text-gray-300 hover:text-white transition-colors whitespace-nowrap"
               >
                 Manual
               </button>
               <a
                 href="mailto:info@biosimlab.app"
-                className="text-sm font-medium text-gray-600 hover:text-gray-700 transition-colors whitespace-nowrap"
+                className="text-sm font-medium text-gray-300 hover:text-white transition-colors whitespace-nowrap"
               >
                 Contact
               </a>
@@ -178,7 +228,7 @@ export default function Header() {
                 className={`px-4 py-2 rounded-full text-sm font-medium transition-all whitespace-nowrap ${
                   isLabBench
                     ? 'bg-[#0891b2] text-white'
-                    : 'bg-transparent text-gray-600 hover:text-gray-700'
+                    : 'bg-transparent text-gray-300 hover:text-white'
                 }`}
               >
                 Lab Bench
@@ -189,7 +239,7 @@ export default function Header() {
                 className={`px-4 py-2 rounded-full text-sm font-medium transition-all whitespace-nowrap flex items-center gap-2 ${
                   currentPath === '/profile'
                     ? 'bg-[#0891b2] text-white'
-                    : 'bg-transparent text-gray-600 hover:text-gray-700'
+                    : 'bg-transparent text-gray-300 hover:text-white'
                 }`}
               >
                 <User className="w-4 h-4" />
@@ -202,7 +252,7 @@ export default function Header() {
                   className={`px-4 py-2 rounded-full text-sm font-medium transition-all whitespace-nowrap ${
                     isInstructor
                       ? 'bg-[#0891b2] text-white'
-                      : 'bg-transparent text-gray-600 hover:text-gray-700'
+                      : 'bg-transparent text-gray-300 hover:text-white'
                   }`}
                 >
                   Instructor Portal
@@ -211,7 +261,7 @@ export default function Header() {
               <button
                 onClick={handleSignOut}
                 title="Sign Out"
-                className="px-4 py-2 rounded-full text-sm font-medium transition-all whitespace-nowrap flex items-center gap-2 bg-transparent text-gray-600 hover:text-gray-700"
+                className="px-4 py-2 rounded-full text-sm font-medium transition-all whitespace-nowrap flex items-center gap-2 bg-transparent text-gray-300 hover:text-white"
               >
                 <LogOut className="w-4 h-4" />
                 Sign Out
