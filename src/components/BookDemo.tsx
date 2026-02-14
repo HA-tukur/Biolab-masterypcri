@@ -69,20 +69,20 @@ export function BookDemo() {
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col">
       <main className="flex-grow">
-        <div className="max-w-2xl mx-auto px-4 py-16">
+        <div className="max-w-2xl mx-auto px-4 py-8 sm:py-16">
           <button
             onClick={() => navigate('/')}
-            className="flex items-center gap-2 text-slate-600 hover:text-slate-900 mb-8 transition-colors"
+            className="flex items-center gap-2 text-base text-slate-600 hover:text-slate-900 mb-6 sm:mb-8 transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
             Back to home
           </button>
 
-          <div className="bg-white rounded-lg border border-slate-200 p-8">
-            <h1 className="text-3xl font-bold text-slate-900 mb-2">
+          <div className="bg-white rounded-lg border border-slate-200 p-5 sm:p-8">
+            <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 mb-2 leading-tight">
               Book a demo for your institution
             </h1>
-            <p className="text-slate-600 mb-8">
+            <p className="text-base text-slate-600 mb-6 sm:mb-8 leading-relaxed">
               Fill out the form below and we'll contact you shortly to schedule a personalized demo.
             </p>
 
@@ -100,9 +100,9 @@ export function BookDemo() {
               </div>
             )}
 
-            <form onSubmit={handleSubmit} className="space-y-6">
+            <form onSubmit={handleSubmit} className="space-y-5 sm:space-y-6">
               <div>
-                <label htmlFor="institution_name" className="block text-sm font-medium text-slate-700 mb-2">
+                <label htmlFor="institution_name" className="block text-sm sm:text-base font-medium text-slate-700 mb-2">
                   Institution / Company Name <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -112,13 +112,13 @@ export function BookDemo() {
                   value={formData.institution_name}
                   onChange={handleChange}
                   required
-                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none"
+                  className="w-full px-4 py-3 text-base border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none"
                 />
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-6">
                 <div>
-                  <label htmlFor="country" className="block text-sm font-medium text-slate-700 mb-2">
+                  <label htmlFor="country" className="block text-sm sm:text-base font-medium text-slate-700 mb-2">
                     Country <span className="text-red-500">*</span>
                   </label>
                   <input
@@ -128,12 +128,12 @@ export function BookDemo() {
                     value={formData.country}
                     onChange={handleChange}
                     required
-                    className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none"
+                    className="w-full px-4 py-3 text-base border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none"
                   />
                 </div>
 
                 <div>
-                  <label htmlFor="state" className="block text-sm font-medium text-slate-700 mb-2">
+                  <label htmlFor="state" className="block text-sm sm:text-base font-medium text-slate-700 mb-2">
                     State / Region
                   </label>
                   <input
@@ -142,13 +142,13 @@ export function BookDemo() {
                     name="state"
                     value={formData.state}
                     onChange={handleChange}
-                    className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none"
+                    className="w-full px-4 py-3 text-base border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none"
                   />
                 </div>
               </div>
 
               <div>
-                <label htmlFor="contact_name" className="block text-sm font-medium text-slate-700 mb-2">
+                <label htmlFor="contact_name" className="block text-sm sm:text-base font-medium text-slate-700 mb-2">
                   Your Name <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -158,12 +158,12 @@ export function BookDemo() {
                   value={formData.contact_name}
                   onChange={handleChange}
                   required
-                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none"
+                  className="w-full px-4 py-3 text-base border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none"
                 />
               </div>
 
               <div>
-                <label htmlFor="contact_email" className="block text-sm font-medium text-slate-700 mb-2">
+                <label htmlFor="contact_email" className="block text-sm sm:text-base font-medium text-slate-700 mb-2">
                   Work Email <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -173,12 +173,12 @@ export function BookDemo() {
                   value={formData.contact_email}
                   onChange={handleChange}
                   required
-                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none"
+                  className="w-full px-4 py-3 text-base border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none"
                 />
               </div>
 
               <div>
-                <label htmlFor="contact_number" className="block text-sm font-medium text-slate-700 mb-2">
+                <label htmlFor="contact_number" className="block text-sm sm:text-base font-medium text-slate-700 mb-2">
                   Contact Number <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -189,12 +189,12 @@ export function BookDemo() {
                   onChange={handleChange}
                   placeholder="Include country code (e.g., +1 555-0123)"
                   required
-                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none"
+                  className="w-full px-4 py-3 text-base border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none"
                 />
               </div>
 
               <div>
-                <label htmlFor="role_position" className="block text-sm font-medium text-slate-700 mb-2">
+                <label htmlFor="role_position" className="block text-sm sm:text-base font-medium text-slate-700 mb-2">
                   Role / Position <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -205,14 +205,14 @@ export function BookDemo() {
                   onChange={handleChange}
                   placeholder="e.g., Head of Department, Program Lead"
                   required
-                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none"
+                  className="w-full px-4 py-3 text-base border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none"
                 />
               </div>
 
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-400 text-white rounded-lg transition-colors font-medium"
+                className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-400 text-white text-base rounded-lg transition-colors font-medium"
               >
                 {loading ? (
                   <>

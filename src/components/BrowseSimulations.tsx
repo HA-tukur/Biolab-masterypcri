@@ -46,17 +46,17 @@ export function BrowseSimulations() {
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
       <SharedNavigation />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="mb-12">
-          <h1 className="text-4xl font-bold text-slate-900 mb-3">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+        <div className="mb-8 sm:mb-12">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-slate-900 mb-3 leading-tight">
             Browse All Simulations
           </h1>
-          <p className="text-lg text-slate-600">
+          <p className="text-base sm:text-lg text-slate-600">
             Explore techniques and choose what to practice
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
           {TECHNIQUE_LIBRARY.map((category) => (
             <div
               key={category.category}
@@ -64,14 +64,14 @@ export function BrowseSimulations() {
             >
               <button
                 onClick={() => toggleCategory(category.category)}
-                className="w-full p-6 flex items-center justify-between hover:bg-slate-50 transition-colors"
+                className="w-full p-4 sm:p-6 flex items-center justify-between hover:bg-slate-50 transition-colors"
               >
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-emerald-100 rounded-lg flex items-center justify-center text-emerald-600">
+                <div className="flex items-center gap-3 sm:gap-4">
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 bg-emerald-100 rounded-lg flex items-center justify-center text-emerald-600">
                     {getCategoryIcon(category.category)}
                   </div>
                   <div className="text-left">
-                    <h3 className="text-lg font-semibold text-slate-900">
+                    <h3 className="text-base sm:text-lg font-semibold text-slate-900">
                       {category.category}
                     </h3>
                     <p className="text-sm text-slate-500">
@@ -80,9 +80,9 @@ export function BrowseSimulations() {
                   </div>
                 </div>
                 {expandedCategory === category.category ? (
-                  <ChevronDown className="w-5 h-5 text-slate-400" />
+                  <ChevronDown className="w-5 h-5 text-slate-400 flex-shrink-0" />
                 ) : (
-                  <ChevronRight className="w-5 h-5 text-slate-400" />
+                  <ChevronRight className="w-5 h-5 text-slate-400 flex-shrink-0" />
                 )}
               </button>
 
@@ -93,16 +93,16 @@ export function BrowseSimulations() {
                       key={technique.id}
                       className="p-4 border-b border-slate-200 last:border-b-0 hover:bg-white transition-colors"
                     >
-                      <div className="flex items-start justify-between gap-4 mb-3">
+                      <div className="flex items-start justify-between gap-3 mb-3">
                         <div className="flex items-start gap-3 flex-1">
-                          <div className="text-slate-600 mt-1">
+                          <div className="text-slate-600 mt-1 flex-shrink-0">
                             {technique.icon}
                           </div>
                           <div>
-                            <h4 className="font-medium text-slate-900 mb-1">
+                            <h4 className="text-base font-medium text-slate-900 mb-1 leading-tight">
                               {technique.title}
                             </h4>
-                            <span className={`inline-block px-2 py-1 rounded text-xs font-medium ${getDifficultyColor(technique.level)}`}>
+                            <span className={`inline-block px-2 py-1 rounded text-xs sm:text-sm font-medium ${getDifficultyColor(technique.level)}`}>
                               {technique.level}
                             </span>
                           </div>
@@ -112,13 +112,13 @@ export function BrowseSimulations() {
                       {technique.status === 'ACTIVE' ? (
                         <button
                           onClick={() => handleStartPracticing(technique.id)}
-                          className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-medium transition-colors"
+                          className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-base rounded-lg font-medium transition-colors"
                         >
                           <Play size={16} />
                           Start Practicing
                         </button>
                       ) : (
-                        <div className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-slate-100 text-slate-400 rounded-lg font-medium cursor-not-allowed">
+                        <div className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-slate-100 text-slate-400 text-base rounded-lg font-medium cursor-not-allowed">
                           Coming Soon
                         </div>
                       )}
