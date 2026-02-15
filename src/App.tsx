@@ -2981,7 +2981,7 @@ export default function App() {
                         }
                       } else {
                         // No subtasks - use existing logic
-                        const cond1 = (currentStep.requiresVolume && hasDispensedThisStep) || (currentStep.options);
+                        const cond1 = (currentStep.requiresVolume && hasDispensedThisStep) || (currentStep.options) || (!currentStep.requiresVolume && !currentStep.options);
                         const cond2 = currentStep.requiresSpin || currentStep.requiresIncubation ? hasSpunThisStep : true;
                         const cond3 = currentStep.requiresMixing ? (currentStep.title === "Lysis & Protein Digestion" ? step2Mixed : currentStep.title === "Binding Preparation" ? step3Mixed : !needsMixing) : true;
                         canContinue = cond1 && cond2 && cond3;
