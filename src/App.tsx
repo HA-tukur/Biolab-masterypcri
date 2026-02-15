@@ -1624,12 +1624,89 @@ export default function App() {
   const protocolSteps = useMemo(() => {
     if (techniqueId !== "DNA_EXT") return [];
     const allSteps = [
-      { title: "Tissue Disruption", prompt: missionId === 'A' ? "Mission A: Use Enzymatic Digestion (recommended for biopsy)" : "Mission B: Use Manual Grinding with liquid nitrogen + mortar/pestle (required for plant tissue)", science: "Biological Context: Cells make up tissues. We must first break down the extracellular matrix to release individual cells into the buffer so lysis reagents can reach the membranes.", options: [{ label: "Enzymatic Digestion", log: "Gentle digestion complete. HMW DNA integrity preserved.", method: "enzymatic", ok: true }, { label: "Manual Grinding", log: "Manual disruption complete with liquid nitrogen. Plant cell walls broken down.", method: "manual", ok: has("mortar_pestle") && has("liquid_nitrogen") }] },
-      { title: "Proteinase K Digestion", prompt: "Add Proteinase K, MIX, and INCUBATE at 56°C for 1 hour.", science: "Proteinase K is a powerful enzyme that digests proteins including histones and other contaminants. This enzymatic digestion helps release DNA and improves purity. Incubation at 56°C for 1 hour provides optimal enzyme activity and complete protein digestion.", requiresIncubation: true, incubationTemp: 56, incubationDuration: 60, requiresVolume: true, targetVolume: 2, requiresMixing: true, reagentRequired: "proteinase_k", skipIf: () => step1Method === "manual" && missionId === 'B' },
-      { title: "Lysis Phase", prompt: "Add Lysis Buffer (~500 µL), MIX, and SPIN.", science: "Mechanism: Lysis buffer contains detergents (like SDS for animal tissue or CTAB for plant material) to dissolve cell membranes and salts to stabilize the DNA. This releases genomic DNA into the aqueous solution. Spinning separates lysed cellular debris.", requiresVolume: true, targetVolume: 500, requiresMixing: true, requiresSpin: true, reagentRequired: "lysis" },
-      { title: "Binding/Column Load", prompt: "Add binding buffer and ethanol, then load onto spin column and SPIN.", science: "Binding Chemistry: In the presence of chaotropic salts and ethanol, DNA binds to the silica membrane in the spin column. The combination of binding buffer and ethanol creates optimal conditions for DNA to adhere to the column while proteins and other contaminants remain in solution.", requiresVolume: true, targetVolume: 500, requiresSpin: true, reagentRequired: "binding" },
-      { title: "Wash Stage", prompt: "Add Wash Buffer to column and SPIN.", science: "Wash buffers remove residual salts and proteins while keeping the DNA bound securely to the silica membrane.", requiresVolume: true, targetVolume: 500, requiresSpin: true, reagentRequired: "wash" },
-      { title: "Elution", prompt: "Add Elution Buffer and SPIN to collect purified DNA.", science: "Final Step: Low-salt Elution buffer (TE or water) releases the high-purity DNA from the column into your final microtube for quantification.", requiresVolume: true, targetVolume: missionId === 'A' ? 20 : 50, requiresSpin: true, isElution: true, reagentRequired: "elute" }
+      {
+        title: "Lysis & Protein Digestion",
+        prompt: "Add 180-200 µL Lysis Buffer and 20 µL Proteinase K to minced tissue. MIX gently and INCUBATE at 56°C for 1-3 hours.",
+        science: "Detergents break open cell membranes while Proteinase K digests proteins (histones, nucleases, structural proteins) that interfere with DNA recovery. ⚠️ CRITICAL: 20 µL Proteinase K is the standard amount for ~25 mg tissue. 2 µL (shown in older protocols) is insufficient for complete protein digestion.",
+        requiresIncubation: true,
+        incubationTemp: 56,
+        incubationDuration: 120,
+        requiresVolume: true,
+        targetVolume: 200,
+        requiresMixing: true,
+        reagentRequired: "lysis_proteinase",
+        successCriteria: "Lysate should be clear with no visible tissue chunks",
+        educationalNote: "🔬 Why 20 µL? This is the standard amount for ~25 mg tissue. Insufficient Proteinase K leads to protein contamination and poor yields."
+      },
+      {
+        title: "Clarification",
+        prompt: "SPIN at 12,000-14,000 g for 3 minutes. Carefully transfer supernatant to fresh tube.",
+        science: "Centrifugation removes debris that could clog the column and reduce DNA purity. The DNA is in the supernatant (liquid), not the pellet.",
+        requiresSpin: true,
+        spinDuration: 3,
+        successCriteria: "Supernatant is clear",
+        educationalNote: "This step is especially important for tough animal tissues. Avoid disturbing the pellet when transferring supernatant."
+      },
+      {
+        title: "Binding Preparation",
+        prompt: "Add 200 µL Binding Buffer and 200 µL Ethanol (96-100%) to cleared lysate. MIX gently - do not vortex.",
+        science: "Chaotropic salts + ethanol create conditions for DNA to bind to silica column membranes. 🧪 WHY THIS MATTERS: Without ethanol, DNA will NOT bind to the silica membrane and will wash away. This is the #1 reason beginners get low yields.",
+        requiresVolume: true,
+        targetVolume: 400,
+        requiresMixing: true,
+        reagentRequired: "binding_ethanol",
+        kitNote: "📋 Kit Reality Check: Your DNA extraction kit includes concentrated wash buffer. In real labs, you would add ethanol from your lab stock before using it. In BioSim Lab, we assume this step is already done - your wash buffer is ready to use.",
+        successCriteria: "Binding Buffer added (200 µL), Ethanol added (200 µL), Mixed gently"
+      },
+      {
+        title: "Column Binding",
+        prompt: "Load mixture onto silica spin column and SPIN at 8,000-14,000 g for 1 minute. Discard flow-through.",
+        science: "DNA binds to silica membrane while contaminants flow through. The chaotropic salts disrupt water molecules around DNA, making it 'sticky' to the silica. If volume >700 µL, load in multiple batches.",
+        requiresSpin: true,
+        spinDuration: 1,
+        reagentRequired: "column",
+        educationalNote: "Pretty cool chemistry! The salts make DNA hydrophobic so it sticks to the silica surface."
+      },
+      {
+        title: "Wash & Dry",
+        prompt: "Add 500 µL Wash Buffer and SPIN (1st wash). Add 500 µL Wash Buffer and SPIN (2nd wash). DRY SPIN at maximum speed for 3 minutes.",
+        science: "Remove salts and contaminants without releasing DNA. Two washes = higher purity. ⚠️ CRITICAL: Dry spin removes residual ethanol that would inhibit PCR. Never skip the dry spin! Residual ethanol is PCR's worst enemy - it denatures the polymerase enzyme.",
+        requiresVolume: true,
+        targetVolume: 1000,
+        requiresSpin: true,
+        spinDuration: 5,
+        reagentRequired: "wash",
+        successCriteria: "Column is completely dry after final spin",
+        educationalNote: "This buffer already has ethanol added (see Binding Preparation step). Two washes ensure maximum purity."
+      },
+      {
+        title: "Elution",
+        prompt: "Transfer column to fresh tube. Add 50 µL Elution Buffer to membrane center, wait 1-5 minutes, then SPIN at 12,000 g for 1 minute.",
+        science: "Low-salt buffer (TE-based) releases pure DNA from the column. TE buffer (Tris-EDTA) protects DNA - the EDTA 'handcuffs' DNase enzymes that would chew up your DNA. Optional: Pre-warm buffer to 56°C for +10-15% yield.",
+        requiresVolume: true,
+        targetVolume: missionId === 'A' ? 20 : 50,
+        requiresSpin: true,
+        isElution: true,
+        reagentRequired: "elute",
+        storageNote: "Store DNA at 4°C (short-term, days-weeks) or -20°C/-80°C (long-term, years)",
+        educationalNote: "That's why we use TE instead of plain water - the EDTA protects your DNA from degradation."
+      },
+      {
+        title: "Quality Check (NanoDrop)",
+        prompt: "Measure DNA concentration and purity using NanoDrop.",
+        science: "Expected results: Concentration 50-500 ng/µL, A₂₆₀/A₂₈₀ ratio 1.8-2.0 (pure DNA), A₂₆₀/A₂₃₀ ratio 2.0-2.2 (no salt contamination).",
+        isQualityCheck: true,
+        expectedResults: {
+          concentration: "50-500 ng/µL",
+          ratio260_280: "1.8-2.0",
+          ratio260_230: "2.0-2.2"
+        },
+        troubleshooting: {
+          lowRatio260_280: "⚠️ Protein contamination. Causes: Insufficient Proteinase K digestion (extend incubation) or not enough washes. Next time: Increase Proteinase K or add third wash.",
+          lowRatio260_230: "⚠️ Salt/solvent contamination. Causes: Incomplete dry spin (ethanol residue) or chaotropic salts. Next time: Extend dry spin to 5 minutes.",
+          lowConcentration: "⚠️ Low yield. Causes: Incomplete lysis (tissue still visible?), Lost DNA in debris pellet, Forgot ethanol → DNA didn't bind (MOST COMMON), or insufficient starting material. Review Steps 1-3 carefully."
+        }
+      }
     ];
     return allSteps.filter(step => !step.skipIf || !step.skipIf());
   }, [techniqueId, missionId, inventory, step1Method]);
