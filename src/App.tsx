@@ -2,6 +2,7 @@ import React, { useMemo, useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { createClient } from "@supabase/supabase-js";
 import { RealisticPipette } from "./components/RealisticPipette";
+import { ReagentContainers } from "./components/ReagentContainers";
 import {
   FlaskConical,
   AlertCircle,
@@ -1409,6 +1410,59 @@ export default function App() {
     return colorMap[reagentId] || '#3b82f6';
   };
 
+  const getAvailableReagents = (stepTitle, reagentRequired) => {
+    const reagents = [];
+
+    if (stepTitle === "Proteinase K Digestion") {
+      reagents.push({
+        id: 'proteinase_k',
+        name: 'Proteinase K',
+        type: 'tube',
+        color: '#f59e0b',
+        volume: '200µL',
+        available: hasReagentForStep('proteinase_k')
+      });
+    } else if (stepTitle === "Lysis Phase") {
+      reagents.push({
+        id: 'lysis',
+        name: 'Lysis Buffer',
+        type: 'bottle',
+        color: '#ec4899',
+        volume: '50mL',
+        available: hasReagentForStep('lysis')
+      });
+    } else if (stepTitle === "Binding/Column Load") {
+      reagents.push({
+        id: 'binding',
+        name: 'Binding Buffer',
+        type: 'bottle',
+        color: '#a855f7',
+        volume: '50mL',
+        available: hasReagentForStep('binding')
+      });
+    } else if (stepTitle === "Wash Stage") {
+      reagents.push({
+        id: 'wash',
+        name: 'Wash Buffer',
+        type: 'bottle',
+        color: '#e2e8f0',
+        volume: '50mL',
+        available: hasReagentForStep('wash')
+      });
+    } else if (stepTitle === "Elution") {
+      reagents.push({
+        id: 'elute',
+        name: 'Elution Buffer',
+        type: 'bottle',
+        color: '#3b82f6',
+        volume: '10mL',
+        available: hasReagentForStep('elute')
+      });
+    }
+
+    return reagents;
+  };
+
   useEffect(() => {
     if (screen === "lab" && protocolIndex === 0) setCurrentSolidMass(sampleMass);
   }, [screen, protocolIndex, sampleMass]);
@@ -2742,9 +2796,31 @@ export default function App() {
                   )}
 
                   {currentStep.requiresVolume && (
-                    <div className="bg-slate-800 border border-slate-700 p-6 rounded-2xl space-y-4">
-                      <h3 className="text-sm font-bold text-white uppercase flex items-center gap-2"><Pipette size={16} /> Pipette System</h3>
-                      <RealisticPipette
+                    <>
+                      <div className="bg-slate-800 border border-slate-700 p-6 rounded-2xl">
+                        <ReagentContainers
+                          availableReagents={getAvailableReagents(currentStep.title, currentStep.reagentRequired)}
+                          onContainerClick={(reagentId, color) => {
+                            if (pipetteVolume && activeTool === 'pipette' && !pipetteHasLiquid) {
+                              if (!hasReagentForStep(currentStep.reagentRequired)) {
+                                addLog(`Aspiration Error: Missing ${currentStep.reagentRequired} reagent.`, "error");
+                                setMissedReagents(missedReagents + 1);
+                                setPipetteVolume(null);
+                                setActiveTool(null);
+                                return;
+                              }
+                              setPipetteHasLiquid(true);
+                              addLog(`Aspirated ${pipetteVolume}µL from ${reagentId}. Press plunger to dispense.`, "success");
+                            }
+                          }}
+                          canAspirate={pipetteVolume !== null && !hasDispensedThisStep && !pipetteHasLiquid}
+                          selectedPipette={activeTool === 'pipette'}
+                        />
+                      </div>
+
+                      <div className="bg-slate-800 border border-slate-700 p-6 rounded-2xl space-y-4">
+                        <h3 className="text-sm font-bold text-white uppercase flex items-center gap-2"><Pipette size={16} /> Pipette System</h3>
+                        <RealisticPipette
                         requiredVolume={currentStep.targetVolume || 500}
                         onVolumeSet={(volume, pipetteSize) => {
                           if (!hasDispensedThisStep) {
@@ -2802,7 +2878,8 @@ export default function App() {
                         hasLiquid={pipetteHasLiquid}
                         liquidColor={pipetteLiquidColor}
                       />
-                    </div>
+                      </div>
+                    </>
                   )}
 
                   {((currentStep.requiresVolume && hasDispensedThisStep) || (currentStep.options)) && (currentStep.requiresSpin || currentStep.requiresIncubation ? hasSpunThisStep : true) && (currentStep.requiresMixing ? (currentStep.title === "Proteinase K Digestion" ? step2Mixed : currentStep.title === "Lysis Phase" ? step3Mixed : true) : true) && (
