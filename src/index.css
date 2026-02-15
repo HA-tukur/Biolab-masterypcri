@@ -1,3 +1,18 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer utilities {
+  @keyframes continueButtonPulse {
+    0%, 100% {
+      box-shadow: 0 0 0 0 rgba(255, 140, 0, 0.4);
+    }
+    50% {
+      box-shadow: 0 0 0 8px rgba(255, 140, 0, 0);
+    }
+  }
+
+  .animate-continue-pulse {
+    animation: continueButtonPulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+}

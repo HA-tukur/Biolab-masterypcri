@@ -2869,10 +2869,13 @@ export default function App() {
             <div className="min-h-screen bg-[#0f172a]">
               <SharedNavigation onShowManual={() => setShowManual(true)} />
               <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-8">
-              <div className="bg-slate-800 border border-slate-700 p-6 rounded-2xl">
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-xl font-black text-slate-50 uppercase tracking-tight">Step {protocolIndex + 1}: {currentStep.title}</h2>
-                  <div className="flex items-center gap-3">
+              <div className="bg-slate-800 border border-slate-700 p-6 rounded-2xl relative">
+                <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between mb-4 gap-4">
+                  <div className="flex-1">
+                    <h2 className="text-xl font-black text-slate-50 uppercase tracking-tight">Step {protocolIndex + 1}: {currentStep.title}</h2>
+                    <span className="text-xs text-slate-500 font-mono">Progress: {protocolIndex + 1}/{protocolSteps.length}</span>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto">
                     {difficultyMode === "challenge" && (
                       <div className="px-3 py-1 bg-amber-900/30 border border-amber-500/30 rounded-lg">
                         <span className="text-[10px] text-amber-400 font-bold uppercase">🏆 Challenge</span>
@@ -2888,7 +2891,147 @@ export default function App() {
                     <button onClick={() => { setScreen("procurement"); addLog("Returned to procurement. Biological state preserved.", "info"); }} className="px-4 py-2 bg-amber-600 hover:bg-amber-500 text-white rounded-lg text-xs font-bold uppercase transition-all cursor-pointer border-0">
                       Add Equipment
                     </button>
-                    <span className="text-xs text-slate-500 font-mono">Progress: {protocolIndex + 1}/{protocolSteps.length}</span>
+
+                    {/* Continue Button - Top Right */}
+                    {(() => {
+                      const subProgress = getSubActionProgress();
+                      let canContinue = false;
+                      let remainingTasks = 0;
+
+                      if (subProgress) {
+                        // Has subtasks - check if all complete
+                        canContinue = subProgress.completed === subProgress.total;
+                        remainingTasks = subProgress.total - subProgress.completed;
+                      } else {
+                        // No subtasks - use existing logic
+                        const cond1 = (currentStep.requiresVolume && hasDispensedThisStep) || (currentStep.options);
+                        const cond2 = currentStep.requiresSpin || currentStep.requiresIncubation ? hasSpunThisStep : true;
+                        const cond3 = currentStep.requiresMixing ? (currentStep.title === "Lysis & Protein Digestion" ? step2Mixed : currentStep.title === "Binding Preparation" ? step3Mixed : !needsMixing) : true;
+                        canContinue = cond1 && cond2 && cond3;
+                      }
+
+                      const nextStepNumber = protocolIndex + 2;
+                      const buttonText = canContinue
+                        ? `CONTINUE TO STEP ${nextStepNumber} →`
+                        : remainingTasks > 0
+                          ? `Complete ${remainingTasks} ${remainingTasks === 1 ? 'task' : 'tasks'} to continue`
+                          : 'Complete step to continue';
+
+                      return (
+                        <button
+                          onClick={() => {
+                            if (canContinue) {
+                              console.log('Moving to step', protocolIndex + 2);
+
+                              // Validation checks
+                              if (currentStep.requiresSpin && !hasSpunThisStep) {
+                                setMissedSpins(missedSpins + 1);
+                                addLog("Critical Error: Centrifugation step bypassed!", "error");
+                                setProtocolAdherenceCompromised(true);
+                              }
+
+                              if (currentStep.requiresVolume && !hasDispensedThisStep) {
+                                addLog("Error: No reagent added.", "error");
+                                setMissedReagents(missedReagents + 1);
+                                setProtocolAdherenceCompromised(true);
+                              }
+
+                              if (currentStep.title === "Lysis & Protein Digestion") {
+                                if (!step1SubActions.lysisBufferAdded) {
+                                  addLog("Error: Add Lysis Buffer before proceeding", "error");
+                                  setProtocolAdherenceCompromised(true);
+                                  return;
+                                }
+                                if (!step1SubActions.proteinaseKAdded) {
+                                  addLog("Error: Add Proteinase K before proceeding", "error");
+                                  setProtocolAdherenceCompromised(true);
+                                  return;
+                                }
+                                if (!step1SubActions.mixed) {
+                                  addLog("Error: Mix the tube by inversion before incubating", "error");
+                                  setProtocolAdherenceCompromised(true);
+                                  return;
+                                }
+                                if (!step1SubActions.incubated) {
+                                  addLog("Error: Incubate at 56°C before proceeding", "error");
+                                  setProtocolAdherenceCompromised(true);
+                                  return;
+                                }
+                              }
+
+                              if (currentStep.title === "Binding Preparation") {
+                                if (!step3SubActions.bindingBufferAdded) {
+                                  addLog("Error: Add Binding Buffer before proceeding", "error");
+                                  setProtocolAdherenceCompromised(true);
+                                  return;
+                                }
+                                if (!step3SubActions.ethanolAdded) {
+                                  addLog("Error: Add Ethanol before proceeding. DNA will NOT bind without ethanol!", "error");
+                                  setProtocolAdherenceCompromised(true);
+                                  return;
+                                }
+                                if (!step3SubActions.mixed) {
+                                  addLog("Error: Mix the tube by inversion before loading onto column", "error");
+                                  setProtocolAdherenceCompromised(true);
+                                  return;
+                                }
+                              }
+
+                              // Volume validation
+                              if (currentStep.multipleReagents && currentStep.reagents) {
+                                currentStep.reagents.forEach(reagent => {
+                                  const addedVolume = currentStepReagents[reagent.id] || 0;
+                                  if (addedVolume === 0) {
+                                    addLog(`Volume Error: ${reagent.name} was not added!`, "error");
+                                    setProtocolAdherenceCompromised(true);
+                                  } else if (Math.abs(addedVolume - reagent.targetVolume) > reagent.tolerance) {
+                                    addLog(`Volume Error: ${reagent.name} target is ${reagent.targetVolume}µL but ${addedVolume}µL was used.`, "error");
+                                    setProtocolAdherenceCompromised(true);
+                                  }
+                                });
+                              } else if (currentStep.reagents && currentStep.reagents[0]) {
+                                const reagent = currentStep.reagents[0];
+                                if (Math.abs(volumeAddedThisStep - reagent.targetVolume) > reagent.tolerance) {
+                                  addLog(`Volume Error: Target is ${reagent.targetVolume}µL but ${volumeAddedThisStep}µL was used. Significant deviation affects protocol.`, "error");
+                                  setProtocolAdherenceCompromised(true);
+                                }
+                              }
+
+                              // Check if this is the last step
+                              if (protocolIndex === protocolSteps.length - 1) {
+                                setCanNanodropNow(true);
+                                setStatus("verification");
+                              } else {
+                                // Move to next step
+                                setBufferVolume(bufferVolume + volumeAddedThisStep);
+                                setVolumeAddedThisStep(0);
+                                setProtocolIndex(protocolIndex + 1);
+                                setHasDispensedThisStep(false);
+                                setHasSpunThisStep(false);
+                                setNeedsMixing(false);
+                                setIsMixing(false);
+                                setStep2Mixed(false);
+                                setStep3Mixed(false);
+                                setCurrentStepReagents({});
+                                setCurrentReagentId(null);
+                                setShowMixPrompt(false);
+                                window.scrollTo({ top: 0, behavior: 'smooth' });
+                              }
+                            }
+                          }}
+                          disabled={!canContinue}
+                          className={`
+                            w-full lg:w-auto px-6 py-3 rounded-lg font-bold text-sm transition-all border-0 whitespace-nowrap
+                            ${canContinue
+                              ? 'bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-500 hover:to-orange-400 text-white cursor-pointer hover:scale-105 hover:shadow-lg hover:shadow-orange-500/40 animate-continue-pulse'
+                              : 'bg-slate-700 text-slate-400 border border-slate-600 cursor-not-allowed'
+                            }
+                          `}
+                        >
+                          {buttonText}
+                        </button>
+                      );
+                    })()}
                   </div>
                 </div>
                 <div className="bg-indigo-900/20 border border-indigo-500/30 p-4 rounded-xl mb-4">
@@ -3364,8 +3507,8 @@ export default function App() {
                 disabled={hasDispensedThisStep && !needsMixing && !(currentStep?.requiresSpin || currentStep?.requiresIncubation)}
               />
 
-              {/* Continue Button - Full Width */}
-              {(() => {
+              {/* Continue Button - Full Width - DISABLED (now in header) */}
+              {false && (() => {
                 const cond1 = (currentStep.requiresVolume && hasDispensedThisStep) || (currentStep.options);
                 const cond2 = currentStep.requiresSpin || currentStep.requiresIncubation ? hasSpunThisStep : true;
                 const cond3 = currentStep.requiresMixing ? (currentStep.title === "Lysis & Protein Digestion" ? step2Mixed : currentStep.title === "Binding Preparation" ? step3Mixed : !needsMixing) : true;
