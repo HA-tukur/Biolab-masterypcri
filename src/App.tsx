@@ -197,6 +197,8 @@ const FilterColumnVisual = ({ volume, hasDNA, showSeparation }) => {
 
 const TubeWithFilterColumnVisual = ({ volume, hasDNA, stepTitle }) => {
   const tubeVolume = Math.min((volume / 2000) * 100, 70);
+  const isElution = stepTitle === "Elution";
+  const isFreshTube = isElution && volume === 0;
 
   return (
     <div className="relative flex flex-col items-center p-2">
@@ -211,11 +213,20 @@ const TubeWithFilterColumnVisual = ({ volume, hasDNA, stepTitle }) => {
         />
         <line x1="25" y1="20" x2="95" y2="20" stroke="#475569" strokeWidth="4" strokeLinecap="round"/>
 
+        {/* Fresh tube indicator - sparkle when empty in elution step */}
+        {isFreshTube && (
+          <g>
+            <circle cx="40" cy="90" r="2" fill="#10b981" opacity="0.6" className="animate-pulse"/>
+            <circle cx="80" cy="95" r="1.5" fill="#10b981" opacity="0.6" className="animate-pulse" style={{animationDelay: '0.3s'}}/>
+            <circle cx="45" cy="120" r="1.5" fill="#10b981" opacity="0.6" className="animate-pulse" style={{animationDelay: '0.6s'}}/>
+          </g>
+        )}
+
         {/* Liquid in tube */}
         {volume > 0 && (
           <path
             d={`M35 ${170 - tubeVolume}C35 ${170 - tubeVolume} 35 160 60 175C85 160 85 ${170 - tubeVolume} 85 ${170 - tubeVolume}`}
-            fill="#38bdf8"
+            fill={isElution ? "#3b82f6" : "#38bdf8"}
             fillOpacity="0.3"
           />
         )}
@@ -224,7 +235,7 @@ const TubeWithFilterColumnVisual = ({ volume, hasDNA, stepTitle }) => {
         <rect x="50" y="10" width="20" height="120" rx="1" fill="#334155" stroke="#64748b" strokeWidth="2"/>
         <ellipse cx="60" cy="10" rx="10" ry="3" fill="#1e293b" stroke="#64748b" strokeWidth="2"/>
 
-        {/* Bottom of filter column with mild protrusion */}
+        {/* Bottom of filter column with mild protrusion - NOT touching liquid when fresh */}
         <path
           d="M 50 130 L 50 133 Q 50 137 60 139 Q 70 137 70 133 L 70 130"
           fill="#334155"
@@ -250,8 +261,13 @@ const TubeWithFilterColumnVisual = ({ volume, hasDNA, stepTitle }) => {
         )}
       </svg>
       <p className="text-[9px] text-slate-500 font-bold uppercase mt-1">
-        {stepTitle === "Wash Stage" ? "Wash Column" : "Elute DNA"}
+        {isFreshTube ? "Fresh Tube" : stepTitle === "Wash Stage" ? "Wash Column" : "Elute DNA"}
       </p>
+      {isFreshTube && (
+        <div className="mt-1 px-2 py-1 bg-emerald-900/20 border border-emerald-500/30 rounded">
+          <p className="text-[8px] text-emerald-400 text-center">Empty & Clean</p>
+        </div>
+      )}
     </div>
   );
 };
@@ -1841,7 +1857,7 @@ export default function App() {
       {
         title: "Elution",
         prompt: "Transfer column to fresh tube. Add 50 µL Elution Buffer to membrane center, wait 1-5 minutes, then SPIN at 12,000 g for 1 minute.",
-        science: "Low-salt buffer (TE-based) releases pure DNA from the column. TE buffer (Tris-EDTA) protects DNA - the EDTA 'handcuffs' DNase enzymes that would chew up your DNA. Optional: Pre-warm buffer to 56°C for +10-15% yield.",
+        science: "Low-salt buffer (TE-based) releases pure DNA from the column. TE buffer (Tris-EDTA) protects DNA - the EDTA 'handcuffs' DNase enzymes that would chew up your DNA. Optional: Pre-warm buffer to 56°C for +10-15% yield. ⚠️ CRITICAL: The previous collection tube contains waste (salts, ethanol, proteins). Always transfer the column to a fresh, empty tube before elution - otherwise contaminants wick back into the membrane and re-contaminate your purified DNA.",
         requiresVolume: true,
         requiresSpin: true,
         isElution: true,
@@ -1849,7 +1865,7 @@ export default function App() {
           { id: "elute", name: "Elution Buffer", targetVolume: missionId === 'A' ? 20 : 50, tolerance: 5, color: "#3b82f6" }
         ],
         storageNote: "Store DNA at 4°C (short-term, days-weeks) or -20°C/-80°C (long-term, years)",
-        educationalNote: "That's why we use TE instead of plain water - the EDTA protects your DNA from degradation."
+        educationalNote: "💡 Why a fresh tube? The old tube contains waste liquid (salts, ethanol, proteins) from washing. If the column touches this liquid, contaminants wick back up into the silica membrane, re-contaminating your DNA. This is a common beginner mistake that ruins otherwise perfect extractions!"
       },
       {
         title: "Quality Check (NanoDrop)",
@@ -3081,8 +3097,16 @@ export default function App() {
                                 setCanNanodropNow(true);
                                 setStatus("verification");
                               } else {
-                                // Move to next step
-                                setBufferVolume(bufferVolume + volumeAddedThisStep);
+                                const nextStep = protocolSteps[protocolIndex + 1];
+
+                                // For Elution step, reset buffer volume to show fresh, empty tube
+                                if (nextStep?.isElution) {
+                                  setBufferVolume(0);
+                                  addLog("Column transferred to fresh, empty collection tube.", "info");
+                                } else {
+                                  setBufferVolume(bufferVolume + volumeAddedThisStep);
+                                }
+
                                 setVolumeAddedThisStep(0);
                                 setProtocolIndex(protocolIndex + 1);
                                 setHasDispensedThisStep(false);
@@ -3120,6 +3144,16 @@ export default function App() {
                 <div className="bg-indigo-900/20 border border-indigo-500/30 p-4 rounded-xl mb-4">
                   <p className="text-sm text-indigo-300 font-bold mb-2">{currentStep.prompt}</p>
                   <p className="text-xs text-slate-400 leading-relaxed">{currentStep.science}</p>
+                  {currentStep.educationalNote && (
+                    <div className="mt-3 p-3 bg-emerald-900/20 border border-emerald-500/30 rounded-lg">
+                      <p className="text-xs text-emerald-300 leading-relaxed">{currentStep.educationalNote}</p>
+                    </div>
+                  )}
+                  {currentStep.storageNote && (
+                    <div className="mt-3 p-3 bg-blue-900/20 border border-blue-500/30 rounded-lg">
+                      <p className="text-xs text-blue-300 leading-relaxed">💾 Storage: {currentStep.storageNote}</p>
+                    </div>
+                  )}
                 </div>
 
                 {getSubActionProgress() && (
