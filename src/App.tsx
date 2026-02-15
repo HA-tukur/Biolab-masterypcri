@@ -1836,10 +1836,10 @@ export default function App() {
       {
         title: "Column Binding",
         prompt: "Load mixture onto silica spin column and SPIN at 8,000-14,000 g for 1 minute. Discard flow-through.",
-        science: "DNA binds to silica membrane while contaminants flow through. The chaotropic salts disrupt water molecules around DNA, making it 'sticky' to the silica. If volume >700 µL, load in multiple batches.",
+        science: "DNA binds to silica membrane while contaminants flow through. The chaotropic salts disrupt water molecules around DNA, making it 'sticky' to the silica. If volume >700 µL, load in multiple batches. ⚠️ The visual shows your sample tube (left) and an empty spin column in a fresh collection tube (right). Transfer the liquid from the sample tube into the column, then centrifuge.",
         requiresSpin: true,
         spinDuration: 1,
-        educationalNote: "Pretty cool chemistry! The salts make DNA hydrophobic so it sticks to the silica surface."
+        educationalNote: "💡 Pretty cool chemistry! The salts make DNA hydrophobic so it sticks to the silica surface. During centrifugation, contaminants (proteins, salts, cell debris) pass through the membrane and collect in the tube below as waste, while purified DNA stays bound to the silica membrane."
       },
       {
         title: "Wash & Dry",
@@ -3219,7 +3219,7 @@ export default function App() {
                 {/* Column 1: Sample Tube (30%) */}
                 <div className="md:col-span-1">
                   <div className="bg-slate-800 border border-slate-700 p-4 rounded-2xl relative">
-                    <h3 className="text-sm font-bold text-white uppercase mb-3 flex items-center gap-2"><FlaskConical size={16} /> {showGrindingSetup ? "Manual Grinding" : (currentStep.title === "Binding/Column Load" || currentStep.title === "Wash Stage") ? "Filter Column" : "Sample Tube"}</h3>
+                    <h3 className="text-sm font-bold text-white uppercase mb-3 flex items-center gap-2"><FlaskConical size={16} /> {showGrindingSetup ? "Manual Grinding" : currentStep.title === "Column Binding" ? "Sample & Column" : (currentStep.title === "Binding/Column Load" || currentStep.title === "Wash Stage" || currentStep.title === "Wash & Dry") ? "Filter Column" : "Sample Tube"}</h3>
                     {showGrindingSetup ? (
                       <div className="flex justify-center items-center min-h-[300px]">
                         <div className="relative">
@@ -3256,10 +3256,34 @@ export default function App() {
                       </div>
                     ) : (
                       <div className={`flex justify-center transition-all duration-500 ${tubeAnimating ? 'opacity-20 scale-75' : 'opacity-100 scale-100'} ${isMixing ? 'animate-[wiggle_0.5s_ease-in-out_4]' : ''}`}>
-                        {(currentStep.title === "Binding/Column Load" || currentStep.title === "Wash Stage") ? (
+                        {currentStep.title === "Column Binding" ? (
+                          <div className="flex items-center justify-center gap-6">
+                            <div className="flex flex-col items-center">
+                              <TubeVisual
+                                volume={bufferVolume + volumeAddedThisStep}
+                                solidMass={currentSolidMass}
+                                hasPellet={pelletVisible}
+                                showColorChange={currentStep.title === "Lysis & Protein Digestion"}
+                              />
+                              <p className="text-[9px] text-slate-400 font-bold uppercase mt-2">Sample Tube</p>
+                              <p className="text-[8px] text-emerald-400 mt-1">{bufferVolume + volumeAddedThisStep}µL</p>
+                            </div>
+                            <div className="text-slate-400 text-2xl">→</div>
+                            <div className="flex flex-col items-center">
+                              <SpinColumnVisual
+                                volume={0}
+                                hasDNA={false}
+                              />
+                              <p className="text-[9px] text-slate-400 font-bold uppercase mt-2">Empty Column</p>
+                              <div className="mt-1 px-2 py-1 bg-blue-900/20 border border-blue-500/30 rounded">
+                                <p className="text-[8px] text-blue-300">Ready to load</p>
+                              </div>
+                            </div>
+                          </div>
+                        ) : (currentStep.title === "Binding/Column Load" || currentStep.title === "Wash Stage" || currentStep.title === "Wash & Dry") ? (
                           <FilterColumnVisual
                             volume={bufferVolume + volumeAddedThisStep}
-                            hasDNA={currentStep.title === "Wash Stage"}
+                            hasDNA={currentStep.title === "Wash Stage" || currentStep.title === "Wash & Dry"}
                             showSeparation={showPhaseSeparation}
                           />
                         ) : currentStep.title === "Elution" ? (
