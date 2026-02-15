@@ -1611,12 +1611,47 @@ export default function App() {
         setPelletVisible(currentStep?.requiresSpin || false);
       }, 2500);
     } else if (action === 'start' && equipment === 'thermocycler') {
+      if (settings.temp !== undefined) {
+        setIncubationTemp(settings.temp);
+      }
+      setTubeInCentrifuge(true);
+
+      const tempOK = (settings.temp || incubationTemp) >= 50 && (settings.temp || incubationTemp) <= 60;
+      if (!tempOK) {
+        addLog(`ERROR: Temperature ${settings.temp || incubationTemp}°C is outside the required 50-60°C range. Proteinase K will not work correctly!`, "error");
+        setProtocolAdherenceCompromised(true);
+      } else if ((settings.temp || incubationTemp) !== currentStep.incubationTemp) {
+        addLog(`Temperature set to ${settings.temp || incubationTemp}°C. Within acceptable range for Proteinase K.`, "info");
+      }
+
       setIsIncubating(true);
-      setTubeInCentrifuge(false);
+      addLog(`Incubation started at ${settings.temp || incubationTemp}°C...`, "info");
       setTimeout(() => {
         setIsIncubating(false);
         setHasSpunThisStep(true);
+        setTubeInCentrifuge(false);
+        addLog("Incubation complete. Tube removed from thermocycler.", "success");
+        if (tempOK) {
+          addLog("Proteinase K successfully digested proteins at correct temperature.", "success");
+          if (currentStep?.title === "Lysis & Protein Digestion") {
+            console.log('[STEP 1] Incubation complete: true');
+            setProtKIncubationOK(true);
+            setStep1SubActions(prev => {
+              const updated = { ...prev, incubated: true };
+              console.log('[STEP 1] Updated step1SubActions:', updated);
+              return updated;
+            });
+          }
+        } else {
+          addLog("WARNING: Incorrect temperature used. This may affect DNA yield.", "error");
+        }
       }, 3500);
+    } else if (action === 'load' && equipment === 'thermocycler') {
+      setTubeInCentrifuge(true);
+      addLog("Tube loaded into thermocycler.", "success");
+    } else if (action === 'remove' && equipment === 'thermocycler') {
+      setTubeInCentrifuge(false);
+      addLog("Tube removed from thermocycler.", "info");
     }
   };
 
