@@ -21,13 +21,8 @@ export function ReagentContainers({
   selectedPipette
 }: ReagentContainersProps) {
   return (
-    <div className="space-y-4">
-      <div className="flex items-center gap-2 mb-4">
-        <FlaskConical className="w-4 h-4 text-emerald-400" />
-        <h3 className="text-sm font-bold text-white uppercase">Available Reagents</h3>
-      </div>
-
-      <div className="grid grid-cols-2 gap-4">
+    <div className="space-y-3">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-2 xl:grid-cols-3 gap-3">
         {availableReagents.map((reagent) => (
           <div
             key={reagent.id}

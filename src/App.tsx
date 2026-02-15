@@ -2674,11 +2674,11 @@ export default function App() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                <div className="space-y-6">
-                  <div className="bg-slate-800 border border-slate-700 p-6 rounded-2xl relative min-h-[400px]">
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div className="lg:col-span-1 space-y-4">
+                  <div className="bg-slate-800 border border-slate-700 p-4 rounded-2xl relative">
                     <LabBenchVisual inventory={inventory} />
-                    <h3 className="text-sm font-bold text-white uppercase mb-4 flex items-center gap-2"><FlaskConical size={16} /> {showGrindingSetup ? "Manual Grinding" : (currentStep.title === "Binding/Column Load" || currentStep.title === "Wash Stage") ? "Filter Column" : "Sample Tube"}</h3>
+                    <h3 className="text-sm font-bold text-white uppercase mb-3 flex items-center gap-2"><FlaskConical size={16} /> {showGrindingSetup ? "Manual Grinding" : (currentStep.title === "Binding/Column Load" || currentStep.title === "Wash Stage") ? "Filter Column" : "Sample Tube"}</h3>
                     {showGrindingSetup ? (
                       <div className="flex justify-center items-center min-h-[300px]">
                         <div className="relative">
@@ -2747,94 +2747,149 @@ export default function App() {
                       )}
                     </div>
 
-                    {activeTool === 'pipette' && pipetteVolume && !needsMixing && !hasDispensedThisStep && !pipetteHasLiquid && (
-                      <div
-                        className="absolute top-8 right-12 p-4 rounded-3xl shadow-2xl border-2 bg-indigo-600 border-indigo-400 animate-bounce cursor-pointer hover:bg-indigo-500 hover:scale-110 transition-all shadow-indigo-500/30"
-                        style={{
-                          animation: 'bounce 1s infinite, drip 2s ease-in-out infinite'
-                        }}
-                        onClick={() => {
-                          setPipetteHasLiquid(true);
-                          addLog(`Aspirated ${pipetteVolume}µL. Click "Press Plunger to Dispense" to add to tube.`, "success");
-                        }}
-                      >
-                        <Pipette size={28} className="text-white" />
-                        <span className="block text-[8px] font-black text-center mt-2 uppercase tracking-widest text-white">
-                          Aspirate
-                        </span>
+                    {/* Integrated Equipment Icons */}
+                    <div className="mt-4 pt-4 border-t border-slate-700">
+                      <p className="text-[10px] text-slate-500 uppercase font-bold text-center mb-2">Equipment</p>
+                      <div className="flex justify-center gap-2 flex-wrap">
+                        {currentStep?.requiresSpin && !currentStep?.requiresIncubation && has("centrifuge") && (
+                          <button
+                            onClick={() => {
+                              if (hasDispensedThisStep && !tubeInCentrifuge && !hasSpunThisStep) {
+                                handleLoadTube();
+                              } else if (tubeInCentrifuge && !isSpinning) {
+                                handleSpin();
+                              }
+                            }}
+                            disabled={(!hasDispensedThisStep || hasSpunThisStep || isSpinning)}
+                            className={`p-2.5 rounded-lg transition-all border-2 ${
+                              (!hasDispensedThisStep || hasSpunThisStep || isSpinning)
+                                ? 'bg-slate-700/50 border-slate-600 opacity-50 cursor-not-allowed'
+                                : tubeInCentrifuge
+                                ? 'bg-emerald-600 border-emerald-400 hover:bg-emerald-500 animate-pulse'
+                                : 'bg-indigo-600 border-indigo-400 hover:bg-indigo-500'
+                            }`}
+                            title={isSpinning ? "Spinning..." : tubeInCentrifuge ? "Start Spin" : "Load Tube"}
+                          >
+                            <svg width="20" height="20" viewBox="0 0 100 100" className="text-white">
+                              <circle cx="50" cy="50" r="35" fill="none" stroke="currentColor" strokeWidth="4" className={isSpinning ? "animate-spin" : ""}/>
+                              <circle cx="50" cy="50" r="15" fill="currentColor" opacity="0.5"/>
+                              <circle cx="50" cy="25" r="6" fill="currentColor"/>
+                            </svg>
+                          </button>
+                        )}
+
+                        {currentStep?.requiresIncubation && (
+                          <div className="flex gap-2 items-center">
+                            <button
+                              onClick={() => {
+                                if (hasDispensedThisStep && !tubeInCentrifuge && !hasSpunThisStep) {
+                                  handleLoadTubeThermocycler();
+                                } else if (tubeInCentrifuge && !isIncubating) {
+                                  handleStartIncubation();
+                                }
+                              }}
+                              disabled={(!hasDispensedThisStep || hasSpunThisStep || isIncubating)}
+                              className={`p-2.5 rounded-lg transition-all border-2 ${
+                                (!hasDispensedThisStep || hasSpunThisStep || isIncubating)
+                                  ? 'bg-slate-700/50 border-slate-600 opacity-50 cursor-not-allowed'
+                                  : tubeInCentrifuge
+                                  ? 'bg-emerald-600 border-emerald-400 hover:bg-emerald-500 animate-pulse'
+                                  : 'bg-amber-600 border-amber-400 hover:bg-amber-500'
+                              }`}
+                              title={isIncubating ? "Incubating..." : tubeInCentrifuge ? "Start Incubation" : "Load Tube"}
+                            >
+                              <Thermometer size={20} className="text-white" />
+                            </button>
+                            {tubeInCentrifuge && !isIncubating && (
+                              <div className="flex gap-1">
+                                <button onClick={() => handleTempChange(-5)} className="px-2 py-1 bg-slate-700 hover:bg-slate-600 text-white rounded text-xs font-bold">-</button>
+                                <span className="px-2 py-1 bg-slate-900 text-white rounded text-xs font-mono">{incubationTemp}°C</span>
+                                <button onClick={() => handleTempChange(5)} className="px-2 py-1 bg-slate-700 hover:bg-slate-600 text-white rounded text-xs font-bold">+</button>
+                              </div>
+                            )}
+                          </div>
+                        )}
+
+                        {needsMixing && !hasDispensedThisStep && (
+                          <button
+                            onClick={() => {
+                              setIsMixing(true);
+                              addLog("Mixing solution...", "info");
+                              if (currentStep.title === "Proteinase K Digestion") setStep2Mixed(true);
+                              if (currentStep.title === "Lysis Phase") setStep3Mixed(true);
+                              setTimeout(() => {
+                                setIsMixing(false);
+                                setNeedsMixing(false);
+                                setHasDispensedThisStep(true);
+                                addLog("Mixing complete.", "success");
+                              }, 1000);
+                            }}
+                            className="p-2.5 rounded-lg bg-emerald-600 border-2 border-emerald-400 hover:bg-emerald-500 animate-pulse transition-all"
+                            title="Mix Solution"
+                          >
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" className={`text-white ${isMixing ? 'animate-spin' : ''}`}>
+                              <circle cx="12" cy="12" r="3" fill="currentColor"/>
+                              <path d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48l2.83-2.83" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                            </svg>
+                          </button>
+                        )}
+
+                        {has("ice_bucket") && (
+                          <button
+                            className="p-2.5 rounded-lg bg-cyan-600/30 border-2 border-cyan-400/50 cursor-default"
+                            title="Sample on Ice"
+                          >
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" className="text-cyan-300">
+                              <path d="M12 2v20M2 12h20M6 6l12 12M6 18L18 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                            </svg>
+                          </button>
+                        )}
                       </div>
-                    )}
-
-                    {needsMixing && !hasDispensedThisStep && (
-                      <div
-                        className="absolute top-8 right-12 p-4 rounded-3xl shadow-2xl border-2 bg-emerald-600 border-emerald-400 cursor-pointer hover:bg-emerald-500 hover:scale-110 transition-all shadow-emerald-500/30"
-                        style={{
-                          animation: isMixing ? 'pulse 0.3s ease-in-out infinite' : 'bounce 1s infinite'
-                        }}
-                        onClick={() => {
-                          setIsMixing(true);
-                          addLog("Mixing solution...", "info");
-
-                          if (currentStep.title === "Proteinase K Digestion") setStep2Mixed(true);
-                          if (currentStep.title === "Lysis Phase") setStep3Mixed(true);
-
-                          setTimeout(() => {
-                            setIsMixing(false);
-                            setNeedsMixing(false);
-                            setHasDispensedThisStep(true);
-                            addLog("Mixing complete. Solution homogenized.", "success");
-                          }, 2000);
-                        }}
-                      >
-                        <Pipette size={28} className={`text-white ${isMixing ? 'animate-pulse' : ''}`} style={{
-                          animation: isMixing ? 'pulse 0.3s ease-in-out infinite' : 'none'
-                        }} />
-                        <span className="block text-[8px] font-black text-center mt-2 uppercase tracking-widest text-white">
-                          {isMixing ? 'Mixing...' : 'Mix'}
-                        </span>
-                      </div>
-                    )}
+                      {(currentStep?.requiresSpin || currentStep?.requiresIncubation || needsMixing) && (
+                        <p className="text-[9px] text-center text-slate-400 mt-2">
+                          {isSpinning ? "Spinning..." : isIncubating ? "Incubating..." : isMixing ? "Mixing..." : tubeInCentrifuge ? "Ready - Click to start" : needsMixing ? "Click to mix" : "Load tube to start"}
+                        </p>
+                      )}
+                    </div>
                   </div>
-
-                  {/* Thermocycler on Bench (for Proteinase K incubation) */}
-                  {currentStep?.requiresIncubation && (
-                    <div className="bg-slate-800 border border-slate-700 p-6 rounded-2xl">
-                      <ThermocyclerVisual
-                        isIncubating={isIncubating}
-                        hasTube={tubeInCentrifuge}
-                        temperature={incubationTemp}
-                        duration={currentStep?.incubationDuration}
-                        onLoadTube={handleLoadTubeThermocycler}
-                        onStartIncubation={handleStartIncubation}
-                        onTempChange={handleTempChange}
-                        canLoad={hasDispensedThisStep && !tubeInCentrifuge && !hasSpunThisStep}
-                        canStart={tubeInCentrifuge && !isIncubating}
-                      />
-                    </div>
-                  )}
-
-                  {/* Centrifuge on Bench */}
-                  {currentStep?.requiresSpin && !currentStep?.requiresIncubation && has("centrifuge") && (
-                    <div className="bg-slate-800 border border-slate-700 p-6 rounded-2xl">
-                      <CentrifugeVisual
-                        isSpinning={isSpinning}
-                        hasTube={tubeInCentrifuge}
-                        onLoadTube={handleLoadTube}
-                        onStartSpin={handleSpin}
-                        canLoad={hasDispensedThisStep && !tubeInCentrifuge && !hasSpunThisStep}
-                        canSpin={tubeInCentrifuge && !isSpinning}
-                      />
-                    </div>
-                  )}
 
                   <BenchInventoryVisuals inventory={inventory} status={status} />
                 </div>
 
-                <div className="space-y-6">
+                <div className="lg:col-span-2 space-y-4">
+                  {currentStep.requiresVolume && (
+                    <div className="bg-slate-800 border border-slate-700 p-4 rounded-2xl">
+                      <h3 className="text-sm font-bold text-white uppercase mb-3 flex items-center gap-2">
+                        <FlaskConical size={16} /> Available Reagents
+                      </h3>
+                      <ReagentContainers
+                        availableReagents={getAvailableReagents(currentStep.title, currentStep.reagentRequired)}
+                        onContainerClick={(reagentId, color) => {
+                          if (pipetteVolume && activeTool === 'pipette' && !pipetteHasLiquid) {
+                            setPipetteHasLiquid(true);
+                            setPipetteLiquidColor(color);
+
+                            if (reagentId !== currentStep.reagentRequired) {
+                              trackMistake('wrong_reagent', {
+                                expected: currentStep.reagentRequired,
+                                actual: reagentId,
+                                volume: pipetteVolume
+                              });
+                            }
+
+                            addLog(`Aspirated ${pipetteVolume}µL from ${reagentId}. Press plunger to dispense.`, "success");
+                          }
+                        }}
+                        canAspirate={pipetteVolume !== null && !hasDispensedThisStep && !pipetteHasLiquid}
+                        selectedPipette={activeTool === 'pipette'}
+                      />
+                    </div>
+                  )}
+
                   {currentStep.options && protocolIndex === 0 && (
-                    <div className="bg-slate-800 border border-slate-700 p-6 rounded-2xl">
-                      <h3 className="text-sm font-bold text-white uppercase mb-4 text-center">Tissue Disruption Equipment</h3>
-                      <div className="flex justify-center gap-8 mb-4">
+                    <div className="bg-slate-800 border border-slate-700 p-4 rounded-2xl">
+                      <h3 className="text-sm font-bold text-white uppercase mb-3 text-center">Tissue Disruption Equipment</h3>
+                      <div className="flex justify-center gap-8 mb-3">
                         <div className="flex flex-col items-center">
                           <MortarPestleVisual />
                           <p className="text-[9px] text-slate-400 font-bold uppercase mt-1">Mortar & Pestle</p>
@@ -2848,8 +2903,8 @@ export default function App() {
                   )}
 
                   {currentStep.options && (
-                    <div className="bg-slate-800 border border-slate-700 p-6 rounded-2xl space-y-3">
-                      <h3 className="text-sm font-bold text-white uppercase mb-4">Select Action</h3>
+                    <div className="bg-slate-800 border border-slate-700 p-4 rounded-2xl space-y-3">
+                      <h3 className="text-sm font-bold text-white uppercase mb-3">Select Action</h3>
                       {currentStep.options.map((opt, idx) => (
                         <button key={idx} onClick={() => {
                           if (opt.ok === false) {
@@ -2898,157 +2953,133 @@ export default function App() {
                             setNeedsMixing(false);
                             setIsMixing(false);
                           }
-                        }} className="w-full bg-indigo-600 hover:bg-indigo-500 text-white py-4 px-6 rounded-xl font-bold uppercase transition-all cursor-pointer border-0">
+                        }} className="w-full bg-indigo-600 hover:bg-indigo-500 text-white py-3 px-4 rounded-xl font-bold uppercase transition-all cursor-pointer border-0">
                           {opt.label}
                         </button>
                       ))}
                     </div>
                   )}
-
-                  {currentStep.requiresVolume && (
-                    <>
-                      <div className="bg-slate-800 border border-slate-700 p-6 rounded-2xl">
-                        <ReagentContainers
-                          availableReagents={getAvailableReagents(currentStep.title, currentStep.reagentRequired)}
-                          onContainerClick={(reagentId, color) => {
-                            if (pipetteVolume && activeTool === 'pipette' && !pipetteHasLiquid) {
-                              setPipetteHasLiquid(true);
-                              setPipetteLiquidColor(color);
-
-                              if (reagentId !== currentStep.reagentRequired) {
-                                trackMistake('wrong_reagent', {
-                                  expected: currentStep.reagentRequired,
-                                  actual: reagentId,
-                                  volume: pipetteVolume
-                                });
-                              }
-
-                              addLog(`Aspirated ${pipetteVolume}µL from ${reagentId}. Press plunger to dispense.`, "success");
-                            }
-                          }}
-                          canAspirate={pipetteVolume !== null && !hasDispensedThisStep && !pipetteHasLiquid}
-                          selectedPipette={activeTool === 'pipette'}
-                        />
-                      </div>
-
-                      <div className="bg-slate-800 border border-slate-700 p-6 rounded-2xl space-y-4">
-                        <h3 className="text-sm font-bold text-white uppercase flex items-center gap-2"><Pipette size={16} /> Pipette System</h3>
-                        <RealisticPipette
-                        requiredVolume={currentStep.targetVolume || 500}
-                        onVolumeSet={(volume, pipetteSize) => {
-                          if (!hasDispensedThisStep) {
-                            setPipetteVolume(volume);
-                            setActiveTool('pipette');
-                            setPipetteLiquidColor(getLiquidColor(currentStep.reagentRequired));
-
-                            if (currentStep.targetVolume && Math.abs(volume - currentStep.targetVolume) > 50) {
-                              trackMistake('wrong_volume', {
-                                expected: currentStep.targetVolume,
-                                actual: volume,
-                                deviation: Math.abs(volume - currentStep.targetVolume)
-                              });
-                            }
-
-                            if (currentStep.targetVolume) {
-                              const optimalPipette = currentStep.targetVolume <= 10 ? '2.5µL' :
-                                                     currentStep.targetVolume <= 100 ? '20µL' : '1000µL';
-                              if (pipetteSize !== optimalPipette) {
-                                trackMistake('wrong_pipette', {
-                                  expected: optimalPipette,
-                                  actual: pipetteSize,
-                                  volume: volume
-                                });
-                              }
-                            }
-
-                            addLog(`Pipette set to ${volume}µL. Click reagent container to aspirate.`, "info");
-                          }
-                        }}
-                        onDispense={() => {
-                          if (currentStep.isElution) {
-                            setElutionVolume(pipetteVolume);
-                          }
-                          setVolumeAddedThisStep(pipetteVolume);
-                          setStepVolumes(prev => {
-                            const title = currentStep?.title;
-                            if (title === "Proteinase K Digestion") return { ...prev, protK: pipetteVolume };
-                            if (title === "Lysis Phase") return { ...prev, lysis: pipetteVolume };
-                            if (title === "Binding/Column Load") return { ...prev, binding: pipetteVolume };
-                            if (title === "Wash Stage") return { ...prev, wash: pipetteVolume };
-                            if (title === "Elution") return { ...prev, elution: pipetteVolume };
-                            return prev;
-                          });
-                          addLog(`Dispensed ${pipetteVolume}µL`, "success");
-                          setPipetteVolume(null);
-                          setActiveTool(null);
-                          setPipetteHasLiquid(false);
-                          if (currentStep.isElution) {
-                            addLog("Elution buffer added. Wait 1 minute for DNA to elute from the membrane.", "info");
-                            setTimeout(() => {
-                              setHasDispensedThisStep(true);
-                              addLog("Elution wait complete. Proceed to centrifugation.", "success");
-                            }, 1000);
-                          } else if (currentStep.requiresMixing) {
-                            setNeedsMixing(true);
-                            addLog("Click pipette above tube to mix solution.", "info");
-                          } else {
-                            setHasDispensedThisStep(true);
-                            addLog("Reagent added. Ready for next step.", "success");
-                          }
-                        }}
-                        disabled={hasDispensedThisStep}
-                        hasLiquid={pipetteHasLiquid}
-                        liquidColor={pipetteLiquidColor}
-                      />
-                      </div>
-                    </>
-                  )}
-
-                  {((currentStep.requiresVolume && hasDispensedThisStep) || (currentStep.options)) && (currentStep.requiresSpin || currentStep.requiresIncubation ? hasSpunThisStep : true) && (currentStep.requiresMixing ? (currentStep.title === "Proteinase K Digestion" ? step2Mixed : currentStep.title === "Lysis Phase" ? step3Mixed : true) : true) && (
-                    <button onClick={() => {
-                      if (currentStep.requiresSpin && !hasSpunThisStep) {
-                        setMissedSpins(missedSpins + 1);
-                        addLog("Critical Error: Centrifugation step bypassed!", "error");
-                        setProtocolAdherenceCompromised(true);
-                      }
-                      if (currentStep.requiresVolume && !hasDispensedThisStep) {
-                        addLog("Error: No reagent added.", "error");
-                        setMissedReagents(missedReagents + 1);
-                        setProtocolAdherenceCompromised(true);
-                      }
-                      if (currentStep.requiresMixing) {
-                        let mixedThisStep = false;
-                        if (currentStep.title === "Proteinase K Digestion") mixedThisStep = step2Mixed;
-                        if (currentStep.title === "Lysis Phase") mixedThisStep = step3Mixed;
-
-                        if (!mixedThisStep) {
-                          addLog("Critical Error: Mixing step bypassed! The sample must be mixed after adding reagent.", "error");
-                          setProtocolAdherenceCompromised(true);
-                        }
-                      }
-                      if (currentStep.targetVolume && Math.abs(volumeAddedThisStep - currentStep.targetVolume) > (currentStep.targetVolume < 10 ? 2 : 100)) {
-                        addLog(`Volume Error: Target is ${currentStep.targetVolume}µL but ${volumeAddedThisStep}µL was used. Significant deviation affects protocol.`, "error");
-                        setProtocolAdherenceCompromised(true);
-                      }
-
-                      if (protocolIndex === protocolSteps.length - 1) {
-                        setCanNanodropNow(true);
-                        setStatus("verification");
-                      } else {
-                        setBufferVolume(bufferVolume + volumeAddedThisStep);
-                        setVolumeAddedThisStep(0);
-                        setProtocolIndex(protocolIndex + 1);
-                        setHasDispensedThisStep(false);
-                        setHasSpunThisStep(false);
-                        setNeedsMixing(false);
-                        setIsMixing(false);
-                      }
-                    }} className="w-full bg-amber-600 hover:bg-amber-500 text-white py-4 px-6 rounded-xl font-black uppercase tracking-wider transition-all cursor-pointer border-0">
-                      Continue to Next Step
-                    </button>
-                  )}
                 </div>
               </div>
+
+              {/* Pipette System and Continue Button - Full Width */}
+              {currentStep.requiresVolume && (
+                <div className="bg-slate-800 border border-slate-700 p-4 rounded-2xl space-y-4">
+                  <h3 className="text-sm font-bold text-white uppercase flex items-center gap-2"><Pipette size={16} /> Pipette System</h3>
+                  <RealisticPipette
+                    requiredVolume={currentStep.targetVolume || 500}
+                    onVolumeSet={(volume, pipetteSize) => {
+                      if (!hasDispensedThisStep) {
+                        setPipetteVolume(volume);
+                        setActiveTool('pipette');
+                        setPipetteLiquidColor(getLiquidColor(currentStep.reagentRequired));
+
+                        if (currentStep.targetVolume && Math.abs(volume - currentStep.targetVolume) > 50) {
+                          trackMistake('wrong_volume', {
+                            expected: currentStep.targetVolume,
+                            actual: volume,
+                            deviation: Math.abs(volume - currentStep.targetVolume)
+                          });
+                        }
+
+                        if (currentStep.targetVolume) {
+                          const optimalPipette = currentStep.targetVolume <= 10 ? '2.5µL' :
+                                                 currentStep.targetVolume <= 100 ? '20µL' : '1000µL';
+                          if (pipetteSize !== optimalPipette) {
+                            trackMistake('wrong_pipette', {
+                              expected: optimalPipette,
+                              actual: pipetteSize,
+                              volume: volume
+                            });
+                          }
+                        }
+
+                        addLog(`Pipette set to ${volume}µL. Click reagent container to aspirate.`, "info");
+                      }
+                    }}
+                    onDispense={() => {
+                      if (currentStep.isElution) {
+                        setElutionVolume(pipetteVolume);
+                      }
+                      setVolumeAddedThisStep(pipetteVolume);
+                      setStepVolumes(prev => {
+                        const title = currentStep?.title;
+                        if (title === "Proteinase K Digestion") return { ...prev, protK: pipetteVolume };
+                        if (title === "Lysis Phase") return { ...prev, lysis: pipetteVolume };
+                        if (title === "Binding/Column Load") return { ...prev, binding: pipetteVolume };
+                        if (title === "Wash Stage") return { ...prev, wash: pipetteVolume };
+                        if (title === "Elution") return { ...prev, elution: pipetteVolume };
+                        return prev;
+                      });
+                      addLog(`Dispensed ${pipetteVolume}µL`, "success");
+                      setPipetteVolume(null);
+                      setActiveTool(null);
+                      setPipetteHasLiquid(false);
+                      if (currentStep.isElution) {
+                        addLog("Elution buffer added. Wait 1 minute for DNA to elute from the membrane.", "info");
+                        setTimeout(() => {
+                          setHasDispensedThisStep(true);
+                          addLog("Elution wait complete. Proceed to centrifugation.", "success");
+                        }, 1000);
+                      } else if (currentStep.requiresMixing) {
+                        setNeedsMixing(true);
+                        addLog("Click mix icon in sample tube to mix solution.", "info");
+                      } else {
+                        setHasDispensedThisStep(true);
+                        addLog("Reagent added. Ready for next step.", "success");
+                      }
+                    }}
+                    disabled={hasDispensedThisStep}
+                    hasLiquid={pipetteHasLiquid}
+                    liquidColor={pipetteLiquidColor}
+                  />
+                </div>
+              )}
+
+              {/* Continue Button - Full Width */}
+              {((currentStep.requiresVolume && hasDispensedThisStep) || (currentStep.options)) && (currentStep.requiresSpin || currentStep.requiresIncubation ? hasSpunThisStep : true) && (currentStep.requiresMixing ? (currentStep.title === "Proteinase K Digestion" ? step2Mixed : currentStep.title === "Lysis Phase" ? step3Mixed : true) : true) && (
+                <button onClick={() => {
+                  if (currentStep.requiresSpin && !hasSpunThisStep) {
+                    setMissedSpins(missedSpins + 1);
+                    addLog("Critical Error: Centrifugation step bypassed!", "error");
+                    setProtocolAdherenceCompromised(true);
+                  }
+                  if (currentStep.requiresVolume && !hasDispensedThisStep) {
+                    addLog("Error: No reagent added.", "error");
+                    setMissedReagents(missedReagents + 1);
+                    setProtocolAdherenceCompromised(true);
+                  }
+                  if (currentStep.requiresMixing) {
+                    let mixedThisStep = false;
+                    if (currentStep.title === "Proteinase K Digestion") mixedThisStep = step2Mixed;
+                    if (currentStep.title === "Lysis Phase") mixedThisStep = step3Mixed;
+
+                    if (!mixedThisStep) {
+                      addLog("Critical Error: Mixing step bypassed! The sample must be mixed after adding reagent.", "error");
+                      setProtocolAdherenceCompromised(true);
+                    }
+                  }
+                  if (currentStep.targetVolume && Math.abs(volumeAddedThisStep - currentStep.targetVolume) > (currentStep.targetVolume < 10 ? 2 : 100)) {
+                    addLog(`Volume Error: Target is ${currentStep.targetVolume}µL but ${volumeAddedThisStep}µL was used. Significant deviation affects protocol.`, "error");
+                    setProtocolAdherenceCompromised(true);
+                  }
+
+                  if (protocolIndex === protocolSteps.length - 1) {
+                    setCanNanodropNow(true);
+                    setStatus("verification");
+                  } else {
+                    setBufferVolume(bufferVolume + volumeAddedThisStep);
+                    setVolumeAddedThisStep(0);
+                    setProtocolIndex(protocolIndex + 1);
+                    setHasDispensedThisStep(false);
+                    setHasSpunThisStep(false);
+                    setNeedsMixing(false);
+                    setIsMixing(false);
+                  }
+                }} className="w-full bg-amber-600 hover:bg-amber-500 text-white py-4 px-6 rounded-xl font-black uppercase tracking-wider transition-all cursor-pointer border-0">
+                  Continue to Next Step
+                </button>
+              )}
 
               <div className="bg-slate-800 border border-slate-700 p-4 rounded-2xl max-h-40 overflow-y-auto">
                 <h3 className="text-xs font-bold text-white uppercase mb-3 flex items-center gap-2"><Terminal size={14} /> Lab Log {difficultyMode === "challenge" && <span className="text-amber-400 text-[9px] font-normal">(Challenge Mode)</span>}</h3>

@@ -111,12 +111,12 @@ export function RealisticPipette({ requiredVolume, onVolumeSet, onDispense, disa
               onClick={() => handlePipetteSelect(size)}
             >
               <div
-                className={`relative transition-all ${
+                className={`relative transition-all p-3 rounded-xl ${
                   isSelected
-                    ? 'scale-110 drop-shadow-2xl'
+                    ? 'scale-110 drop-shadow-2xl ring-4 ring-indigo-500 ring-offset-4 ring-offset-slate-900 bg-indigo-900/20'
                     : shouldHighlight
                     ? 'ring-2 ring-emerald-400 ring-offset-4 ring-offset-slate-900 rounded-lg'
-                    : 'opacity-60 hover:opacity-100'
+                    : 'opacity-40 hover:opacity-80 hover:scale-105'
                 }`}
               >
                 <PipetteSVG
@@ -171,17 +171,17 @@ export function RealisticPipette({ requiredVolume, onVolumeSet, onDispense, disa
               <button
                 onClick={handleDispense}
                 disabled={disabled}
-                className="px-8 py-3 bg-orange-600 hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold rounded-lg transition-all border-0 cursor-pointer"
+                className="px-8 py-3 bg-orange-600 hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold rounded-lg transition-all border-0 cursor-pointer animate-pulse"
               >
                 Press Plunger to Dispense
               </button>
-              <p className="text-xs text-slate-400 mt-2">Click the pipette tip above tube to aspirate liquid</p>
+              <p className="text-xs text-slate-400 mt-2">Click orange plunger to dispense into sample tube</p>
             </div>
           )}
 
           {!hasLiquid && !validationError && (
-            <p className="text-xs text-center text-amber-400">
-              Click pipette tip on source container to aspirate {formatVolume(volume, selectedPipette)}µL
+            <p className="text-xs text-center text-emerald-400 font-bold animate-pulse">
+              Click a reagent bottle above to aspirate {formatVolume(volume, selectedPipette)}µL
             </p>
           )}
         </div>
