@@ -281,19 +281,19 @@ const SpinColumnVisual = ({ volume, hasDNA }) => {
         <rect x="20" y="40" width="70" height="120" rx="3" fill="#1e293b" stroke="#475569" strokeWidth="2"/>
         <ellipse cx="55" cy="40" rx="35" ry="8" fill="#0f172a" stroke="#475569" strokeWidth="2"/>
 
-        {/* Spin Column (inner, smaller, slightly longer) */}
-        <rect x="35" y="25" width="40" height="110" rx="2" fill="#334155" stroke="#64748b" strokeWidth="1.5"/>
-        <ellipse cx="55" cy="25" rx="20" ry="5" fill="#1e293b" stroke="#64748b" strokeWidth="1.5"/>
+        {/* Spin Column (inner, smaller, positioned higher with clear air gap) */}
+        <rect x="35" y="10" width="40" height="105" rx="2" fill="#334155" stroke="#64748b" strokeWidth="1.5"/>
+        <ellipse cx="55" cy="10" rx="20" ry="5" fill="#1e293b" stroke="#64748b" strokeWidth="1.5"/>
 
-        {/* Silica Membrane (inside column) */}
-        <rect x="37" y="65" width="36" height="8" fill="#e2e8f0" opacity="0.7"/>
-        <line x1="37" y1="69" x2="73" y2="69" stroke="#94a3b8" strokeWidth="0.5" strokeDasharray="2 1"/>
+        {/* Silica Membrane (inside column, positioned higher) */}
+        <rect x="37" y="50" width="36" height="8" fill="#e2e8f0" opacity="0.7"/>
+        <line x1="37" y1="54" x2="73" y2="54" stroke="#94a3b8" strokeWidth="0.5" strokeDasharray="2 1"/>
 
         {/* DNA bound to membrane indicator */}
         {hasDNA && (
           <g>
-            <rect x="40" y="66" width="30" height="5" fill="#10b981" opacity="0.5" className="animate-pulse"/>
-            <text x="55" y="71" textAnchor="middle" fontSize="6" fill="#10b981" fontWeight="bold">DNA</text>
+            <rect x="40" y="51" width="30" height="5" fill="#10b981" opacity="0.5" className="animate-pulse"/>
+            <text x="55" y="56" textAnchor="middle" fontSize="6" fill="#10b981" fontWeight="bold">DNA</text>
           </g>
         )}
 
@@ -302,8 +302,16 @@ const SpinColumnVisual = ({ volume, hasDNA }) => {
           <rect x="22" y={`${155 - fillPercent}`} width="66" height={fillPercent} fill="#38bdf8" opacity="0.3"/>
         )}
 
-        {/* Column tip (showing it extends into collection tube) */}
-        <line x1="55" y1="133" x2="55" y2="138" stroke="#64748b" strokeWidth="2"/>
+        {/* Column tip (showing it extends into collection tube with clear air gap) */}
+        <line x1="55" y1="115" x2="55" y2="120" stroke="#64748b" strokeWidth="2"/>
+
+        {/* Air gap indicator - subtle dashed line */}
+        {volume === 0 && (
+          <g>
+            <line x1="25" y1="120" x2="85" y2="120" stroke="#64748b" strokeWidth="0.5" strokeDasharray="2 2" opacity="0.3"/>
+            <text x="55" y="138" textAnchor="middle" fontSize="7" fill="#64748b" opacity="0.5">AIR GAP</text>
+          </g>
+        )}
       </svg>
       <p className="text-[9px] text-slate-500 font-bold uppercase mt-1">Spin Column</p>
     </div>
