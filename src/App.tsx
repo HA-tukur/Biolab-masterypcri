@@ -3073,20 +3073,9 @@ export default function App() {
                             setPipetteLiquidColor(color);
                             setCurrentReagentId(reagentId);
 
-                            const currentReagent = getCurrentReagent();
-                            if (currentStep.multipleReagents && currentReagent && reagentId !== currentReagent.id) {
-                              trackMistake('wrong_reagent', {
-                                expected: currentReagent.id,
-                                actual: reagentId,
-                                volume: pipetteVolume
-                              });
-                              if (difficultyMode !== "challenge") {
-                                addLog(`⚠️ Wrong reagent! Expected ${currentReagent.name}, got ${reagentId}`, "error");
-                              }
-                            }
-
+                            const reagentName = currentStep.reagents?.find(r => r.id === reagentId)?.name || reagentId;
                             if (difficultyMode !== "challenge") {
-                              addLog(`Aspirated ${pipetteVolume}µL from ${reagentId}. Press plunger to dispense.`, "success");
+                              addLog(`Aspirated ${pipetteVolume}µL of ${reagentName}. Press plunger to dispense.`, "success");
                             }
                           }
                         }}
@@ -3189,32 +3178,6 @@ export default function App() {
                             setPipetteVolume(volume);
                             setActiveTool('pipette');
 
-                            const currentReagent = getCurrentReagent();
-                            const targetVol = currentReagent?.targetVolume || getTargetVolume();
-                            const tolerance = currentReagent?.tolerance || 50;
-
-                            if (Math.abs(volume - targetVol) > tolerance) {
-                              trackMistake('wrong_volume', {
-                                expected: targetVol,
-                                actual: volume,
-                                deviation: Math.abs(volume - targetVol),
-                                reagent: currentReagent?.name || 'unknown'
-                              });
-                              if (difficultyMode !== "challenge") {
-                                addLog(`⚠️ Volume differs from target by ${Math.abs(volume - targetVol).toFixed(1)}µL. Target: ${targetVol}µL`, "error");
-                              }
-                            }
-
-                            const optimalPipette = targetVol <= 10 ? '2.5µL' :
-                                                   targetVol <= 100 ? '20µL' : '1000µL';
-                            if (pipetteSize !== optimalPipette) {
-                              trackMistake('wrong_pipette', {
-                                expected: optimalPipette,
-                                actual: pipetteSize,
-                                volume: volume
-                              });
-                            }
-
                             if (difficultyMode !== "challenge") {
                               const remaining = getRemainingReagentsText();
                               addLog(`Pipette set to ${volume}µL. ${remaining || 'Click reagent container to aspirate.'}`, "info");
@@ -3245,7 +3208,33 @@ export default function App() {
                             });
                           }
 
-                          if (difficultyMode !== "challenge") {
+                          const actualReagent = currentStep.reagents?.find(r => r.id === reagentId);
+                          if (actualReagent && pipetteVolume) {
+                            const targetVol = actualReagent.targetVolume;
+                            const tolerance = actualReagent.tolerance || 50;
+                            const minAcceptable = targetVol - tolerance;
+                            const maxAcceptable = targetVol + tolerance;
+
+                            if (pipetteVolume === targetVol) {
+                              if (difficultyMode !== "challenge") {
+                                addLog(`✓ Perfect volume: ${pipetteVolume}µL of ${actualReagent.name}`, "success");
+                              }
+                            } else if (pipetteVolume >= minAcceptable && pipetteVolume <= maxAcceptable) {
+                              if (difficultyMode !== "challenge") {
+                                addLog(`✓ Acceptable: ${pipetteVolume}µL of ${actualReagent.name} (target ${targetVol}µL)`, "success");
+                              }
+                            } else {
+                              trackMistake('wrong_volume', {
+                                expected: targetVol,
+                                actual: pipetteVolume,
+                                deviation: Math.abs(pipetteVolume - targetVol),
+                                reagent: actualReagent.name
+                              });
+                              if (difficultyMode !== "challenge") {
+                                addLog(`⚠️ Volume outside range: ${pipetteVolume}µL. Use ${minAcceptable}-${maxAcceptable}µL for ${actualReagent.name}`, "error");
+                              }
+                            }
+                          } else if (difficultyMode !== "challenge") {
                             const reagentName = currentStep.reagents?.find(r => r.id === reagentId)?.name || 'reagent';
                             addLog(`Dispensed ${pipetteVolume}µL of ${reagentName}`, "success");
                           }
