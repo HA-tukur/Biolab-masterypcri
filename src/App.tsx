@@ -1526,8 +1526,21 @@ export default function App() {
   };
 
   const getTargetVolume = () => {
+    // If user has selected a specific reagent, use that reagent's target
+    if (currentReagentId && currentStep?.reagents) {
+      const selectedReagent = currentStep.reagents.find(r => r.id === currentReagentId);
+      if (selectedReagent) {
+        console.log('[getTargetVolume] Using currentReagentId:', currentReagentId, 'target:', selectedReagent.targetVolume);
+        return selectedReagent.targetVolume;
+      }
+    }
+
+    // Otherwise, use the next reagent to be added
     const reagent = getCurrentReagent();
-    if (reagent) return reagent.targetVolume;
+    if (reagent) {
+      console.log('[getTargetVolume] Using getCurrentReagent:', reagent.id, 'target:', reagent.targetVolume);
+      return reagent.targetVolume;
+    }
     if (currentStep?.targetVolume) return currentStep.targetVolume;
     return 500;
   };
@@ -1959,8 +1972,13 @@ export default function App() {
       if (tempOK) {
         addLog("Proteinase K successfully digested proteins at correct temperature.", "success");
         if (currentStep?.title === "Lysis & Protein Digestion") {
+          console.log('[STEP 1] Incubation complete: true');
           setProtKIncubationOK(true);
-          setStep1SubActions(prev => ({ ...prev, incubated: true }));
+          setStep1SubActions(prev => {
+            const updated = { ...prev, incubated: true };
+            console.log('[STEP 1] Updated step1SubActions:', updated);
+            return updated;
+          });
         }
       } else {
         addLog("Proteinase K activity failed due to incorrect temperature. Protocol compromised.", "error");
@@ -2913,6 +2931,11 @@ export default function App() {
                         // Has subtasks - check if all complete
                         canContinue = subProgress.completed === subProgress.total;
                         remainingTasks = subProgress.total - subProgress.completed;
+                        console.log(`[CONTINUE BUTTON] Step "${currentStep?.title}" - Progress: ${subProgress.completed}/${subProgress.total}, Can Continue: ${canContinue}`);
+                        if (currentStep?.title === "Lysis & Protein Digestion") {
+                          console.log('[CONTINUE BUTTON] Step 1 complete status:', canContinue ? 'true' : 'false');
+                          console.log('[CONTINUE BUTTON] Subtasks:', subProgress.actions);
+                        }
                       } else {
                         // No subtasks - use existing logic
                         const cond1 = (currentStep.requiresVolume && hasDispensedThisStep) || (currentStep.options);
@@ -3007,6 +3030,8 @@ export default function App() {
                                   setProtocolAdherenceCompromised(true);
                                 }
                               }
+
+                              console.log('[NAVIGATE] Moving to Step', protocolIndex + 2);
 
                               // Check if this is the last step
                               if (protocolIndex === protocolSteps.length - 1) {
@@ -3182,7 +3207,12 @@ export default function App() {
                                     setNeedsMixing(false);
 
                                     if (currentStep.title === "Lysis & Protein Digestion") {
-                                      setStep1SubActions(prev => ({ ...prev, mixed: true }));
+                                      console.log('[STEP 1] Mixing complete: true');
+                                      setStep1SubActions(prev => {
+                                        const updated = { ...prev, mixed: true };
+                                        console.log('[STEP 1] Updated step1SubActions:', updated);
+                                        return updated;
+                                      });
                                       setStep2Mixed(true);
                                       if (difficultyMode !== "challenge") {
                                         addLog("✓ Mixed. Proceed to incubate at 56°C.", "success");
@@ -3421,18 +3451,18 @@ export default function App() {
 
                           if (currentStep.title === "Lysis & Protein Digestion") {
                             if (reagentId === "lysis") {
-                              console.log('Setting lysisBufferAdded to TRUE');
+                              console.log('[STEP 1] Buffer ATL added: true');
                               setStep1SubActions(prev => {
                                 const updated = { ...prev, lysisBufferAdded: true };
-                                console.log('Updated step1SubActions:', updated);
+                                console.log('[STEP 1] Updated step1SubActions:', updated);
                                 return updated;
                               });
                               showToastNotification(`✓ Added ${pipetteVolume}µL ${reagentName} to sample`);
                             } else if (reagentId === "proteinase_k") {
-                              console.log('Setting proteinaseKAdded to TRUE');
+                              console.log('[STEP 1] Proteinase K added: true');
                               setStep1SubActions(prev => {
                                 const updated = { ...prev, proteinaseKAdded: true };
-                                console.log('Updated step1SubActions:', updated);
+                                console.log('[STEP 1] Updated step1SubActions:', updated);
                                 return updated;
                               });
                               showToastNotification(`✓ Added ${pipetteVolume}µL ${reagentName} to sample`);
