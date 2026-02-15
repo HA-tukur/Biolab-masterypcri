@@ -2674,8 +2674,10 @@ export default function App() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div className="lg:col-span-1 space-y-4">
+              {/* 3 Column Layout: Sample | Reagents | Pipettes */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {/* Column 1: Sample Tube (30%) */}
+                <div className="md:col-span-1">
                   <div className="bg-slate-800 border border-slate-700 p-4 rounded-2xl relative">
                     <LabBenchVisual inventory={inventory} />
                     <h3 className="text-sm font-bold text-white uppercase mb-3 flex items-center gap-2"><FlaskConical size={16} /> {showGrindingSetup ? "Manual Grinding" : (currentStep.title === "Binding/Column Load" || currentStep.title === "Wash Stage") ? "Filter Column" : "Sample Tube"}</h3>
@@ -2746,117 +2748,11 @@ export default function App() {
                         <p className="text-sm font-bold">{bufferVolume + volumeAddedThisStep} µl</p>
                       )}
                     </div>
-
-                    {/* Integrated Equipment Icons */}
-                    <div className="mt-4 pt-4 border-t border-slate-700">
-                      <p className="text-[10px] text-slate-500 uppercase font-bold text-center mb-2">Equipment</p>
-                      <div className="flex justify-center gap-2 flex-wrap">
-                        {currentStep?.requiresSpin && !currentStep?.requiresIncubation && has("centrifuge") && (
-                          <button
-                            onClick={() => {
-                              if (hasDispensedThisStep && !tubeInCentrifuge && !hasSpunThisStep) {
-                                handleLoadTube();
-                              } else if (tubeInCentrifuge && !isSpinning) {
-                                handleSpin();
-                              }
-                            }}
-                            disabled={(!hasDispensedThisStep || hasSpunThisStep || isSpinning)}
-                            className={`p-2.5 rounded-lg transition-all border-2 ${
-                              (!hasDispensedThisStep || hasSpunThisStep || isSpinning)
-                                ? 'bg-slate-700/50 border-slate-600 opacity-50 cursor-not-allowed'
-                                : tubeInCentrifuge
-                                ? 'bg-emerald-600 border-emerald-400 hover:bg-emerald-500 animate-pulse'
-                                : 'bg-indigo-600 border-indigo-400 hover:bg-indigo-500'
-                            }`}
-                            title={isSpinning ? "Spinning..." : tubeInCentrifuge ? "Start Spin" : "Load Tube"}
-                          >
-                            <svg width="20" height="20" viewBox="0 0 100 100" className="text-white">
-                              <circle cx="50" cy="50" r="35" fill="none" stroke="currentColor" strokeWidth="4" className={isSpinning ? "animate-spin" : ""}/>
-                              <circle cx="50" cy="50" r="15" fill="currentColor" opacity="0.5"/>
-                              <circle cx="50" cy="25" r="6" fill="currentColor"/>
-                            </svg>
-                          </button>
-                        )}
-
-                        {currentStep?.requiresIncubation && (
-                          <div className="flex gap-2 items-center">
-                            <button
-                              onClick={() => {
-                                if (hasDispensedThisStep && !tubeInCentrifuge && !hasSpunThisStep) {
-                                  handleLoadTubeThermocycler();
-                                } else if (tubeInCentrifuge && !isIncubating) {
-                                  handleStartIncubation();
-                                }
-                              }}
-                              disabled={(!hasDispensedThisStep || hasSpunThisStep || isIncubating)}
-                              className={`p-2.5 rounded-lg transition-all border-2 ${
-                                (!hasDispensedThisStep || hasSpunThisStep || isIncubating)
-                                  ? 'bg-slate-700/50 border-slate-600 opacity-50 cursor-not-allowed'
-                                  : tubeInCentrifuge
-                                  ? 'bg-emerald-600 border-emerald-400 hover:bg-emerald-500 animate-pulse'
-                                  : 'bg-amber-600 border-amber-400 hover:bg-amber-500'
-                              }`}
-                              title={isIncubating ? "Incubating..." : tubeInCentrifuge ? "Start Incubation" : "Load Tube"}
-                            >
-                              <Thermometer size={20} className="text-white" />
-                            </button>
-                            {tubeInCentrifuge && !isIncubating && (
-                              <div className="flex gap-1">
-                                <button onClick={() => handleTempChange(-5)} className="px-2 py-1 bg-slate-700 hover:bg-slate-600 text-white rounded text-xs font-bold">-</button>
-                                <span className="px-2 py-1 bg-slate-900 text-white rounded text-xs font-mono">{incubationTemp}°C</span>
-                                <button onClick={() => handleTempChange(5)} className="px-2 py-1 bg-slate-700 hover:bg-slate-600 text-white rounded text-xs font-bold">+</button>
-                              </div>
-                            )}
-                          </div>
-                        )}
-
-                        {needsMixing && !hasDispensedThisStep && (
-                          <button
-                            onClick={() => {
-                              setIsMixing(true);
-                              addLog("Mixing solution...", "info");
-                              if (currentStep.title === "Proteinase K Digestion") setStep2Mixed(true);
-                              if (currentStep.title === "Lysis Phase") setStep3Mixed(true);
-                              setTimeout(() => {
-                                setIsMixing(false);
-                                setNeedsMixing(false);
-                                setHasDispensedThisStep(true);
-                                addLog("Mixing complete.", "success");
-                              }, 1000);
-                            }}
-                            className="p-2.5 rounded-lg bg-emerald-600 border-2 border-emerald-400 hover:bg-emerald-500 animate-pulse transition-all"
-                            title="Mix Solution"
-                          >
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" className={`text-white ${isMixing ? 'animate-spin' : ''}`}>
-                              <circle cx="12" cy="12" r="3" fill="currentColor"/>
-                              <path d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48l2.83-2.83" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-                            </svg>
-                          </button>
-                        )}
-
-                        {has("ice_bucket") && (
-                          <button
-                            className="p-2.5 rounded-lg bg-cyan-600/30 border-2 border-cyan-400/50 cursor-default"
-                            title="Sample on Ice"
-                          >
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" className="text-cyan-300">
-                              <path d="M12 2v20M2 12h20M6 6l12 12M6 18L18 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-                            </svg>
-                          </button>
-                        )}
-                      </div>
-                      {(currentStep?.requiresSpin || currentStep?.requiresIncubation || needsMixing) && (
-                        <p className="text-[9px] text-center text-slate-400 mt-2">
-                          {isSpinning ? "Spinning..." : isIncubating ? "Incubating..." : isMixing ? "Mixing..." : tubeInCentrifuge ? "Ready - Click to start" : needsMixing ? "Click to mix" : "Load tube to start"}
-                        </p>
-                      )}
-                    </div>
                   </div>
-
-                  <BenchInventoryVisuals inventory={inventory} status={status} />
                 </div>
 
-                <div className="lg:col-span-2 space-y-4">
+                {/* Column 2: Reagents (35%) */}
+                <div className="md:col-span-1 space-y-4">
                   {currentStep.requiresVolume && (
                     <div className="bg-slate-800 border border-slate-700 p-4 rounded-2xl">
                       <h3 className="text-sm font-bold text-white uppercase mb-3 flex items-center gap-2">
@@ -2960,13 +2856,13 @@ export default function App() {
                     </div>
                   )}
                 </div>
-              </div>
 
-              {/* Pipette System and Continue Button - Full Width */}
-              {currentStep.requiresVolume && (
-                <div className="bg-slate-800 border border-slate-700 p-4 rounded-2xl space-y-4">
-                  <h3 className="text-sm font-bold text-white uppercase flex items-center gap-2"><Pipette size={16} /> Pipette System</h3>
-                  <RealisticPipette
+                {/* Column 3: Pipettes (35%) */}
+                <div className="md:col-span-1">
+                  {currentStep.requiresVolume && (
+                    <div className="bg-slate-800 border border-slate-700 p-4 rounded-2xl space-y-4">
+                      <h3 className="text-sm font-bold text-white uppercase flex items-center gap-2"><Pipette size={16} /> Pipettes</h3>
+                      <RealisticPipette
                     requiredVolume={currentStep.targetVolume || 500}
                     onVolumeSet={(volume, pipetteSize) => {
                       if (!hasDispensedThisStep) {
@@ -2997,42 +2893,218 @@ export default function App() {
                         addLog(`Pipette set to ${volume}µL. Click reagent container to aspirate.`, "info");
                       }
                     }}
-                    onDispense={() => {
-                      if (currentStep.isElution) {
-                        setElutionVolume(pipetteVolume);
-                      }
-                      setVolumeAddedThisStep(pipetteVolume);
-                      setStepVolumes(prev => {
-                        const title = currentStep?.title;
-                        if (title === "Proteinase K Digestion") return { ...prev, protK: pipetteVolume };
-                        if (title === "Lysis Phase") return { ...prev, lysis: pipetteVolume };
-                        if (title === "Binding/Column Load") return { ...prev, binding: pipetteVolume };
-                        if (title === "Wash Stage") return { ...prev, wash: pipetteVolume };
-                        if (title === "Elution") return { ...prev, elution: pipetteVolume };
-                        return prev;
-                      });
-                      addLog(`Dispensed ${pipetteVolume}µL`, "success");
-                      setPipetteVolume(null);
-                      setActiveTool(null);
-                      setPipetteHasLiquid(false);
-                      if (currentStep.isElution) {
-                        addLog("Elution buffer added. Wait 1 minute for DNA to elute from the membrane.", "info");
-                        setTimeout(() => {
+                      onDispense={() => {
+                        if (currentStep.isElution) {
+                          setElutionVolume(pipetteVolume);
+                        }
+                        setVolumeAddedThisStep(pipetteVolume);
+                        setStepVolumes(prev => {
+                          const title = currentStep?.title;
+                          if (title === "Proteinase K Digestion") return { ...prev, protK: pipetteVolume };
+                          if (title === "Lysis Phase") return { ...prev, lysis: pipetteVolume };
+                          if (title === "Binding/Column Load") return { ...prev, binding: pipetteVolume };
+                          if (title === "Wash Stage") return { ...prev, wash: pipetteVolume };
+                          if (title === "Elution") return { ...prev, elution: pipetteVolume };
+                          return prev;
+                        });
+                        addLog(`Dispensed ${pipetteVolume}µL`, "success");
+                        setPipetteVolume(null);
+                        setActiveTool(null);
+                        setPipetteHasLiquid(false);
+                        if (currentStep.isElution) {
+                          addLog("Elution buffer added. Wait 1 minute for DNA to elute from the membrane.", "info");
+                          setTimeout(() => {
+                            setHasDispensedThisStep(true);
+                            addLog("Elution wait complete. Proceed to centrifugation.", "success");
+                          }, 1000);
+                        } else if (currentStep.requiresMixing) {
+                          setNeedsMixing(true);
+                          addLog("Click mix icon in sample tube to mix solution.", "info");
+                        } else {
                           setHasDispensedThisStep(true);
-                          addLog("Elution wait complete. Proceed to centrifugation.", "success");
-                        }, 1000);
-                      } else if (currentStep.requiresMixing) {
-                        setNeedsMixing(true);
-                        addLog("Click mix icon in sample tube to mix solution.", "info");
-                      } else {
-                        setHasDispensedThisStep(true);
-                        addLog("Reagent added. Ready for next step.", "success");
-                      }
-                    }}
-                    disabled={hasDispensedThisStep}
-                    hasLiquid={pipetteHasLiquid}
-                    liquidColor={pipetteLiquidColor}
-                  />
+                          addLog("Reagent added. Ready for next step.", "success");
+                        }
+                      }}
+                      disabled={hasDispensedThisStep}
+                      hasLiquid={pipetteHasLiquid}
+                      liquidColor={pipetteLiquidColor}
+                    />
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Equipment Section - Full Width */}
+              {(currentStep?.requiresSpin || currentStep?.requiresIncubation || needsMixing) && (
+                <div className="bg-slate-800 border border-slate-700 p-4 rounded-2xl">
+                  <h3 className="text-sm font-bold text-white uppercase mb-4 flex items-center gap-2">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" className="text-emerald-400">
+                      <rect x="3" y="3" width="18" height="18" rx="2" stroke="currentColor" strokeWidth="2"/>
+                      <path d="M9 9h6M9 15h6" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                    </svg>
+                    Lab Equipment
+                  </h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    {currentStep?.requiresSpin && !currentStep?.requiresIncubation && has("centrifuge") && (
+                      <div className="bg-slate-900/50 border border-slate-600 rounded-xl p-4">
+                        <h4 className="text-xs font-bold text-white uppercase mb-3 text-center">Centrifuge</h4>
+                        <div className="flex flex-col items-center space-y-3">
+                          <div className="relative w-48 h-48 flex items-center justify-center">
+                            <svg width="180" height="180" viewBox="0 0 180 180" className={isSpinning ? "animate-spin" : ""}>
+                              <circle cx="90" cy="90" r="70" fill="#334155" stroke="#475569" strokeWidth="3"/>
+                              <circle cx="90" cy="90" r="50" fill="#1e293b" stroke="#64748b" strokeWidth="2"/>
+                              {tubeInCentrifuge && (
+                                <rect x="85" y="60" width="10" height="30" rx="2" fill="#94a3b8" opacity="0.8"/>
+                              )}
+                              <circle cx="90" cy="90" r="15" fill="#475569"/>
+                              <circle cx="90" cy="50" r="8" fill={tubeInCentrifuge ? "#22c55e" : "#64748b"}/>
+                            </svg>
+                          </div>
+                          <div className="flex flex-col gap-2 w-full">
+                            <button
+                              onClick={handleLoadTube}
+                              disabled={!hasDispensedThisStep || tubeInCentrifuge || hasSpunThisStep}
+                              className={`w-full py-2 px-4 rounded-lg text-xs font-bold uppercase transition-all border-0 cursor-pointer ${
+                                !hasDispensedThisStep || tubeInCentrifuge || hasSpunThisStep
+                                  ? 'bg-slate-700 text-slate-500 cursor-not-allowed'
+                                  : 'bg-indigo-600 hover:bg-indigo-500 text-white'
+                              }`}
+                            >
+                              Load Tube
+                            </button>
+                            <button
+                              onClick={handleSpin}
+                              disabled={!tubeInCentrifuge || isSpinning}
+                              className={`w-full py-2 px-4 rounded-lg text-xs font-bold uppercase transition-all border-0 cursor-pointer ${
+                                !tubeInCentrifuge || isSpinning
+                                  ? 'bg-slate-700 text-slate-500 cursor-not-allowed'
+                                  : 'bg-emerald-600 hover:bg-emerald-500 text-white animate-pulse'
+                              }`}
+                            >
+                              {isSpinning ? 'Spinning...' : 'Start Spin'}
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {currentStep?.requiresIncubation && (
+                      <div className="bg-slate-900/50 border border-slate-600 rounded-xl p-4">
+                        <h4 className="text-xs font-bold text-white uppercase mb-3 text-center">Thermocycler</h4>
+                        <div className="flex flex-col items-center space-y-3">
+                          <div className="relative w-48 h-48 flex items-center justify-center">
+                            <svg width="180" height="180" viewBox="0 0 180 180">
+                              <rect x="20" y="20" width="140" height="140" rx="8" fill="#334155" stroke="#475569" strokeWidth="3"/>
+                              <rect x="30" y="30" width="120" height="80" rx="4" fill="#1e293b" stroke="#64748b" strokeWidth="2"/>
+                              {tubeInCentrifuge && (
+                                <rect x="85" y="50" width="10" height="40" rx="2" fill="#94a3b8" opacity="0.8"/>
+                              )}
+                              {isIncubating && (
+                                <>
+                                  <circle cx="60" cy="70" r="3" fill="#ef4444" opacity="0.7" className="animate-ping"/>
+                                  <circle cx="120" cy="70" r="3" fill="#ef4444" opacity="0.7" className="animate-ping" style={{animationDelay: '0.3s'}}/>
+                                </>
+                              )}
+                              <rect x="40" y="120" width="100" height="30" rx="4" fill="#475569"/>
+                              <text x="90" y="140" textAnchor="middle" fontSize="16" fill="#22c55e" fontWeight="bold" fontFamily="monospace">
+                                {isIncubating ? `${incubationTemp}°C` : '--'}
+                              </text>
+                            </svg>
+                          </div>
+                          <div className="flex flex-col gap-2 w-full">
+                            <div className="flex gap-2 items-center justify-center mb-2">
+                              <button onClick={() => handleTempChange(-5)} disabled={tubeInCentrifuge && isIncubating} className="px-3 py-1 bg-slate-700 hover:bg-slate-600 disabled:opacity-50 text-white rounded text-xs font-bold border-0 cursor-pointer">-</button>
+                              <span className="px-4 py-1 bg-slate-900 text-white rounded text-sm font-mono min-w-[80px] text-center">{incubationTemp}°C</span>
+                              <button onClick={() => handleTempChange(5)} disabled={tubeInCentrifuge && isIncubating} className="px-3 py-1 bg-slate-700 hover:bg-slate-600 disabled:opacity-50 text-white rounded text-xs font-bold border-0 cursor-pointer">+</button>
+                            </div>
+                            <button
+                              onClick={handleLoadTubeThermocycler}
+                              disabled={!hasDispensedThisStep || tubeInCentrifuge || hasSpunThisStep}
+                              className={`w-full py-2 px-4 rounded-lg text-xs font-bold uppercase transition-all border-0 cursor-pointer ${
+                                !hasDispensedThisStep || tubeInCentrifuge || hasSpunThisStep
+                                  ? 'bg-slate-700 text-slate-500 cursor-not-allowed'
+                                  : 'bg-indigo-600 hover:bg-indigo-500 text-white'
+                              }`}
+                            >
+                              Load Tube
+                            </button>
+                            <button
+                              onClick={handleStartIncubation}
+                              disabled={!tubeInCentrifuge || isIncubating}
+                              className={`w-full py-2 px-4 rounded-lg text-xs font-bold uppercase transition-all border-0 cursor-pointer ${
+                                !tubeInCentrifuge || isIncubating
+                                  ? 'bg-slate-700 text-slate-500 cursor-not-allowed'
+                                  : 'bg-emerald-600 hover:bg-emerald-500 text-white animate-pulse'
+                              }`}
+                            >
+                              {isIncubating ? 'Incubating...' : 'Start Incubation'}
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {needsMixing && !hasDispensedThisStep && (
+                      <div className="bg-slate-900/50 border border-slate-600 rounded-xl p-4">
+                        <h4 className="text-xs font-bold text-white uppercase mb-3 text-center">Vortex Mixer</h4>
+                        <div className="flex flex-col items-center space-y-3">
+                          <div className="relative w-48 h-48 flex items-center justify-center">
+                            <svg width="180" height="180" viewBox="0 0 180 180">
+                              <ellipse cx="90" cy="150" rx="60" ry="15" fill="#334155" opacity="0.6"/>
+                              <rect x="50" y="80" width="80" height="70" rx="8" fill="#334155" stroke="#475569" strokeWidth="3"/>
+                              <circle cx="90" cy="100" r="25" fill="#1e293b" stroke="#64748b" strokeWidth="2" className={isMixing ? "animate-spin" : ""}/>
+                              {isMixing && (
+                                <>
+                                  <circle cx="70" cy="100" r="3" fill="#60a5fa" opacity="0.7" className="animate-ping"/>
+                                  <circle cx="110" cy="100" r="3" fill="#60a5fa" opacity="0.7" className="animate-ping" style={{animationDelay: '0.2s'}}/>
+                                </>
+                              )}
+                              <rect x="85" y="50" width="10" height="30" rx="2" fill="#94a3b8" opacity="0.8"/>
+                            </svg>
+                          </div>
+                          <button
+                            onClick={() => {
+                              setIsMixing(true);
+                              addLog("Mixing solution...", "info");
+                              if (currentStep.title === "Proteinase K Digestion") setStep2Mixed(true);
+                              if (currentStep.title === "Lysis Phase") setStep3Mixed(true);
+                              setTimeout(() => {
+                                setIsMixing(false);
+                                setNeedsMixing(false);
+                                setHasDispensedThisStep(true);
+                                addLog("Mixing complete.", "success");
+                              }, 1000);
+                            }}
+                            className="w-full py-2 px-4 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-bold uppercase transition-all border-0 cursor-pointer animate-pulse"
+                          >
+                            {isMixing ? 'Mixing...' : 'Start Vortex'}
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    {has("ice_bucket") && (
+                      <div className="bg-slate-900/50 border border-slate-600 rounded-xl p-4">
+                        <h4 className="text-xs font-bold text-white uppercase mb-3 text-center">Ice Bucket</h4>
+                        <div className="flex flex-col items-center space-y-3">
+                          <div className="relative w-48 h-48 flex items-center justify-center">
+                            <svg width="180" height="180" viewBox="0 0 180 180">
+                              <path d="M40 60 L40 140 Q40 155 55 160 L125 160 Q140 155 140 140 L140 60 Q140 50 130 50 L50 50 Q40 50 40 60 Z" fill="#334155" stroke="#475569" strokeWidth="3"/>
+                              <ellipse cx="90" cy="58" rx="40" ry="10" fill="#cbd5e1" opacity="0.3"/>
+                              <rect x="50" y="70" width="80" height="70" fill="#60a5fa" opacity="0.2"/>
+                              <path d="M70 90 L80 80 M80 90 L90 80 M90 90 L100 80 M100 90 L110 80" stroke="#60a5fa" strokeWidth="2" opacity="0.4"/>
+                              <path d="M65 110 L75 100 M75 110 L85 100 M85 110 L95 100 M95 110 L105 100 M105 110 L115 100" stroke="#60a5fa" strokeWidth="2" opacity="0.4"/>
+                              <text x="90" y="95" textAnchor="middle" fontSize="24" fill="#60a5fa" fontWeight="bold">❄</text>
+                            </svg>
+                          </div>
+                          <div className="text-center">
+                            <p className="text-xs text-cyan-400 font-bold">Sample on Ice</p>
+                            <p className="text-[10px] text-slate-500 mt-1">Keeping sample cold</p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
 
