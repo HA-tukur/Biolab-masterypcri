@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ChevronUp, ChevronDown, Play, Square, Loader, X } from 'lucide-react';
+import { ChevronUp, ChevronDown, Play, Square, Loader, X, CheckCircle2 } from 'lucide-react';
 
 interface LabEquipmentProps {
   inventory: string[];
@@ -12,17 +12,17 @@ export const LabEquipment: React.FC<LabEquipmentProps> = ({
   onEquipmentUse,
   disabled = false
 }) => {
-  const [centrifugeState, setCentrifugeState] = useState<'idle' | 'loaded' | 'spinning'>('idle');
+  const [centrifugeState, setCentrifugeState] = useState<'idle' | 'loaded' | 'spinning' | 'complete'>('idle');
   const [centrifugeSpeed, setCentrifugeSpeed] = useState(13000);
   const [centrifugeTime, setCentrifugeTime] = useState(2);
   const [isBalanced, setIsBalanced] = useState(false);
   const [showBalancingModal, setShowBalancingModal] = useState(false);
 
-  const [thermocyclerState, setThermocyclerState] = useState<'idle' | 'loaded' | 'heating'>('idle');
+  const [thermocyclerState, setThermocyclerState] = useState<'idle' | 'loaded' | 'heating' | 'complete'>('idle');
   const [thermocyclerTemp, setThermocyclerTemp] = useState(55);
   const [thermocyclerTime, setThermocyclerTime] = useState(60);
 
-  const [vortexState, setVortexState] = useState<'idle' | 'loaded' | 'mixing'>('idle');
+  const [vortexState, setVortexState] = useState<'idle' | 'loaded' | 'mixing' | 'complete'>('idle');
   const [vortexTime, setVortexTime] = useState(10);
 
   const [iceBucketState, setIceBucketState] = useState<'idle' | 'on_ice'>('idle');
@@ -31,6 +31,14 @@ export const LabEquipment: React.FC<LabEquipmentProps> = ({
   const hasThermocycler = inventory.includes('incubator');
   const hasVortex = inventory.includes('vortex');
   const hasIceBucket = inventory.includes('ice_bucket');
+
+  const getCentrifugeRotationSpeed = (rpm: number) => {
+    if (rpm < 5000) return 2.0;
+    if (rpm < 10000) return 0.8;
+    return 0.35;
+  };
+
+  const shouldBlur = centrifugeSpeed >= 10000;
 
   const handleCentrifugeAction = (action: string) => {
     if (action === 'load') {
@@ -45,9 +53,8 @@ export const LabEquipment: React.FC<LabEquipmentProps> = ({
       setCentrifugeState('spinning');
       onEquipmentUse('centrifuge', 'spin', { speed: centrifugeSpeed, time: centrifugeTime, balanced: true });
       setTimeout(() => {
-        setCentrifugeState('idle');
-        setIsBalanced(false);
-      }, 5500);
+        setCentrifugeState('complete');
+      }, 2500);
     } else if (action === 'remove') {
       setCentrifugeState('idle');
       setIsBalanced(false);
@@ -65,8 +72,8 @@ export const LabEquipment: React.FC<LabEquipmentProps> = ({
       setThermocyclerState('heating');
       onEquipmentUse('thermocycler', 'start', { temp: thermocyclerTemp, time: thermocyclerTime });
       setTimeout(() => {
-        setThermocyclerState('idle');
-      }, 9000);
+        setThermocyclerState('complete');
+      }, 3500);
     } else if (action === 'remove') {
       setThermocyclerState('idle');
       onEquipmentUse('thermocycler', 'remove');
@@ -81,8 +88,8 @@ export const LabEquipment: React.FC<LabEquipmentProps> = ({
       setVortexState('mixing');
       onEquipmentUse('vortex', 'start', { time: vortexTime });
       setTimeout(() => {
-        setVortexState('idle');
-      }, 3500);
+        setVortexState('complete');
+      }, 2000);
     } else if (action === 'remove') {
       setVortexState('idle');
       onEquipmentUse('vortex', 'remove');
@@ -99,12 +106,11 @@ export const LabEquipment: React.FC<LabEquipmentProps> = ({
     }
   };
 
-  const handleAddBalanceAndContinue = () => {
+  const handleAddBalanceAndContinue = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
     setIsBalanced(true);
     setShowBalancingModal(false);
-    setTimeout(() => {
-      handleCentrifugeAction('spin');
-    }, 100);
   };
 
   return (
@@ -133,7 +139,15 @@ export const LabEquipment: React.FC<LabEquipmentProps> = ({
             )}
 
             <div className="relative w-full h-48 flex items-center justify-center">
-              <svg width="160" height="160" viewBox="0 0 160 160" className={centrifugeState === 'spinning' ? "animate-spin" : ""}>
+              <svg
+                width="160"
+                height="160"
+                viewBox="0 0 160 160"
+                className={centrifugeState === 'spinning' ? (shouldBlur ? 'blur-[1px]' : '') : ''}
+                style={centrifugeState === 'spinning' ? {
+                  animation: `spin ${getCentrifugeRotationSpeed(centrifugeSpeed)}s linear infinite`
+                } : {}}
+              >
                 <circle cx="80" cy="80" r="60" fill="#334155" stroke="#475569" strokeWidth="3"/>
                 <circle cx="80" cy="80" r="45" fill="#1e293b" stroke="#64748b" strokeWidth="2"/>
 
@@ -243,6 +257,15 @@ export const LabEquipment: React.FC<LabEquipmentProps> = ({
                 >
                   <Loader size={14} className="animate-spin" />
                   Spinning...
+                </button>
+              )}
+              {centrifugeState === 'complete' && (
+                <button
+                  onClick={() => handleCentrifugeAction('remove')}
+                  className="w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold uppercase transition-all border-0 cursor-pointer flex items-center justify-center gap-2"
+                >
+                  <CheckCircle2 size={16} />
+                  Spin Complete ✓
                 </button>
               )}
             </div>
@@ -359,6 +382,15 @@ export const LabEquipment: React.FC<LabEquipmentProps> = ({
                   Heating...
                 </button>
               )}
+              {thermocyclerState === 'complete' && (
+                <button
+                  onClick={() => handleThermocyclerAction('remove')}
+                  className="w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold uppercase transition-all border-0 cursor-pointer flex items-center justify-center gap-2"
+                >
+                  <CheckCircle2 size={16} />
+                  Incubation Complete ✓
+                </button>
+              )}
             </div>
           </div>
         )}
@@ -444,6 +476,15 @@ export const LabEquipment: React.FC<LabEquipmentProps> = ({
                 >
                   <Loader size={14} className="animate-spin" />
                   Vortexing...
+                </button>
+              )}
+              {vortexState === 'complete' && (
+                <button
+                  onClick={() => handleVortexAction('remove')}
+                  className="w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold uppercase transition-all border-0 cursor-pointer flex items-center justify-center gap-2"
+                >
+                  <CheckCircle2 size={16} />
+                  Vortex Complete ✓
                 </button>
               )}
             </div>

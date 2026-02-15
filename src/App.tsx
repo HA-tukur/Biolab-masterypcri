@@ -1491,14 +1491,14 @@ export default function App() {
         setIsSpinning(false);
         setHasSpunThisStep(true);
         setPelletVisible(currentStep?.requiresSpin || false);
-      }, 2000);
+      }, 2500);
     } else if (action === 'start' && equipment === 'thermocycler') {
       setIsIncubating(true);
       setTubeInCentrifuge(false);
       setTimeout(() => {
         setIsIncubating(false);
         setHasSpunThisStep(true);
-      }, 3000);
+      }, 3500);
     }
   };
 
