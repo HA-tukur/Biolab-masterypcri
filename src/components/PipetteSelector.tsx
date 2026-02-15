@@ -11,9 +11,9 @@ interface PipetteSelectorProps {
 }
 
 const PIPETTES = [
-  { id: 'p2.5', name: '2.5µL', range: [0.5, 2.5], step: 0.1, color: 'bg-purple-600' },
-  { id: 'p20', name: '20µL', range: [2, 20], step: 1, color: 'bg-yellow-600' },
-  { id: 'p1000', name: '1000µL', range: [100, 1000], step: 10, color: 'bg-blue-600' }
+  { id: 'p2.5', name: '2.5µL', range: [0.5, 2.5], step: 0.5, color: 'bg-purple-600' },
+  { id: 'p20', name: '20µL', range: [2, 20], step: 5, color: 'bg-yellow-600' },
+  { id: 'p1000', name: '1000µL', range: [100, 1000], step: 100, color: 'bg-blue-600' }
 ];
 
 export const PipetteSelector: React.FC<PipetteSelectorProps> = ({

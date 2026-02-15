@@ -2713,7 +2713,6 @@ export default function App() {
                 {/* Column 1: Sample Tube (30%) */}
                 <div className="md:col-span-1">
                   <div className="bg-slate-800 border border-slate-700 p-4 rounded-2xl relative">
-                    <LabBenchVisual inventory={inventory} />
                     <h3 className="text-sm font-bold text-white uppercase mb-3 flex items-center gap-2"><FlaskConical size={16} /> {showGrindingSetup ? "Manual Grinding" : (currentStep.title === "Binding/Column Load" || currentStep.title === "Wash Stage") ? "Filter Column" : "Sample Tube"}</h3>
                     {showGrindingSetup ? (
                       <div className="flex justify-center items-center min-h-[300px]">

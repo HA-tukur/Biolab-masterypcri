@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ChevronUp, ChevronDown, Play, Square, Loader } from 'lucide-react';
+import { ChevronUp, ChevronDown, Play, Square, Loader, X } from 'lucide-react';
 
 interface LabEquipmentProps {
   inventory: string[];
@@ -15,6 +15,8 @@ export const LabEquipment: React.FC<LabEquipmentProps> = ({
   const [centrifugeState, setCentrifugeState] = useState<'idle' | 'loaded' | 'spinning'>('idle');
   const [centrifugeSpeed, setCentrifugeSpeed] = useState(13000);
   const [centrifugeTime, setCentrifugeTime] = useState(2);
+  const [isBalanced, setIsBalanced] = useState(false);
+  const [showBalancingModal, setShowBalancingModal] = useState(false);
 
   const [thermocyclerState, setThermocyclerState] = useState<'idle' | 'loaded' | 'heating'>('idle');
   const [thermocyclerTemp, setThermocyclerTemp] = useState(55);
@@ -33,16 +35,25 @@ export const LabEquipment: React.FC<LabEquipmentProps> = ({
   const handleCentrifugeAction = (action: string) => {
     if (action === 'load') {
       setCentrifugeState('loaded');
+      setIsBalanced(false);
       onEquipmentUse('centrifuge', 'load');
     } else if (action === 'spin') {
+      if (!isBalanced) {
+        setShowBalancingModal(true);
+        return;
+      }
       setCentrifugeState('spinning');
-      onEquipmentUse('centrifuge', 'spin', { speed: centrifugeSpeed, time: centrifugeTime });
+      onEquipmentUse('centrifuge', 'spin', { speed: centrifugeSpeed, time: centrifugeTime, balanced: true });
       setTimeout(() => {
         setCentrifugeState('idle');
+        setIsBalanced(false);
       }, centrifugeTime * 1000);
     } else if (action === 'remove') {
       setCentrifugeState('idle');
+      setIsBalanced(false);
       onEquipmentUse('centrifuge', 'remove');
+    } else if (action === 'balance') {
+      setIsBalanced(true);
     }
   };
 
@@ -88,6 +99,14 @@ export const LabEquipment: React.FC<LabEquipmentProps> = ({
     }
   };
 
+  const handleAddBalanceAndContinue = () => {
+    setIsBalanced(true);
+    setShowBalancingModal(false);
+    setTimeout(() => {
+      handleCentrifugeAction('spin');
+    }, 100);
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-3 mb-4">
@@ -98,21 +117,44 @@ export const LabEquipment: React.FC<LabEquipmentProps> = ({
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {hasCentrifuge && (
-          <div className="bg-slate-900/50 border border-slate-600 rounded-xl p-4 space-y-3">
+          <div className="bg-slate-900/50 border border-slate-600 rounded-xl p-4 space-y-3 relative">
             <h4 className="text-xs font-bold text-white uppercase text-center flex items-center justify-center gap-2">
               <div className="w-2 h-2 bg-blue-500 rounded-full"/>
               Centrifuge
             </h4>
 
+            {centrifugeState === 'loaded' && !isBalanced && (
+              <button
+                onClick={() => handleCentrifugeAction('balance')}
+                className="absolute top-4 right-4 px-2 py-1 bg-amber-600 hover:bg-amber-500 text-white rounded text-[10px] font-bold uppercase transition-all border-0 cursor-pointer animate-pulse"
+              >
+                ⚖️ Balance
+              </button>
+            )}
+
             <div className="relative w-full h-48 flex items-center justify-center">
               <svg width="160" height="160" viewBox="0 0 160 160" className={centrifugeState === 'spinning' ? "animate-spin" : ""}>
                 <circle cx="80" cy="80" r="60" fill="#334155" stroke="#475569" strokeWidth="3"/>
                 <circle cx="80" cy="80" r="45" fill="#1e293b" stroke="#64748b" strokeWidth="2"/>
+
+                {/* Sample tube (green) - top position */}
                 {centrifugeState !== 'idle' && (
-                  <rect x="75" y="50" width="10" height="30" rx="2" fill="#94a3b8" opacity="0.8"/>
+                  <rect x="75" y="50" width="10" height="30" rx="2" fill="#22c55e" opacity="0.9"/>
                 )}
+
+                {/* Balance tube (yellow/amber) - bottom position */}
+                {centrifugeState === 'loaded' && !isBalanced && (
+                  <rect x="75" y="100" width="10" height="30" rx="2" fill="none" stroke="#f59e0b" strokeWidth="2" strokeDasharray="2 2" opacity="0.7"/>
+                )}
+                {centrifugeState !== 'idle' && isBalanced && (
+                  <rect x="75" y="100" width="10" height="30" rx="2" fill="#f59e0b" opacity="0.8"/>
+                )}
+
                 <circle cx="80" cy="80" r="12" fill="#475569"/>
                 <circle cx="80" cy="50" r="6" fill={centrifugeState !== 'idle' ? "#22c55e" : "#64748b"}/>
+                {centrifugeState !== 'idle' && isBalanced && (
+                  <circle cx="80" cy="110" r="6" fill="#f59e0b"/>
+                )}
               </svg>
               {centrifugeState === 'spinning' && (
                 <div className="absolute inset-0 flex items-center justify-center">
@@ -177,10 +219,14 @@ export const LabEquipment: React.FC<LabEquipmentProps> = ({
                 <>
                   <button
                     onClick={() => handleCentrifugeAction('spin')}
-                    className="w-full py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-bold uppercase transition-all border-0 cursor-pointer animate-pulse flex items-center justify-center gap-2"
+                    className={`w-full py-2 rounded-lg text-xs font-bold uppercase transition-all border-0 cursor-pointer flex items-center justify-center gap-2 ${
+                      isBalanced
+                        ? 'bg-emerald-600 hover:bg-emerald-500 text-white animate-pulse'
+                        : 'bg-amber-600 hover:bg-amber-500 text-white'
+                    }`}
                   >
                     <Play size={14} />
-                    Start Spin
+                    {isBalanced ? 'Start Spin' : 'Start Spin (Add Balance First)'}
                   </button>
                   <button
                     onClick={() => handleCentrifugeAction('remove')}
@@ -456,6 +502,54 @@ export const LabEquipment: React.FC<LabEquipmentProps> = ({
         <div className="bg-slate-900/30 border border-slate-700 rounded-lg p-8 text-center">
           <p className="text-slate-500 text-sm">No equipment available</p>
           <p className="text-slate-600 text-xs mt-1">Equipment will appear here after procurement</p>
+        </div>
+      )}
+
+      {/* Balancing Modal */}
+      {showBalancingModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="bg-white rounded-lg shadow-2xl max-w-lg w-full p-6 relative">
+            <button
+              onClick={() => setShowBalancingModal(false)}
+              className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 transition-colors"
+            >
+              <X size={24} />
+            </button>
+
+            <div className="text-center mb-6">
+              <div className="text-5xl mb-4">⚖️</div>
+              <h2 className="text-2xl font-bold text-slate-900 mb-2">
+                Centrifuge Balancing Required
+              </h2>
+            </div>
+
+            <div className="space-y-4">
+              <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4">
+                <h3 className="text-lg font-semibold text-emerald-700 mb-2">
+                  Why Balance?
+                </h3>
+                <p className="text-sm text-slate-700 leading-relaxed">
+                  Centrifuges must be balanced. Placing tubes in opposite directions ensures balanced force for precise sample separation. Without this, vibrations create smeary, inconsistent pellets that are easily lost during processing.
+                </p>
+              </div>
+
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                <h3 className="text-lg font-semibold text-red-600 mb-2">
+                  Safety First
+                </h3>
+                <p className="text-sm text-slate-700 leading-relaxed">
+                  An unbalanced centrifuge can shake violently, damage the rotor, break tubes, or even cause the machine to fail. Always use a balance tube of equal mass opposite your sample.
+                </p>
+              </div>
+            </div>
+
+            <button
+              onClick={handleAddBalanceAndContinue}
+              className="w-full mt-6 px-8 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold text-base uppercase transition-all shadow-lg border-0 cursor-pointer"
+            >
+              Add Balance & Continue
+            </button>
+          </div>
         </div>
       )}
     </div>
