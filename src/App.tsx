@@ -1371,6 +1371,18 @@ export default function App() {
   });
   const [currentStepReagents, setCurrentStepReagents] = useState({});
   const [currentReagentId, setCurrentReagentId] = useState(null);
+  const [step1SubActions, setStep1SubActions] = useState({
+    lysisBufferAdded: false,
+    proteinaseKAdded: false,
+    mixed: false,
+    incubated: false
+  });
+  const [step3SubActions, setStep3SubActions] = useState({
+    bindingBufferAdded: false,
+    ethanolAdded: false,
+    mixed: false
+  });
+  const [showMixPrompt, setShowMixPrompt] = useState(false);
   const [protKIncubationOK, setProtKIncubationOK] = useState(false);
   const [yieldQuality, setYieldQuality] = useState(null);
   const [isGrinding, setIsGrinding] = useState(false);
@@ -1504,6 +1516,18 @@ export default function App() {
     const remaining = currentStep.reagents.filter(r => !currentStepReagents[r.id]);
     if (remaining.length === 0) return null;
     return `Still needed: ${remaining.map(r => `${r.name} (${r.targetVolume}µL)`).join(', ')}`;
+  };
+
+  const getSubActionProgress = () => {
+    if (currentStep?.title === "Lysis & Protein Digestion") {
+      const completed = Object.values(step1SubActions).filter(Boolean).length;
+      return { completed, total: 4, actions: step1SubActions };
+    }
+    if (currentStep?.title === "Binding Preparation") {
+      const completed = Object.values(step3SubActions).filter(Boolean).length;
+      return { completed, total: 3, actions: step3SubActions };
+    }
+    return null;
   };
 
   const trackMistake = (type, details) => {
@@ -1800,6 +1824,9 @@ export default function App() {
     setStepVolumes({ protK: 0, lysis: 0, binding: 0, ethanol: 0, wash: 0, elution: 0 });
     setCurrentStepReagents({});
     setCurrentReagentId(null);
+    setStep1SubActions({ lysisBufferAdded: false, proteinaseKAdded: false, mixed: false, incubated: false });
+    setStep3SubActions({ bindingBufferAdded: false, ethanolAdded: false, mixed: false });
+    setShowMixPrompt(false);
     setProtKIncubationOK(false);
     setTubeAnimating(false);
     setHasSeenBalancingTip(false);
@@ -1904,6 +1931,7 @@ export default function App() {
         addLog("Proteinase K successfully digested proteins at correct temperature.", "success");
         if (currentStep?.title === "Lysis & Protein Digestion") {
           setProtKIncubationOK(true);
+          setStep1SubActions(prev => ({ ...prev, incubated: true }));
         }
       } else {
         addLog("Proteinase K activity failed due to incorrect temperature. Protocol compromised.", "error");
@@ -2838,6 +2866,60 @@ export default function App() {
                   <p className="text-sm text-indigo-300 font-bold mb-2">{currentStep.prompt}</p>
                   <p className="text-xs text-slate-400 leading-relaxed">{currentStep.science}</p>
                 </div>
+
+                {getSubActionProgress() && (
+                  <div className="bg-slate-900/50 border border-slate-700 p-4 rounded-xl">
+                    <div className="flex items-center justify-between mb-3">
+                      <h4 className="text-xs font-bold text-white uppercase">Tasks ({getSubActionProgress().completed}/{getSubActionProgress().total} complete)</h4>
+                      <div className="flex gap-1">
+                        {Array.from({ length: getSubActionProgress().total }).map((_, i) => (
+                          <div
+                            key={i}
+                            className={`w-2 h-2 rounded-full ${i < getSubActionProgress().completed ? 'bg-emerald-500' : 'bg-slate-600'}`}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      {currentStep.title === "Lysis & Protein Digestion" && (
+                        <>
+                          <div className={`flex items-center gap-2 text-xs ${step1SubActions.lysisBufferAdded ? 'text-emerald-400' : 'text-slate-500'}`}>
+                            <span>{step1SubActions.lysisBufferAdded ? '☑' : '☐'}</span>
+                            <span>Add Lysis Buffer (180-200 µL)</span>
+                          </div>
+                          <div className={`flex items-center gap-2 text-xs ${step1SubActions.proteinaseKAdded ? 'text-emerald-400' : 'text-slate-500'}`}>
+                            <span>{step1SubActions.proteinaseKAdded ? '☑' : '☐'}</span>
+                            <span>Add Proteinase K (20 µL)</span>
+                          </div>
+                          <div className={`flex items-center gap-2 text-xs ${step1SubActions.mixed ? 'text-emerald-400' : 'text-slate-500'}`}>
+                            <span>{step1SubActions.mixed ? '☑' : '☐'}</span>
+                            <span>Mix by inverting tube</span>
+                          </div>
+                          <div className={`flex items-center gap-2 text-xs ${step1SubActions.incubated ? 'text-emerald-400' : 'text-slate-500'}`}>
+                            <span>{step1SubActions.incubated ? '☑' : '☐'}</span>
+                            <span>Incubate at 56°C</span>
+                          </div>
+                        </>
+                      )}
+                      {currentStep.title === "Binding Preparation" && (
+                        <>
+                          <div className={`flex items-center gap-2 text-xs ${step3SubActions.bindingBufferAdded ? 'text-emerald-400' : 'text-slate-500'}`}>
+                            <span>{step3SubActions.bindingBufferAdded ? '☑' : '☐'}</span>
+                            <span>Add Binding Buffer (200 µL)</span>
+                          </div>
+                          <div className={`flex items-center gap-2 text-xs ${step3SubActions.ethanolAdded ? 'text-emerald-400' : 'text-slate-500'}`}>
+                            <span>{step3SubActions.ethanolAdded ? '☑' : '☐'}</span>
+                            <span>Add Ethanol 96-100% (200 µL)</span>
+                          </div>
+                          <div className={`flex items-center gap-2 text-xs ${step3SubActions.mixed ? 'text-emerald-400' : 'text-slate-500'}`}>
+                            <span>{step3SubActions.mixed ? '☑' : '☐'}</span>
+                            <span>Mix by inverting tube</span>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* 3 Column Layout: Sample | Reagents | Pipettes */}
@@ -2881,7 +2963,7 @@ export default function App() {
                         </div>
                       </div>
                     ) : (
-                      <div className={`flex justify-center transition-all duration-500 ${tubeAnimating ? 'opacity-20 scale-75' : 'opacity-100 scale-100'}`}>
+                      <div className={`flex justify-center transition-all duration-500 ${tubeAnimating ? 'opacity-20 scale-75' : 'opacity-100 scale-100'} ${isMixing ? 'animate-[wiggle_0.5s_ease-in-out_4]' : ''}`}>
                         {(currentStep.title === "Binding/Column Load" || currentStep.title === "Wash Stage") ? (
                           <FilterColumnVisual
                             volume={bufferVolume + volumeAddedThisStep}
@@ -2895,14 +2977,52 @@ export default function App() {
                             stepTitle={currentStep.title}
                           />
                         ) : (
-                          <TubeVisual
-                            volume={bufferVolume + volumeAddedThisStep}
-                            solidMass={currentSolidMass}
-                            hasPellet={pelletVisible}
-                            showSeparation={showPhaseSeparation}
-                            onSupernatantClick={showPhaseSeparation ? () => setShowBioPopup("supernatant") : null}
-                            onPelletClick={showPhaseSeparation ? () => setShowBioPopup("pellet") : null}
-                          />
+                          <div className="relative">
+                            <div
+                              className={`${showMixPrompt ? 'cursor-pointer hover:scale-105 transition-transform' : ''}`}
+                              onClick={() => {
+                                if (showMixPrompt && !isMixing) {
+                                  setIsMixing(true);
+                                  if (difficultyMode !== "challenge") {
+                                    addLog("Mixing by inversion...", "info");
+                                  }
+                                  setTimeout(() => {
+                                    setIsMixing(false);
+                                    setShowMixPrompt(false);
+                                    setNeedsMixing(false);
+
+                                    if (currentStep.title === "Lysis & Protein Digestion") {
+                                      setStep1SubActions(prev => ({ ...prev, mixed: true }));
+                                      setStep2Mixed(true);
+                                      if (difficultyMode !== "challenge") {
+                                        addLog("✓ Mixed. Proceed to incubate at 56°C.", "success");
+                                      }
+                                    } else if (currentStep.title === "Binding Preparation") {
+                                      setStep3SubActions(prev => ({ ...prev, mixed: true }));
+                                      setStep3Mixed(true);
+                                      if (difficultyMode !== "challenge") {
+                                        addLog("✓ Mixed. Ready for column binding.", "success");
+                                      }
+                                    }
+                                  }, 2000);
+                                }
+                              }}
+                            >
+                              {showMixPrompt && (
+                                <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-emerald-600 text-white text-xs font-bold px-3 py-1 rounded-lg animate-pulse whitespace-nowrap">
+                                  👆 Click to mix by inversion
+                                </div>
+                              )}
+                              <TubeVisual
+                                volume={bufferVolume + volumeAddedThisStep}
+                                solidMass={currentSolidMass}
+                                hasPellet={pelletVisible}
+                                showSeparation={showPhaseSeparation}
+                                onSupernatantClick={showPhaseSeparation ? () => setShowBioPopup("supernatant") : null}
+                                onPelletClick={showPhaseSeparation ? () => setShowBioPopup("pellet") : null}
+                              />
+                            </div>
+                          </div>
                         )}
                       </div>
                     )}
@@ -3111,6 +3231,20 @@ export default function App() {
                             addLog(`Dispensed ${pipetteVolume}µL of ${reagentName}`, "success");
                           }
 
+                          if (currentStep.title === "Lysis & Protein Digestion") {
+                            if (reagentId === "lysis") {
+                              setStep1SubActions(prev => ({ ...prev, lysisBufferAdded: true }));
+                            } else if (reagentId === "proteinase_k") {
+                              setStep1SubActions(prev => ({ ...prev, proteinaseKAdded: true }));
+                            }
+                          } else if (currentStep.title === "Binding Preparation") {
+                            if (reagentId === "binding") {
+                              setStep3SubActions(prev => ({ ...prev, bindingBufferAdded: true }));
+                            } else if (reagentId === "ethanol") {
+                              setStep3SubActions(prev => ({ ...prev, ethanolAdded: true }));
+                            }
+                          }
+
                           if (currentStep.multipleReagents) {
                             const allReagentsAdded = currentStep.reagents.every(r =>
                               currentStepReagents[r.id] || r.id === reagentId
@@ -3130,6 +3264,12 @@ export default function App() {
                               return;
                             } else {
                               setHasDispensedThisStep(true);
+                              if (currentStep.title === "Lysis & Protein Digestion" || currentStep.title === "Binding Preparation") {
+                                setShowMixPrompt(true);
+                                if (difficultyMode !== "challenge") {
+                                  addLog("✓ All reagents added. Click the tube to mix by inversion.", "info");
+                                }
+                              }
                             }
                           }
 
@@ -3199,6 +3339,47 @@ export default function App() {
                       setProtocolAdherenceCompromised(true);
                     }
                   }
+                  if (currentStep.title === "Lysis & Protein Digestion") {
+                    if (!step1SubActions.lysisBufferAdded) {
+                      addLog("Error: Add Lysis Buffer before proceeding", "error");
+                      setProtocolAdherenceCompromised(true);
+                      return;
+                    }
+                    if (!step1SubActions.proteinaseKAdded) {
+                      addLog("Error: Add Proteinase K before proceeding", "error");
+                      setProtocolAdherenceCompromised(true);
+                      return;
+                    }
+                    if (!step1SubActions.mixed) {
+                      addLog("Error: Mix the tube by inversion before incubating", "error");
+                      setProtocolAdherenceCompromised(true);
+                      return;
+                    }
+                    if (!step1SubActions.incubated) {
+                      addLog("Error: Incubate at 56°C before proceeding", "error");
+                      setProtocolAdherenceCompromised(true);
+                      return;
+                    }
+                  }
+
+                  if (currentStep.title === "Binding Preparation") {
+                    if (!step3SubActions.bindingBufferAdded) {
+                      addLog("Error: Add Binding Buffer before proceeding", "error");
+                      setProtocolAdherenceCompromised(true);
+                      return;
+                    }
+                    if (!step3SubActions.ethanolAdded) {
+                      addLog("Error: Add Ethanol before proceeding. DNA will NOT bind without ethanol!", "error");
+                      setProtocolAdherenceCompromised(true);
+                      return;
+                    }
+                    if (!step3SubActions.mixed) {
+                      addLog("Error: Mix the tube by inversion before loading onto column", "error");
+                      setProtocolAdherenceCompromised(true);
+                      return;
+                    }
+                  }
+
                   if (currentStep.multipleReagents && currentStep.reagents) {
                     currentStep.reagents.forEach(reagent => {
                       const addedVolume = currentStepReagents[reagent.id] || 0;
@@ -3231,6 +3412,7 @@ export default function App() {
                     setIsMixing(false);
                     setCurrentStepReagents({});
                     setCurrentReagentId(null);
+                    setShowMixPrompt(false);
                   }
                 }} className="w-full bg-amber-600 hover:bg-amber-500 text-white py-4 px-6 rounded-xl font-black uppercase tracking-wider transition-all cursor-pointer border-0">
                   Continue to Next Step

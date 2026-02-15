@@ -28,6 +28,16 @@ export default {
           800: '#92400e',
           900: '#78350f',
         }
+      },
+      keyframes: {
+        wiggle: {
+          '0%, 100%': { transform: 'rotate(0deg)' },
+          '25%': { transform: 'rotate(-15deg)' },
+          '75%': { transform: 'rotate(15deg)' },
+        }
+      },
+      animation: {
+        wiggle: 'wiggle 0.5s ease-in-out',
       }
     },
   },
