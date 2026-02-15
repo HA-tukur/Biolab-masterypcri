@@ -1388,6 +1388,8 @@ export default function App() {
   const [isGrinding, setIsGrinding] = useState(false);
   const [showGrindingSetup, setShowGrindingSetup] = useState(false);
   const [difficultyMode, setDifficultyMode] = useState("learning");
+  const [toastMessage, setToastMessage] = useState(null);
+  const [showToast, setShowToast] = useState(false);
   const [challengeModeErrors, setChallengeModeErrors] = useState([]);
   const [showProtocolGuide, setShowProtocolGuide] = useState(false);
   const [guestModeDismissed, setGuestModeDismissed] = useState(false);
@@ -1547,6 +1549,14 @@ export default function App() {
       return { completed, total: 3, actions: step3SubActions };
     }
     return null;
+  };
+
+  const showToastNotification = (message) => {
+    setToastMessage(message);
+    setShowToast(true);
+    setTimeout(() => {
+      setShowToast(false);
+    }, 3000);
   };
 
   const trackMistake = (type, details) => {
@@ -2900,7 +2910,9 @@ export default function App() {
                       </div>
                     </div>
                     <div className="space-y-2">
-                      {currentStep.title === "Lysis & Protein Digestion" && (
+                      {currentStep.title === "Lysis & Protein Digestion" && (() => {
+                        console.log('[RENDER CHECKLIST] step1SubActions:', step1SubActions);
+                        return (
                         <>
                           <div className={`flex items-center gap-2 text-xs ${step1SubActions.lysisBufferAdded ? 'text-emerald-400' : 'text-slate-500'}`}>
                             <span>{step1SubActions.lysisBufferAdded ? '☑' : '☐'}</span>
@@ -2919,7 +2931,8 @@ export default function App() {
                             <span>Incubate at 56°C</span>
                           </div>
                         </>
-                      )}
+                        );
+                      })()}
                       {currentStep.title === "Binding Preparation" && (
                         <>
                           <div className={`flex items-center gap-2 text-xs ${step3SubActions.bindingBufferAdded ? 'text-emerald-400' : 'text-slate-500'}`}>
@@ -2998,7 +3011,7 @@ export default function App() {
                         ) : (
                           <div className="relative">
                             <div
-                              className={`${showMixPrompt ? 'cursor-pointer hover:scale-105 transition-transform' : ''}`}
+                              className={`${showMixPrompt ? 'cursor-pointer hover:scale-105 transition-transform ring-4 ring-emerald-400 ring-opacity-50 animate-pulse rounded-full' : ''}`}
                               onClick={() => {
                                 if (showMixPrompt && !isMixing) {
                                   setIsMixing(true);
@@ -3239,17 +3252,40 @@ export default function App() {
                             addLog(`Dispensed ${pipetteVolume}µL of ${reagentName}`, "success");
                           }
 
+                          console.log('[DISPENSE DEBUG]', {
+                            step: currentStep.title,
+                            reagentId,
+                            volume: pipetteVolume,
+                            currentStepReagents
+                          });
+
+                          const reagentName = currentStep.reagents?.find(r => r.id === reagentId)?.name || reagentId;
+
                           if (currentStep.title === "Lysis & Protein Digestion") {
                             if (reagentId === "lysis") {
-                              setStep1SubActions(prev => ({ ...prev, lysisBufferAdded: true }));
+                              console.log('Setting lysisBufferAdded to TRUE');
+                              setStep1SubActions(prev => {
+                                const updated = { ...prev, lysisBufferAdded: true };
+                                console.log('Updated step1SubActions:', updated);
+                                return updated;
+                              });
+                              showToastNotification(`✓ Added ${pipetteVolume}µL ${reagentName} to sample`);
                             } else if (reagentId === "proteinase_k") {
-                              setStep1SubActions(prev => ({ ...prev, proteinaseKAdded: true }));
+                              console.log('Setting proteinaseKAdded to TRUE');
+                              setStep1SubActions(prev => {
+                                const updated = { ...prev, proteinaseKAdded: true };
+                                console.log('Updated step1SubActions:', updated);
+                                return updated;
+                              });
+                              showToastNotification(`✓ Added ${pipetteVolume}µL ${reagentName} to sample`);
                             }
                           } else if (currentStep.title === "Binding Preparation") {
                             if (reagentId === "binding") {
                               setStep3SubActions(prev => ({ ...prev, bindingBufferAdded: true }));
+                              showToastNotification(`✓ Added ${pipetteVolume}µL ${reagentName} to sample`);
                             } else if (reagentId === "ethanol") {
                               setStep3SubActions(prev => ({ ...prev, ethanolAdded: true }));
+                              showToastNotification(`✓ Added ${pipetteVolume}µL ${reagentName} to sample`);
                             }
                           }
 
@@ -3308,7 +3344,11 @@ export default function App() {
                             }
                           }
                         }}
-                        disabled={hasDispensedThisStep}
+                        disabled={
+                          currentStep.multipleReagents
+                            ? currentStep.reagents.every(r => currentStepReagents[r.id])
+                            : hasDispensedThisStep
+                        }
                         hasLiquid={pipetteHasLiquid}
                         liquidColor={pipetteLiquidColor}
                       />
@@ -3890,6 +3930,18 @@ export default function App() {
 
       {/* AI Lab Assistant temporarily disabled - needs API key configuration */}
       {/* <AILabAssistant /> */}
+
+      {/* Toast Notification */}
+      {showToast && toastMessage && (
+        <div className="fixed top-8 left-1/2 transform -translate-x-1/2 z-[200] animate-in slide-in-from-top duration-300">
+          <div className="bg-emerald-600 text-white px-6 py-4 rounded-xl shadow-2xl font-bold text-sm flex items-center gap-3">
+            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+            </svg>
+            {toastMessage}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
