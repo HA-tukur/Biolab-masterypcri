@@ -174,9 +174,9 @@ export const PipetteSelector: React.FC<PipetteSelectorProps> = ({
               </button>
             </div>
 
-            {Math.abs(volume - requiredVolume) > 10 && (
+            {volume !== requiredVolume && (
               <p className="text-xs text-amber-400 text-center mt-2">
-                ⚠ Volume differs from target by {Math.abs(volume - requiredVolume).toFixed(1)}µL
+                ⚠ Use exactly {requiredVolume}µL
               </p>
             )}
           </div>
