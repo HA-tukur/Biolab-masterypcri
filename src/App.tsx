@@ -1753,8 +1753,8 @@ export default function App() {
         requiresMixing: true,
         multipleReagents: true,
         reagents: [
-          { id: "lysis", name: "Lysis Buffer", targetVolume: 200, tolerance: 20, color: "#ec4899" },
-          { id: "proteinase_k", name: "Proteinase K", targetVolume: 20, tolerance: 3, color: "#f59e0b" }
+          { id: "lysis", name: "Lysis Buffer", targetVolume: 200, tolerance: 0, color: "#ec4899" },
+          { id: "proteinase_k", name: "Proteinase K", targetVolume: 20, tolerance: 0, color: "#f59e0b" }
         ],
         successCriteria: "Lysate should be clear with no visible tissue chunks",
         educationalNote: "🔬 Why 20 µL? This is the standard amount for ~25 mg tissue. Insufficient Proteinase K leads to protein contamination and poor yields."
@@ -3026,15 +3026,15 @@ export default function App() {
                                   if (addedVolume === 0) {
                                     addLog(`Volume Error: ${reagent.name} was not added!`, "error");
                                     setProtocolAdherenceCompromised(true);
-                                  } else if (Math.abs(addedVolume - reagent.targetVolume) > reagent.tolerance) {
-                                    addLog(`Volume Error: ${reagent.name} target is ${reagent.targetVolume}µL but ${addedVolume}µL was used.`, "error");
+                                  } else if (addedVolume !== reagent.targetVolume) {
+                                    addLog(`Volume Error: Use exactly ${reagent.targetVolume}µL of ${reagent.name}.`, "error");
                                     setProtocolAdherenceCompromised(true);
                                   }
                                 });
                               } else if (currentStep.reagents && currentStep.reagents[0]) {
                                 const reagent = currentStep.reagents[0];
-                                if (Math.abs(volumeAddedThisStep - reagent.targetVolume) > reagent.tolerance) {
-                                  addLog(`Volume Error: Target is ${reagent.targetVolume}µL but ${volumeAddedThisStep}µL was used. Significant deviation affects protocol.`, "error");
+                                if (volumeAddedThisStep !== reagent.targetVolume) {
+                                  addLog(`Volume Error: Use exactly ${reagent.targetVolume}µL.`, "error");
                                   setProtocolAdherenceCompromised(true);
                                 }
                               }
@@ -3647,15 +3647,15 @@ export default function App() {
                       if (addedVolume === 0) {
                         addLog(`Volume Error: ${reagent.name} was not added!`, "error");
                         setProtocolAdherenceCompromised(true);
-                      } else if (Math.abs(addedVolume - reagent.targetVolume) > reagent.tolerance) {
-                        addLog(`Volume Error: ${reagent.name} target is ${reagent.targetVolume}µL but ${addedVolume}µL was used.`, "error");
+                      } else if (addedVolume !== reagent.targetVolume) {
+                        addLog(`Volume Error: Use exactly ${reagent.targetVolume}µL of ${reagent.name}.`, "error");
                         setProtocolAdherenceCompromised(true);
                       }
                     });
                   } else if (currentStep.reagents && currentStep.reagents[0]) {
                     const reagent = currentStep.reagents[0];
-                    if (Math.abs(volumeAddedThisStep - reagent.targetVolume) > reagent.tolerance) {
-                      addLog(`Volume Error: Target is ${reagent.targetVolume}µL but ${volumeAddedThisStep}µL was used. Significant deviation affects protocol.`, "error");
+                    if (volumeAddedThisStep !== reagent.targetVolume) {
+                      addLog(`Volume Error: Use exactly ${reagent.targetVolume}µL.`, "error");
                       setProtocolAdherenceCompromised(true);
                     }
                   }
