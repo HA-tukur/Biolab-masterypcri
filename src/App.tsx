@@ -1365,9 +1365,12 @@ export default function App() {
     protK: 0,
     lysis: 0,
     binding: 0,
+    ethanol: 0,
     wash: 0,
     elution: 0,
   });
+  const [currentStepReagents, setCurrentStepReagents] = useState({});
+  const [currentReagentId, setCurrentReagentId] = useState(null);
   const [protKIncubationOK, setProtKIncubationOK] = useState(false);
   const [yieldQuality, setYieldQuality] = useState(null);
   const [isGrinding, setIsGrinding] = useState(false);
@@ -1409,13 +1412,16 @@ export default function App() {
       proteinase_k: '#f59e0b',
       lysis: '#ec4899',
       binding: '#a855f7',
+      ethanol: '#60a5fa',
       wash: '#e2e8f0',
       elute: '#3b82f6'
     };
     return colorMap[reagentId] || '#3b82f6';
   };
 
-  const getAvailableReagents = (stepTitle, reagentRequired) => {
+  const getAvailableReagents = (currentStep) => {
+    if (!currentStep) return [];
+
     const allReagents = [
       {
         id: 'proteinase_k',
@@ -1442,6 +1448,14 @@ export default function App() {
         available: hasReagentForStep('binding')
       },
       {
+        id: 'ethanol',
+        name: 'Ethanol (96-100%)',
+        type: 'bottle',
+        color: '#60a5fa',
+        volume: '500mL',
+        available: has('ethanol')
+      },
+      {
         id: 'wash',
         name: 'Wash Buffer',
         type: 'bottle',
@@ -1459,7 +1473,37 @@ export default function App() {
       }
     ];
 
+    if (currentStep.reagents) {
+      const stepReagentIds = currentStep.reagents.map(r => r.id);
+      return allReagents.filter(r => r.available && stepReagentIds.includes(r.id));
+    }
+
     return allReagents.filter(r => r.available);
+  };
+
+  const getCurrentReagent = () => {
+    if (!currentStep || !currentStep.reagents) return null;
+
+    if (currentStep.multipleReagents) {
+      const reagentsToAdd = currentStep.reagents.filter(r => !currentStepReagents[r.id]);
+      return reagentsToAdd.length > 0 ? reagentsToAdd[0] : currentStep.reagents[0];
+    }
+
+    return currentStep.reagents[0];
+  };
+
+  const getTargetVolume = () => {
+    const reagent = getCurrentReagent();
+    if (reagent) return reagent.targetVolume;
+    if (currentStep?.targetVolume) return currentStep.targetVolume;
+    return 500;
+  };
+
+  const getRemainingReagentsText = () => {
+    if (!currentStep || !currentStep.multipleReagents || !currentStep.reagents) return null;
+    const remaining = currentStep.reagents.filter(r => !currentStepReagents[r.id]);
+    if (remaining.length === 0) return null;
+    return `Still needed: ${remaining.map(r => `${r.name} (${r.targetVolume}µL)`).join(', ')}`;
   };
 
   const trackMistake = (type, details) => {
@@ -1632,9 +1676,12 @@ export default function App() {
         incubationTemp: 56,
         incubationDuration: 120,
         requiresVolume: true,
-        targetVolume: 200,
         requiresMixing: true,
-        reagentRequired: "lysis_proteinase",
+        multipleReagents: true,
+        reagents: [
+          { id: "lysis", name: "Lysis Buffer", targetVolume: 200, tolerance: 20, color: "#ec4899" },
+          { id: "proteinase_k", name: "Proteinase K", targetVolume: 20, tolerance: 3, color: "#f59e0b" }
+        ],
         successCriteria: "Lysate should be clear with no visible tissue chunks",
         educationalNote: "🔬 Why 20 µL? This is the standard amount for ~25 mg tissue. Insufficient Proteinase K leads to protein contamination and poor yields."
       },
@@ -1652,9 +1699,12 @@ export default function App() {
         prompt: "Add 200 µL Binding Buffer and 200 µL Ethanol (96-100%) to cleared lysate. MIX gently - do not vortex.",
         science: "Chaotropic salts + ethanol create conditions for DNA to bind to silica column membranes. 🧪 WHY THIS MATTERS: Without ethanol, DNA will NOT bind to the silica membrane and will wash away. This is the #1 reason beginners get low yields.",
         requiresVolume: true,
-        targetVolume: 400,
         requiresMixing: true,
-        reagentRequired: "binding_ethanol",
+        multipleReagents: true,
+        reagents: [
+          { id: "binding", name: "Binding Buffer", targetVolume: 200, tolerance: 20, color: "#a855f7" },
+          { id: "ethanol", name: "Ethanol (96-100%)", targetVolume: 200, tolerance: 20, color: "#60a5fa" }
+        ],
         kitNote: "📋 Kit Reality Check: Your DNA extraction kit includes concentrated wash buffer. In real labs, you would add ethanol from your lab stock before using it. In BioSim Lab, we assume this step is already done - your wash buffer is ready to use.",
         successCriteria: "Binding Buffer added (200 µL), Ethanol added (200 µL), Mixed gently"
       },
@@ -1664,7 +1714,6 @@ export default function App() {
         science: "DNA binds to silica membrane while contaminants flow through. The chaotropic salts disrupt water molecules around DNA, making it 'sticky' to the silica. If volume >700 µL, load in multiple batches.",
         requiresSpin: true,
         spinDuration: 1,
-        reagentRequired: "column",
         educationalNote: "Pretty cool chemistry! The salts make DNA hydrophobic so it sticks to the silica surface."
       },
       {
@@ -1672,10 +1721,11 @@ export default function App() {
         prompt: "Add 500 µL Wash Buffer and SPIN (1st wash). Add 500 µL Wash Buffer and SPIN (2nd wash). DRY SPIN at maximum speed for 3 minutes.",
         science: "Remove salts and contaminants without releasing DNA. Two washes = higher purity. ⚠️ CRITICAL: Dry spin removes residual ethanol that would inhibit PCR. Never skip the dry spin! Residual ethanol is PCR's worst enemy - it denatures the polymerase enzyme.",
         requiresVolume: true,
-        targetVolume: 1000,
         requiresSpin: true,
         spinDuration: 5,
-        reagentRequired: "wash",
+        reagents: [
+          { id: "wash", name: "Wash Buffer", targetVolume: 500, tolerance: 50, color: "#e2e8f0", requireTwoAdditions: true }
+        ],
         successCriteria: "Column is completely dry after final spin",
         educationalNote: "This buffer already has ethanol added (see Binding Preparation step). Two washes ensure maximum purity."
       },
@@ -1684,10 +1734,11 @@ export default function App() {
         prompt: "Transfer column to fresh tube. Add 50 µL Elution Buffer to membrane center, wait 1-5 minutes, then SPIN at 12,000 g for 1 minute.",
         science: "Low-salt buffer (TE-based) releases pure DNA from the column. TE buffer (Tris-EDTA) protects DNA - the EDTA 'handcuffs' DNase enzymes that would chew up your DNA. Optional: Pre-warm buffer to 56°C for +10-15% yield.",
         requiresVolume: true,
-        targetVolume: missionId === 'A' ? 20 : 50,
         requiresSpin: true,
         isElution: true,
-        reagentRequired: "elute",
+        reagents: [
+          { id: "elute", name: "Elution Buffer", targetVolume: missionId === 'A' ? 20 : 50, tolerance: 5, color: "#3b82f6" }
+        ],
         storageNote: "Store DNA at 4°C (short-term, days-weeks) or -20°C/-80°C (long-term, years)",
         educationalNote: "That's why we use TE instead of plain water - the EDTA protects your DNA from degradation."
       },
@@ -1746,7 +1797,9 @@ export default function App() {
     setCanNanodropNow(false);
     setShowPhaseSeparation(false);
     setShowBioPopup(null);
-    setStepVolumes({ protK: 0, lysis: 0, binding: 0, wash: 0, elution: 0 });
+    setStepVolumes({ protK: 0, lysis: 0, binding: 0, ethanol: 0, wash: 0, elution: 0 });
+    setCurrentStepReagents({});
+    setCurrentReagentId(null);
     setProtKIncubationOK(false);
     setTubeAnimating(false);
     setHasSeenBalancingTip(false);
@@ -1760,6 +1813,8 @@ export default function App() {
     setYieldQuality(null);
     setDifficultyMode("learning");
     setChallengeModeErrors([]);
+    setMistakes([]);
+    setEquipmentUsageLog([]);
     setScreen("briefing");
     setShowReadinessModal(true);
   };
@@ -1847,7 +1902,7 @@ export default function App() {
       addLog("Incubation complete. Tube removed from thermocycler.", "success");
       if (tempOK) {
         addLog("Proteinase K successfully digested proteins at correct temperature.", "success");
-        if (currentStep?.title === "Proteinase K Digestion") {
+        if (currentStep?.title === "Lysis & Protein Digestion") {
           setProtKIncubationOK(true);
         }
       } else {
@@ -2869,7 +2924,7 @@ export default function App() {
                         <FlaskConical size={16} /> Available Reagents
                       </h3>
                       <EnhancedReagentContainers
-                        availableReagents={getAvailableReagents(currentStep.title, currentStep.reagentRequired).map(r => ({
+                        availableReagents={getAvailableReagents(currentStep).map(r => ({
                           ...r,
                           type: r.name.includes('Proteinase') ? 'tube' : 'bottle'
                         }))}
@@ -2877,13 +2932,18 @@ export default function App() {
                           if (pipetteVolume && activeTool === 'pipette' && !pipetteHasLiquid) {
                             setPipetteHasLiquid(true);
                             setPipetteLiquidColor(color);
+                            setCurrentReagentId(reagentId);
 
-                            if (reagentId !== currentStep.reagentRequired) {
+                            const currentReagent = getCurrentReagent();
+                            if (currentStep.multipleReagents && currentReagent && reagentId !== currentReagent.id) {
                               trackMistake('wrong_reagent', {
-                                expected: currentStep.reagentRequired,
+                                expected: currentReagent.id,
                                 actual: reagentId,
                                 volume: pipetteVolume
                               });
+                              if (difficultyMode !== "challenge") {
+                                addLog(`⚠️ Wrong reagent! Expected ${currentReagent.name}, got ${reagentId}`, "error");
+                              }
                             }
 
                             if (difficultyMode !== "challenge") {
@@ -2957,12 +3017,18 @@ export default function App() {
                             setHasSpunThisStep(false);
                             setNeedsMixing(false);
                             setIsMixing(false);
+                            setCurrentStepReagents({});
+                            setCurrentReagentId(null);
+                            setVolumeAddedThisStep(0);
                           } else {
                             setProtocolIndex(protocolIndex + 1);
                             setHasDispensedThisStep(false);
                             setHasSpunThisStep(false);
                             setNeedsMixing(false);
                             setIsMixing(false);
+                            setCurrentStepReagents({});
+                            setCurrentReagentId(null);
+                            setVolumeAddedThisStep(0);
                           }
                         }} className="w-full bg-indigo-600 hover:bg-indigo-500 text-white py-3 px-4 rounded-xl font-bold uppercase transition-all cursor-pointer border-0">
                           {opt.label}
@@ -2978,35 +3044,41 @@ export default function App() {
                     <div className="bg-slate-800 border border-slate-700 p-4 rounded-2xl space-y-4">
                       <h3 className="text-sm font-bold text-white uppercase flex items-center gap-2"><Pipette size={16} /> Pipettes</h3>
                       <PipetteSelector
-                        requiredVolume={currentStep.targetVolume || 500}
+                        requiredVolume={getTargetVolume()}
                         onVolumeSet={(volume, pipetteSize) => {
-                          if (!hasDispensedThisStep) {
+                          if (!hasDispensedThisStep || currentStep.multipleReagents) {
                             setPipetteVolume(volume);
                             setActiveTool('pipette');
-                            setPipetteLiquidColor(getLiquidColor(currentStep.reagentRequired));
 
-                            if (currentStep.targetVolume && Math.abs(volume - currentStep.targetVolume) > 50) {
+                            const currentReagent = getCurrentReagent();
+                            const targetVol = currentReagent?.targetVolume || getTargetVolume();
+                            const tolerance = currentReagent?.tolerance || 50;
+
+                            if (Math.abs(volume - targetVol) > tolerance) {
                               trackMistake('wrong_volume', {
-                                expected: currentStep.targetVolume,
+                                expected: targetVol,
                                 actual: volume,
-                                deviation: Math.abs(volume - currentStep.targetVolume)
+                                deviation: Math.abs(volume - targetVol),
+                                reagent: currentReagent?.name || 'unknown'
                               });
-                            }
-
-                            if (currentStep.targetVolume) {
-                              const optimalPipette = currentStep.targetVolume <= 10 ? '2.5µL' :
-                                                     currentStep.targetVolume <= 100 ? '20µL' : '1000µL';
-                              if (pipetteSize !== optimalPipette) {
-                                trackMistake('wrong_pipette', {
-                                  expected: optimalPipette,
-                                  actual: pipetteSize,
-                                  volume: volume
-                                });
+                              if (difficultyMode !== "challenge") {
+                                addLog(`⚠️ Volume differs from target by ${Math.abs(volume - targetVol).toFixed(1)}µL. Target: ${targetVol}µL`, "error");
                               }
                             }
 
+                            const optimalPipette = targetVol <= 10 ? '2.5µL' :
+                                                   targetVol <= 100 ? '20µL' : '1000µL';
+                            if (pipetteSize !== optimalPipette) {
+                              trackMistake('wrong_pipette', {
+                                expected: optimalPipette,
+                                actual: pipetteSize,
+                                volume: volume
+                              });
+                            }
+
                             if (difficultyMode !== "challenge") {
-                              addLog(`Pipette set to ${volume}µL. Click reagent container to aspirate.`, "info");
+                              const remaining = getRemainingReagentsText();
+                              addLog(`Pipette set to ${volume}µL. ${remaining || 'Click reagent container to aspirate.'}`, "info");
                             }
                           }
                         }}
@@ -3014,22 +3086,58 @@ export default function App() {
                           if (currentStep.isElution) {
                             setElutionVolume(pipetteVolume);
                           }
-                          setVolumeAddedThisStep(pipetteVolume);
-                          setStepVolumes(prev => {
-                            const title = currentStep?.title;
-                            if (title === "Proteinase K Digestion") return { ...prev, protK: pipetteVolume };
-                            if (title === "Lysis Phase") return { ...prev, lysis: pipetteVolume };
-                            if (title === "Binding/Column Load") return { ...prev, binding: pipetteVolume };
-                            if (title === "Wash Stage") return { ...prev, wash: pipetteVolume };
-                            if (title === "Elution") return { ...prev, elution: pipetteVolume };
-                            return prev;
-                          });
-                          if (difficultyMode !== "challenge") {
-                            addLog(`Dispensed ${pipetteVolume}µL`, "success");
+
+                          const reagentId = currentReagentId;
+                          setVolumeAddedThisStep(prev => prev + pipetteVolume);
+
+                          if (currentStep.multipleReagents && reagentId) {
+                            setCurrentStepReagents(prev => ({
+                              ...prev,
+                              [reagentId]: pipetteVolume
+                            }));
+                            setStepVolumes(prev => ({ ...prev, [reagentId]: (prev[reagentId] || 0) + pipetteVolume }));
+                          } else {
+                            setStepVolumes(prev => {
+                              const title = currentStep?.title;
+                              if (title === "Lysis & Protein Digestion") return { ...prev, lysis: pipetteVolume };
+                              if (title === "Wash & Dry") return { ...prev, wash: (prev.wash || 0) + pipetteVolume };
+                              if (title === "Elution") return { ...prev, elution: pipetteVolume };
+                              return prev;
+                            });
                           }
+
+                          if (difficultyMode !== "challenge") {
+                            const reagentName = currentStep.reagents?.find(r => r.id === reagentId)?.name || 'reagent';
+                            addLog(`Dispensed ${pipetteVolume}µL of ${reagentName}`, "success");
+                          }
+
+                          if (currentStep.multipleReagents) {
+                            const allReagentsAdded = currentStep.reagents.every(r =>
+                              currentStepReagents[r.id] || r.id === reagentId
+                            );
+
+                            if (!allReagentsAdded) {
+                              const remaining = currentStep.reagents.filter(r =>
+                                !currentStepReagents[r.id] && r.id !== reagentId
+                              );
+                              if (difficultyMode !== "challenge") {
+                                addLog(`✓ ${reagentName} added. Next: ${remaining[0].name} (${remaining[0].targetVolume}µL)`, "info");
+                              }
+                              setPipetteVolume(null);
+                              setActiveTool(null);
+                              setPipetteHasLiquid(false);
+                              setCurrentReagentId(null);
+                              return;
+                            } else {
+                              setHasDispensedThisStep(true);
+                            }
+                          }
+
                           setPipetteVolume(null);
                           setActiveTool(null);
                           setPipetteHasLiquid(false);
+                          setCurrentReagentId(null);
+
                           if (currentStep.isElution) {
                             if (difficultyMode !== "challenge") {
                               addLog("Elution buffer added. Wait 1 minute for DNA to elute from the membrane.", "info");
@@ -3069,7 +3177,7 @@ export default function App() {
               />
 
               {/* Continue Button - Full Width */}
-              {((currentStep.requiresVolume && hasDispensedThisStep) || (currentStep.options)) && (currentStep.requiresSpin || currentStep.requiresIncubation ? hasSpunThisStep : true) && (currentStep.requiresMixing ? (currentStep.title === "Proteinase K Digestion" ? step2Mixed : currentStep.title === "Lysis Phase" ? step3Mixed : true) : true) && (
+              {((currentStep.requiresVolume && hasDispensedThisStep) || (currentStep.options)) && (currentStep.requiresSpin || currentStep.requiresIncubation ? hasSpunThisStep : true) && (currentStep.requiresMixing ? (currentStep.title === "Lysis & Protein Digestion" ? step2Mixed : currentStep.title === "Binding Preparation" ? step3Mixed : !needsMixing) : true) && (
                 <button onClick={() => {
                   if (currentStep.requiresSpin && !hasSpunThisStep) {
                     setMissedSpins(missedSpins + 1);
@@ -3083,17 +3191,31 @@ export default function App() {
                   }
                   if (currentStep.requiresMixing) {
                     let mixedThisStep = false;
-                    if (currentStep.title === "Proteinase K Digestion") mixedThisStep = step2Mixed;
-                    if (currentStep.title === "Lysis Phase") mixedThisStep = step3Mixed;
+                    if (currentStep.title === "Lysis & Protein Digestion") mixedThisStep = step2Mixed;
+                    if (currentStep.title === "Binding Preparation") mixedThisStep = step3Mixed;
 
-                    if (!mixedThisStep) {
+                    if (!mixedThisStep && needsMixing) {
                       addLog("Critical Error: Mixing step bypassed! The sample must be mixed after adding reagent.", "error");
                       setProtocolAdherenceCompromised(true);
                     }
                   }
-                  if (currentStep.targetVolume && Math.abs(volumeAddedThisStep - currentStep.targetVolume) > (currentStep.targetVolume < 10 ? 2 : 100)) {
-                    addLog(`Volume Error: Target is ${currentStep.targetVolume}µL but ${volumeAddedThisStep}µL was used. Significant deviation affects protocol.`, "error");
-                    setProtocolAdherenceCompromised(true);
+                  if (currentStep.multipleReagents && currentStep.reagents) {
+                    currentStep.reagents.forEach(reagent => {
+                      const addedVolume = currentStepReagents[reagent.id] || 0;
+                      if (addedVolume === 0) {
+                        addLog(`Volume Error: ${reagent.name} was not added!`, "error");
+                        setProtocolAdherenceCompromised(true);
+                      } else if (Math.abs(addedVolume - reagent.targetVolume) > reagent.tolerance) {
+                        addLog(`Volume Error: ${reagent.name} target is ${reagent.targetVolume}µL but ${addedVolume}µL was used.`, "error");
+                        setProtocolAdherenceCompromised(true);
+                      }
+                    });
+                  } else if (currentStep.reagents && currentStep.reagents[0]) {
+                    const reagent = currentStep.reagents[0];
+                    if (Math.abs(volumeAddedThisStep - reagent.targetVolume) > reagent.tolerance) {
+                      addLog(`Volume Error: Target is ${reagent.targetVolume}µL but ${volumeAddedThisStep}µL was used. Significant deviation affects protocol.`, "error");
+                      setProtocolAdherenceCompromised(true);
+                    }
                   }
 
                   if (protocolIndex === protocolSteps.length - 1) {
@@ -3107,6 +3229,8 @@ export default function App() {
                     setHasSpunThisStep(false);
                     setNeedsMixing(false);
                     setIsMixing(false);
+                    setCurrentStepReagents({});
+                    setCurrentReagentId(null);
                   }
                 }} className="w-full bg-amber-600 hover:bg-amber-500 text-white py-4 px-6 rounded-xl font-black uppercase tracking-wider transition-all cursor-pointer border-0">
                   Continue to Next Step
