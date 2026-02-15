@@ -1736,7 +1736,7 @@ export default function App() {
     const allSteps = [
       {
         title: "Lysis & Protein Digestion",
-        prompt: "Add 180-200 µL Lysis Buffer (Buffer ATL) and 20 µL Proteinase K to minced tissue. MIX gently and INCUBATE at 56°C for 1-3 hours.",
+        prompt: "Add 200 µL Lysis Buffer (Buffer ATL) and 20 µL Proteinase K to minced tissue. MIX gently and INCUBATE at 56°C for 1-3 hours.",
         science: "Detergents break open cell membranes while Proteinase K digests proteins (histones, nucleases, structural proteins) that interfere with DNA recovery. ⚠️ Note: Both Lysis Buffer and Proteinase K are included in your DNA extraction kit. 20 µL Proteinase K is the standard amount for ~25 mg tissue.",
         requiresIncubation: true,
         incubationTemp: 56,
@@ -3099,7 +3099,7 @@ export default function App() {
                         <>
                           <div className={`flex items-center gap-2 text-xs ${step1SubActions.lysisBufferAdded ? 'text-emerald-400' : 'text-slate-500'}`}>
                             <span>{step1SubActions.lysisBufferAdded ? '☑' : '☐'}</span>
-                            <span>Add Lysis Buffer (180-200 µL)</span>
+                            <span>Add Lysis Buffer (200 µL)</span>
                           </div>
                           <div className={`flex items-center gap-2 text-xs ${step1SubActions.proteinaseKAdded ? 'text-emerald-400' : 'text-slate-500'}`}>
                             <span>{step1SubActions.proteinaseKAdded ? '☑' : '☐'}</span>
