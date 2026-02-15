@@ -1,6 +1,7 @@
 import React, { useMemo, useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { createClient } from "@supabase/supabase-js";
+import { RealisticPipette } from "./components/RealisticPipette";
 import {
   FlaskConical,
   AlertCircle,
@@ -1329,6 +1330,8 @@ export default function App() {
   const [stoichiometryError, setStoichiometryError] = useState(false);
   const [activeTool, setActiveTool] = useState(null);
   const [pipetteVolume, setPipetteVolume] = useState(null);
+  const [pipetteHasLiquid, setPipetteHasLiquid] = useState(false);
+  const [pipetteLiquidColor, setPipetteLiquidColor] = useState("#3b82f6");
   const [isMixing, setIsMixing] = useState(false);
   const [needsMixing, setNeedsMixing] = useState(false);
   const [yieldUg, setYieldUg] = useState(null);
@@ -1395,6 +1398,17 @@ export default function App() {
     return (reagentMap[reagentId] || []).some(r => has(r));
   };
 
+  const getLiquidColor = (reagentId) => {
+    const colorMap = {
+      proteinase_k: '#f59e0b',
+      lysis: '#ec4899',
+      binding: '#a855f7',
+      wash: '#e2e8f0',
+      elute: '#3b82f6'
+    };
+    return colorMap[reagentId] || '#3b82f6';
+  };
+
   useEffect(() => {
     if (screen === "lab" && protocolIndex === 0) setCurrentSolidMass(sampleMass);
   }, [screen, protocolIndex, sampleMass]);
@@ -1447,6 +1461,8 @@ export default function App() {
     setTubeInCentrifuge(false);
     setNeedsMixing(false);
     setIsMixing(false);
+    setPipetteHasLiquid(false);
+    setPipetteLiquidColor("#3b82f6");
     setMissedSpins(0);
     setMissedReagents(0);
     setStoichiometryError(false);
@@ -2560,7 +2576,7 @@ export default function App() {
                       )}
                     </div>
 
-                    {activeTool === 'pipette' && pipetteVolume && !needsMixing && !hasDispensedThisStep && (
+                    {activeTool === 'pipette' && pipetteVolume && !needsMixing && !hasDispensedThisStep && !pipetteHasLiquid && (
                       <div
                         className="absolute top-8 right-12 p-4 rounded-3xl shadow-2xl border-2 bg-indigo-600 border-indigo-400 animate-bounce cursor-pointer hover:bg-indigo-500 hover:scale-110 transition-all shadow-indigo-500/30"
                         style={{
@@ -2574,44 +2590,13 @@ export default function App() {
                             setActiveTool(null);
                             return;
                           }
-                          if (currentStep.isElution) {
-                            setElutionVolume(pipetteVolume);
-                          }
-                          setVolumeAddedThisStep(pipetteVolume);
-                          setStepVolumes(prev => {
-                            const title = currentStep?.title;
-                            if (title === "Proteinase K Digestion") return { ...prev, protK: pipetteVolume };
-                            if (title === "Lysis Phase") return { ...prev, lysis: pipetteVolume };
-                            if (title === "Binding/Column Load") return { ...prev, binding: pipetteVolume };
-                            if (title === "Wash Stage") return { ...prev, wash: pipetteVolume };
-                            if (title === "Elution") return { ...prev, elution: pipetteVolume };
-                            return prev;
-                          });
-                          addLog(`Dispensed ${pipetteVolume}µL`, "success");
-                          if (currentStep.targetVolume && Math.abs(pipetteVolume - currentStep.targetVolume) > 50) {
-                            setStoichiometryError(true);
-                            addLog("Warning: Volume deviates significantly from protocol.", "error");
-                          }
-                          setPipetteVolume(null);
-                          setActiveTool(null);
-                          if (currentStep.isElution) {
-                            addLog("Elution buffer added. Wait 1 minute for DNA to elute from the membrane.", "info");
-                            setTimeout(() => {
-                              setHasDispensedThisStep(true);
-                              addLog("Elution wait complete. Proceed to centrifugation.", "success");
-                            }, 1000);
-                          } else if (currentStep.requiresMixing) {
-                            setNeedsMixing(true);
-                            addLog("Click pipette above tube to mix solution.", "info");
-                          } else {
-                            setHasDispensedThisStep(true);
-                            addLog("Reagent added. Ready for next step.", "success");
-                          }
+                          setPipetteHasLiquid(true);
+                          addLog(`Aspirated ${pipetteVolume}µL. Click "Press Plunger to Dispense" to add to tube.`, "success");
                         }}
                       >
                         <Pipette size={28} className="text-white" />
                         <span className="block text-[8px] font-black text-center mt-2 uppercase tracking-widest text-white">
-                          Dispense
+                          Aspirate
                         </span>
                       </div>
                     )}
@@ -2758,42 +2743,65 @@ export default function App() {
 
                   {currentStep.requiresVolume && (
                     <div className="bg-slate-800 border border-slate-700 p-6 rounded-2xl space-y-4">
-                      <h3 className="text-sm font-bold text-white uppercase flex items-center gap-2"><Pipette size={16} /> Pipette Control</h3>
-                      <div className="space-y-3">
-                        <div>
-                          <label className="text-xs text-slate-400 mb-2 block">Select Volume (µL)</label>
-                          <div className={`grid gap-2 ${currentStep.isElution ? 'grid-cols-3' : 'grid-cols-3'}`}>
-                            {(currentStep.title === "Proteinase K Digestion" ? [2, 5, 10] : currentStep.isElution ? [20, 30, 50] : [100, 500, 1000]).map(v => (
-                              <button
-                                key={v}
-                                onClick={() => {
-                                  if (!hasDispensedThisStep) {
-                                    const volumeToUse = v;
-                                    setPipetteVolume(volumeToUse);
-                                    setActiveTool('pipette');
-                                    addLog(`Pipette set to ${volumeToUse}µL. Click pipette above tube to dispense.`, "info");
-                                  }
-                                }}
-                                disabled={hasDispensedThisStep}
-                                className={`py-3 rounded-lg border-2 font-bold transition-all text-sm cursor-pointer ${
-                                  pipetteVolume === v && !hasDispensedThisStep
-                                    ? "bg-indigo-600 text-white border-indigo-400 shadow-lg"
-                                    : hasDispensedThisStep
-                                    ? "bg-slate-900 text-slate-600 border-slate-700 cursor-not-allowed"
-                                    : "bg-slate-900 text-slate-300 border-slate-700 hover:border-indigo-500"
-                                }`}
-                              >
-                                {v}µL
-                              </button>
-                            ))}
-                          </div>
-                          {activeTool === 'pipette' && pipetteVolume && !hasDispensedThisStep && (
-                            <p className="text-xs text-indigo-400 mt-3 animate-pulse font-bold text-center">
-                              Click the bouncing pipette above the tube to dispense {pipetteVolume}µL
-                            </p>
-                          )}
-                        </div>
-                      </div>
+                      <h3 className="text-sm font-bold text-white uppercase flex items-center gap-2"><Pipette size={16} /> Pipette System</h3>
+                      <RealisticPipette
+                        requiredVolume={currentStep.targetVolume || 500}
+                        onVolumeSet={(volume, pipetteSize) => {
+                          if (!hasDispensedThisStep) {
+                            setPipetteVolume(volume);
+                            setActiveTool('pipette');
+                            setPipetteLiquidColor(getLiquidColor(currentStep.reagentRequired));
+                            addLog(`Pipette set to ${volume}µL. Click pipette tip on tube to aspirate.`, "info");
+                          }
+                        }}
+                        onDispense={() => {
+                          if (!hasReagentForStep(currentStep.reagentRequired)) {
+                            addLog(`Aspiration Error: Missing ${currentStep.reagentRequired} reagent.`, "error");
+                            setMissedReagents(missedReagents + 1);
+                            setPipetteVolume(null);
+                            setActiveTool(null);
+                            setPipetteHasLiquid(false);
+                            return;
+                          }
+                          if (currentStep.isElution) {
+                            setElutionVolume(pipetteVolume);
+                          }
+                          setVolumeAddedThisStep(pipetteVolume);
+                          setStepVolumes(prev => {
+                            const title = currentStep?.title;
+                            if (title === "Proteinase K Digestion") return { ...prev, protK: pipetteVolume };
+                            if (title === "Lysis Phase") return { ...prev, lysis: pipetteVolume };
+                            if (title === "Binding/Column Load") return { ...prev, binding: pipetteVolume };
+                            if (title === "Wash Stage") return { ...prev, wash: pipetteVolume };
+                            if (title === "Elution") return { ...prev, elution: pipetteVolume };
+                            return prev;
+                          });
+                          addLog(`Dispensed ${pipetteVolume}µL`, "success");
+                          if (currentStep.targetVolume && Math.abs(pipetteVolume - currentStep.targetVolume) > 50) {
+                            setStoichiometryError(true);
+                            addLog("Warning: Volume deviates significantly from protocol.", "error");
+                          }
+                          setPipetteVolume(null);
+                          setActiveTool(null);
+                          setPipetteHasLiquid(false);
+                          if (currentStep.isElution) {
+                            addLog("Elution buffer added. Wait 1 minute for DNA to elute from the membrane.", "info");
+                            setTimeout(() => {
+                              setHasDispensedThisStep(true);
+                              addLog("Elution wait complete. Proceed to centrifugation.", "success");
+                            }, 1000);
+                          } else if (currentStep.requiresMixing) {
+                            setNeedsMixing(true);
+                            addLog("Click pipette above tube to mix solution.", "info");
+                          } else {
+                            setHasDispensedThisStep(true);
+                            addLog("Reagent added. Ready for next step.", "success");
+                          }
+                        }}
+                        disabled={hasDispensedThisStep}
+                        hasLiquid={pipetteHasLiquid}
+                        liquidColor={pipetteLiquidColor}
+                      />
                     </div>
                   )}
 
