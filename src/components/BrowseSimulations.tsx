@@ -35,6 +35,9 @@ export function BrowseSimulations() {
     const simId = simMap[techniqueId];
     if (simId) {
       navigate(`/lab?sim=${simId}`);
+    } else {
+      // Safety check - should never reach here with proper UI state
+      alert('⏳ This simulation is not yet available. Only DNA Extraction and PCR are currently accessible.');
     }
   };
 
@@ -118,9 +121,14 @@ export function BrowseSimulations() {
                           Start Practicing
                         </button>
                       ) : (
-                        <div className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-slate-100 text-slate-400 rounded-lg font-medium cursor-not-allowed">
+                        <button
+                          onClick={() => {
+                            alert('⏳ This simulation is under development and will be available soon. Only DNA Extraction and PCR are currently accessible.');
+                          }}
+                          className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-slate-100 text-slate-400 rounded-lg font-medium cursor-not-allowed"
+                        >
                           Coming Soon
-                        </div>
+                        </button>
                       )}
                     </div>
                   ))}

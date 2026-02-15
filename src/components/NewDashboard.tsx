@@ -57,10 +57,10 @@ interface EnrolledClass {
 const availableSimulations = [
   { id: 'dna-extraction', name: 'DNA Extraction', difficulty: 'Beginner', completed: false },
   { id: 'pcr-setup', name: 'PCR Setup', difficulty: 'Intermediate', completed: false },
-  { id: 'western-blot', name: 'Western Blot', difficulty: 'Advanced', completed: false },
-  { id: 'gel-electrophoresis', name: 'Gel Electrophoresis', difficulty: 'Intermediate', completed: false },
-  { id: 'confocal-microscopy', name: 'Confocal Microscopy', difficulty: 'Advanced', completed: false },
 ];
+
+const AVAILABLE_SIMULATION_IDS = ['dna-extraction', 'pcr-setup'];
+const AVAILABLE_SIMULATION_NAMES = ['DNA Extraction', 'PCR', 'PCR Setup'];
 
 export function NewDashboard() {
   const navigate = useNavigate();
@@ -94,12 +94,13 @@ export function NewDashboard() {
         setProfile(profileData);
       }
 
-      // Load last activity
+      // Load last activity (only show available simulations)
       const { data: activityData } = await supabase
         .from('simulation_usage')
         .select('id, simulation_name, started_at')
         .eq('user_id', user?.id)
         .eq('completed', false)
+        .in('simulation_name', AVAILABLE_SIMULATION_NAMES)
         .order('started_at', { ascending: false })
         .limit(1)
         .maybeSingle();
@@ -117,11 +118,12 @@ export function NewDashboard() {
 
       setCompletedCount(completedData?.length || 0);
 
-      // Load recent sessions
+      // Load recent sessions (only show available simulations)
       const { data: sessionsData } = await supabase
         .from('simulation_usage')
         .select('id, simulation_name, completed, started_at')
         .eq('user_id', user?.id)
+        .in('simulation_name', AVAILABLE_SIMULATION_NAMES)
         .order('started_at', { ascending: false })
         .limit(3);
 
@@ -201,6 +203,11 @@ export function NewDashboard() {
   };
 
   const handleStartSimulation = (simId: string) => {
+    // Only allow navigation to available simulations
+    if (!AVAILABLE_SIMULATION_IDS.includes(simId)) {
+      alert('⏳ This simulation is not yet available. Only DNA Extraction and PCR are currently accessible.');
+      return;
+    }
     navigate(`/lab?sim=${simId}`);
   };
 

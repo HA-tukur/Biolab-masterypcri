@@ -1195,12 +1195,20 @@ export default function App() {
     console.log('App mounted, screen:', screen);
     const sim = searchParams.get('sim');
     if (sim) {
+      // Only allow DNA Extraction and PCR
+      const availableSimulations = ['dna-extraction', 'pcr-setup'];
+
+      if (!availableSimulations.includes(sim)) {
+        // Locked simulation - redirect to browse page with message
+        console.log('Attempted to access locked simulation:', sim);
+        alert('⏳ This simulation is not yet available. Only DNA Extraction and PCR are currently accessible.');
+        navigate('/browse');
+        return;
+      }
+
       const simulationMap: Record<string, string> = {
         'dna-extraction': 'missions',
         'pcr-setup': 'pcr-missions',
-        'western-blot': 'welcome',
-        'gel-electrophoresis': 'welcome',
-        'confocal-microscopy': 'welcome'
       };
       const targetScreen = simulationMap[sim] || 'welcome';
       const missionFlowScreens = ['briefing', 'procurement', 'lab', 'workspace', 'result'];
