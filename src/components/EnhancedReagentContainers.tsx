@@ -10,6 +10,18 @@ interface Reagent {
   type?: 'tube' | 'bottle';
 }
 
+const getReagentTooltip = (reagentId: string): string => {
+  const tooltips: Record<string, string> = {
+    lysis: 'Buffer ATL (Lysis Buffer) - Breaks cell membranes | Use: Step 1 (200µL)',
+    proteinase_k: 'Proteinase K - Digests proteins at 56°C | Use: Step 1 (20µL)',
+    binding: 'Buffer AL (Binding Buffer) - Prepares DNA for column | Use: Step 3 (200µL)',
+    ethanol: 'Ethanol 96-100% - Required for DNA binding | Use: Step 3 (200µL)',
+    wash: 'Wash Buffer - Removes salts and contaminants | Use: Step 5 (500µL × 2)',
+    elute: 'Buffer AE (Elution Buffer) - Releases pure DNA | Use: Step 6 (50µL)'
+  };
+  return tooltips[reagentId] || '';
+};
+
 interface EnhancedReagentContainersProps {
   availableReagents: Reagent[];
   onContainerClick: (reagentId: string, color: string) => void;
@@ -73,6 +85,7 @@ export const EnhancedReagentContainers: React.FC<EnhancedReagentContainersProps>
             <div
               key={reagent.id}
               onClick={() => isClickable && onContainerClick(reagent.id, reagent.color)}
+              title={getReagentTooltip(reagent.id)}
               className={`
                 bg-slate-900/50 border rounded-xl p-3 transition-all
                 ${isClickable

@@ -305,11 +305,36 @@ export const LabEquipment: React.FC<LabEquipmentProps> = ({
             </div>
 
             <div className="bg-slate-950/50 rounded-lg p-2 space-y-2">
+              <div className="flex flex-wrap gap-1 mb-2">
+                <span className="text-[9px] text-slate-400 w-full mb-1">Quick Presets:</span>
+                {[37, 56, 72, 95].map(temp => (
+                  <button
+                    key={temp}
+                    onClick={() => setThermocyclerTemp(temp)}
+                    disabled={thermocyclerState !== 'idle'}
+                    className={`flex-1 min-w-[38px] py-1 ${
+                      thermocyclerTemp === temp
+                        ? 'bg-emerald-600 border border-emerald-400'
+                        : 'bg-slate-700 hover:bg-slate-600'
+                    } disabled:opacity-50 text-white rounded text-[10px] font-bold border-0 cursor-pointer transition-all ${
+                      temp === 56 ? 'ring-2 ring-amber-500/50' : ''
+                    }`}
+                    title={
+                      temp === 37 ? 'Body temperature' :
+                      temp === 56 ? 'Proteinase K optimal' :
+                      temp === 72 ? 'PCR extension' :
+                      'Denaturation'
+                    }
+                  >
+                    {temp}°C{temp === 56 ? ' ★' : ''}
+                  </button>
+                ))}
+              </div>
               <div className="flex items-center justify-between">
-                <span className="text-[10px] text-slate-400">Temp:</span>
+                <span className="text-[10px] text-slate-400">Fine Tune:</span>
                 <div className="flex items-center gap-1">
                   <button
-                    onClick={() => setThermocyclerTemp(Math.max(25, thermocyclerTemp - 5))}
+                    onClick={() => setThermocyclerTemp(Math.max(25, thermocyclerTemp - 1))}
                     disabled={thermocyclerState !== 'idle'}
                     className="w-6 h-6 bg-slate-700 hover:bg-slate-600 disabled:opacity-50 text-white rounded text-xs border-0 cursor-pointer"
                   >
@@ -317,7 +342,7 @@ export const LabEquipment: React.FC<LabEquipmentProps> = ({
                   </button>
                   <span className="text-xs text-white font-mono w-16 text-center">{thermocyclerTemp}°C</span>
                   <button
-                    onClick={() => setThermocyclerTemp(Math.min(100, thermocyclerTemp + 5))}
+                    onClick={() => setThermocyclerTemp(Math.min(100, thermocyclerTemp + 1))}
                     disabled={thermocyclerState !== 'idle'}
                     className="w-6 h-6 bg-slate-700 hover:bg-slate-600 disabled:opacity-50 text-white rounded text-xs border-0 cursor-pointer"
                   >

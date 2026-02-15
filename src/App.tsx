@@ -1397,6 +1397,24 @@ export default function App() {
 
   const has = (itemId) => inventory.includes(itemId);
 
+  useEffect(() => {
+    if (currentStep && screen === "lab" && status === "idle") {
+      const cond1 = (currentStep.requiresVolume && hasDispensedThisStep) || (currentStep.options);
+      const cond2 = currentStep.requiresSpin || currentStep.requiresIncubation ? hasSpunThisStep : true;
+      const cond3 = currentStep.requiresMixing ? (currentStep.title === "Lysis & Protein Digestion" ? step2Mixed : currentStep.title === "Binding Preparation" ? step3Mixed : !needsMixing) : true;
+
+      console.log('[Continue Button Check]', {
+        step: currentStep.title,
+        condition1: { requiresVolume: currentStep.requiresVolume, hasDispensedThisStep, hasOptions: !!currentStep.options, result: cond1 },
+        condition2: { requiresSpin: currentStep.requiresSpin, requiresIncubation: currentStep.requiresIncubation, hasSpunThisStep, result: cond2 },
+        condition3: { requiresMixing: currentStep.requiresMixing, step2Mixed, step3Mixed, needsMixing, result: cond3 },
+        allConditionsMet: cond1 && cond2 && cond3,
+        step1SubActions,
+        step3SubActions
+      });
+    }
+  }, [currentStep, hasDispensedThisStep, hasSpunThisStep, step2Mixed, step3Mixed, needsMixing, screen, status, step1SubActions, step3SubActions]);
+
   const addLog = (msg, type = 'info') => {
     if (difficultyMode === "challenge") {
       if (type === "error" || type === "success") {
@@ -1410,13 +1428,23 @@ export default function App() {
   const hasReagentForStep = (reagentId) => {
     if (!reagentId) return true;
     const reagentMap = {
-      proteinase_k: ['proteinase_k'],
+      proteinase_k: ['kit_qiagen', 'kit_thermo', 'proteinase_k'],
       lysis: ['kit_qiagen', 'kit_zymo', 'kit_thermo', 'lysis_clean'],
       binding: ['kit_qiagen', 'kit_zymo', 'kit_thermo', 'column'],
+      ethanol: ['ethanol'],
       wash: ['kit_qiagen', 'kit_zymo', 'kit_thermo', 'wash_buffer'],
       elute: ['kit_qiagen', 'kit_zymo', 'kit_thermo', 'elute_buffer']
     };
-    return (reagentMap[reagentId] || []).some(r => has(r));
+    const sources = reagentMap[reagentId] || [];
+    const isAvailable = sources.some(r => has(r));
+
+    console.log(`[Reagent Check] ${reagentId}:`, {
+      sources,
+      inventory,
+      available: isAvailable
+    });
+
+    return isAvailable;
   };
 
   const getLiquidColor = (reagentId) => {
@@ -1440,12 +1468,12 @@ export default function App() {
         name: 'Proteinase K',
         type: 'tube',
         color: '#f59e0b',
-        volume: '200µL',
-        available: has('proteinase_k')
+        volume: '20µL',
+        available: hasReagentForStep('proteinase_k')
       },
       {
         id: 'lysis',
-        name: 'Lysis Buffer',
+        name: 'Buffer ATL (Lysis Buffer)',
         type: 'bottle',
         color: '#ec4899',
         volume: '50mL',
@@ -1453,7 +1481,7 @@ export default function App() {
       },
       {
         id: 'binding',
-        name: 'Binding Buffer',
+        name: 'Buffer AL (Binding Buffer)',
         type: 'bottle',
         color: '#a855f7',
         volume: '50mL',
@@ -1465,7 +1493,7 @@ export default function App() {
         type: 'bottle',
         color: '#60a5fa',
         volume: '500mL',
-        available: has('ethanol')
+        available: hasReagentForStep('ethanol')
       },
       {
         id: 'wash',
@@ -1477,7 +1505,7 @@ export default function App() {
       },
       {
         id: 'elute',
-        name: 'Elution Buffer',
+        name: 'Buffer AE (Elution Buffer)',
         type: 'bottle',
         color: '#3b82f6',
         volume: '10mL',
@@ -1487,7 +1515,16 @@ export default function App() {
 
     if (currentStep.reagents) {
       const stepReagentIds = currentStep.reagents.map(r => r.id);
-      return allReagents.filter(r => r.available && stepReagentIds.includes(r.id));
+      const availableForStep = allReagents.filter(r => r.available && stepReagentIds.includes(r.id));
+
+      console.log('[Available Reagents]', {
+        stepTitle: currentStep.title,
+        stepReagentIds,
+        allReagents: allReagents.map(r => ({ id: r.id, available: r.available })),
+        availableForStep: availableForStep.map(r => r.id)
+      });
+
+      return availableForStep;
     }
 
     return allReagents.filter(r => r.available);
@@ -1694,8 +1731,8 @@ export default function App() {
     const allSteps = [
       {
         title: "Lysis & Protein Digestion",
-        prompt: "Add 180-200 µL Lysis Buffer and 20 µL Proteinase K to minced tissue. MIX gently and INCUBATE at 56°C for 1-3 hours.",
-        science: "Detergents break open cell membranes while Proteinase K digests proteins (histones, nucleases, structural proteins) that interfere with DNA recovery. ⚠️ CRITICAL: 20 µL Proteinase K is the standard amount for ~25 mg tissue. 2 µL (shown in older protocols) is insufficient for complete protein digestion.",
+        prompt: "Add 180-200 µL Lysis Buffer (Buffer ATL) and 20 µL Proteinase K to minced tissue. MIX gently and INCUBATE at 56°C for 1-3 hours.",
+        science: "Detergents break open cell membranes while Proteinase K digests proteins (histones, nucleases, structural proteins) that interfere with DNA recovery. ⚠️ Note: Both Lysis Buffer and Proteinase K are included in your DNA extraction kit. 20 µL Proteinase K is the standard amount for ~25 mg tissue.",
         requiresIncubation: true,
         incubationTemp: 56,
         incubationDuration: 120,
@@ -1720,8 +1757,8 @@ export default function App() {
       },
       {
         title: "Binding Preparation",
-        prompt: "Add 200 µL Binding Buffer and 200 µL Ethanol (96-100%) to cleared lysate. MIX gently - do not vortex.",
-        science: "Chaotropic salts + ethanol create conditions for DNA to bind to silica column membranes. 🧪 WHY THIS MATTERS: Without ethanol, DNA will NOT bind to the silica membrane and will wash away. This is the #1 reason beginners get low yields.",
+        prompt: "Add 200 µL Binding Buffer (Buffer AL) and 200 µL Ethanol (96-100%) to cleared lysate. MIX gently - do not vortex.",
+        science: "Chaotropic salts + ethanol create conditions for DNA to bind to silica column membranes. 🧪 WHY THIS MATTERS: Without ethanol, DNA will NOT bind to the silica membrane and will wash away. This is the #1 reason beginners get low yields. ⚠️ Note: Binding Buffer comes from your kit; Ethanol must be purchased separately from Equipment & Reagents.",
         requiresVolume: true,
         requiresMixing: true,
         multipleReagents: true,
