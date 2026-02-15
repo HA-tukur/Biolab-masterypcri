@@ -2873,7 +2873,18 @@ export default function App() {
                 <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between mb-4 gap-4">
                   <div className="flex-1">
                     <h2 className="text-xl font-black text-slate-50 uppercase tracking-tight">Step {protocolIndex + 1}: {currentStep.title}</h2>
-                    <span className="text-xs text-slate-500 font-mono">Progress: {protocolIndex + 1}/{protocolSteps.length}</span>
+                    <div className="flex items-center gap-3 mt-1">
+                      <span className="text-xs text-slate-500 font-mono">Progress: {protocolIndex + 1}/{protocolSteps.length}</span>
+                      {(() => {
+                        const subProgress = getSubActionProgress();
+                        if (subProgress && subProgress.completed === subProgress.total) {
+                          return (
+                            <span className="text-xs text-emerald-400 font-bold">All tasks complete ✓</span>
+                          );
+                        }
+                        return null;
+                      })()}
+                    </div>
                   </div>
                   <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto">
                     {difficultyMode === "challenge" && (
@@ -2914,7 +2925,7 @@ export default function App() {
                       const buttonText = canContinue
                         ? `CONTINUE TO STEP ${nextStepNumber} →`
                         : remainingTasks > 0
-                          ? `Complete ${remainingTasks} ${remainingTasks === 1 ? 'task' : 'tasks'} to continue`
+                          ? `Complete ${remainingTasks} remaining ${remainingTasks === 1 ? 'task' : 'tasks'}`
                           : 'Complete step to continue';
 
                       return (
@@ -3024,9 +3035,13 @@ export default function App() {
                             w-full lg:w-auto px-6 py-3 rounded-lg font-bold text-sm transition-all border-0 whitespace-nowrap
                             ${canContinue
                               ? 'bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-500 hover:to-orange-400 text-white cursor-pointer hover:scale-105 hover:shadow-lg hover:shadow-orange-500/40 animate-continue-pulse'
-                              : 'bg-slate-700 text-slate-400 border border-slate-600 cursor-not-allowed'
+                              : 'cursor-not-allowed'
                             }
                           `}
+                          style={canContinue ? {} : {
+                            backgroundColor: '#2a2a2a',
+                            color: '#666',
+                          }}
                         >
                           {buttonText}
                         </button>
