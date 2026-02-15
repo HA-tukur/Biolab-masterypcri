@@ -47,7 +47,7 @@ export const LabEquipment: React.FC<LabEquipmentProps> = ({
       setTimeout(() => {
         setCentrifugeState('idle');
         setIsBalanced(false);
-      }, centrifugeTime * 1000);
+      }, 5500);
     } else if (action === 'remove') {
       setCentrifugeState('idle');
       setIsBalanced(false);
@@ -66,7 +66,7 @@ export const LabEquipment: React.FC<LabEquipmentProps> = ({
       onEquipmentUse('thermocycler', 'start', { temp: thermocyclerTemp, time: thermocyclerTime });
       setTimeout(() => {
         setThermocyclerState('idle');
-      }, thermocyclerTime * 1000);
+      }, 9000);
     } else if (action === 'remove') {
       setThermocyclerState('idle');
       onEquipmentUse('thermocycler', 'remove');
@@ -82,7 +82,7 @@ export const LabEquipment: React.FC<LabEquipmentProps> = ({
       onEquipmentUse('vortex', 'start', { time: vortexTime });
       setTimeout(() => {
         setVortexState('idle');
-      }, vortexTime * 1000);
+      }, 3500);
     } else if (action === 'remove') {
       setVortexState('idle');
       onEquipmentUse('vortex', 'remove');
