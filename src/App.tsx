@@ -1397,24 +1397,6 @@ export default function App() {
 
   const has = (itemId) => inventory.includes(itemId);
 
-  useEffect(() => {
-    if (currentStep && screen === "lab" && status === "idle") {
-      const cond1 = (currentStep.requiresVolume && hasDispensedThisStep) || (currentStep.options);
-      const cond2 = currentStep.requiresSpin || currentStep.requiresIncubation ? hasSpunThisStep : true;
-      const cond3 = currentStep.requiresMixing ? (currentStep.title === "Lysis & Protein Digestion" ? step2Mixed : currentStep.title === "Binding Preparation" ? step3Mixed : !needsMixing) : true;
-
-      console.log('[Continue Button Check]', {
-        step: currentStep.title,
-        condition1: { requiresVolume: currentStep.requiresVolume, hasDispensedThisStep, hasOptions: !!currentStep.options, result: cond1 },
-        condition2: { requiresSpin: currentStep.requiresSpin, requiresIncubation: currentStep.requiresIncubation, hasSpunThisStep, result: cond2 },
-        condition3: { requiresMixing: currentStep.requiresMixing, step2Mixed, step3Mixed, needsMixing, result: cond3 },
-        allConditionsMet: cond1 && cond2 && cond3,
-        step1SubActions,
-        step3SubActions
-      });
-    }
-  }, [currentStep, hasDispensedThisStep, hasSpunThisStep, step2Mixed, step3Mixed, needsMixing, screen, status, step1SubActions, step3SubActions]);
-
   const addLog = (msg, type = 'info') => {
     if (difficultyMode === "challenge") {
       if (type === "error" || type === "success") {
@@ -3354,7 +3336,24 @@ export default function App() {
               />
 
               {/* Continue Button - Full Width */}
-              {((currentStep.requiresVolume && hasDispensedThisStep) || (currentStep.options)) && (currentStep.requiresSpin || currentStep.requiresIncubation ? hasSpunThisStep : true) && (currentStep.requiresMixing ? (currentStep.title === "Lysis & Protein Digestion" ? step2Mixed : currentStep.title === "Binding Preparation" ? step3Mixed : !needsMixing) : true) && (
+              {(() => {
+                const cond1 = (currentStep.requiresVolume && hasDispensedThisStep) || (currentStep.options);
+                const cond2 = currentStep.requiresSpin || currentStep.requiresIncubation ? hasSpunThisStep : true;
+                const cond3 = currentStep.requiresMixing ? (currentStep.title === "Lysis & Protein Digestion" ? step2Mixed : currentStep.title === "Binding Preparation" ? step3Mixed : !needsMixing) : true;
+                const showButton = cond1 && cond2 && cond3;
+
+                console.log('[Continue Button Check]', {
+                  step: currentStep?.title || 'unknown',
+                  condition1: { requiresVolume: currentStep.requiresVolume, hasDispensedThisStep, hasOptions: !!currentStep.options, result: cond1 },
+                  condition2: { requiresSpin: currentStep.requiresSpin, requiresIncubation: currentStep.requiresIncubation, hasSpunThisStep, result: cond2 },
+                  condition3: { requiresMixing: currentStep.requiresMixing, step2Mixed, step3Mixed, needsMixing, result: cond3 },
+                  showButton,
+                  step1SubActions,
+                  step3SubActions
+                });
+
+                return showButton;
+              })() && (
                 <button onClick={() => {
                   if (currentStep.requiresSpin && !hasSpunThisStep) {
                     setMissedSpins(missedSpins + 1);
