@@ -1329,6 +1329,7 @@ export default function App() {
   const [missedSpins, setMissedSpins] = useState(0);
   const [missedReagents, setMissedReagents] = useState(0);
   const [stoichiometryError, setStoichiometryError] = useState(false);
+  const [mistakes, setMistakes] = useState([]);
   const [activeTool, setActiveTool] = useState(null);
   const [pipetteVolume, setPipetteVolume] = useState(null);
   const [pipetteHasLiquid, setPipetteHasLiquid] = useState(false);
@@ -1411,56 +1412,163 @@ export default function App() {
   };
 
   const getAvailableReagents = (stepTitle, reagentRequired) => {
-    const reagents = [];
-
-    if (stepTitle === "Proteinase K Digestion") {
-      reagents.push({
+    const allReagents = [
+      {
         id: 'proteinase_k',
         name: 'Proteinase K',
         type: 'tube',
         color: '#f59e0b',
         volume: '200µL',
-        available: hasReagentForStep('proteinase_k')
-      });
-    } else if (stepTitle === "Lysis Phase") {
-      reagents.push({
+        available: has('proteinase_k')
+      },
+      {
         id: 'lysis',
         name: 'Lysis Buffer',
         type: 'bottle',
         color: '#ec4899',
         volume: '50mL',
         available: hasReagentForStep('lysis')
-      });
-    } else if (stepTitle === "Binding/Column Load") {
-      reagents.push({
+      },
+      {
         id: 'binding',
         name: 'Binding Buffer',
         type: 'bottle',
         color: '#a855f7',
         volume: '50mL',
         available: hasReagentForStep('binding')
-      });
-    } else if (stepTitle === "Wash Stage") {
-      reagents.push({
+      },
+      {
         id: 'wash',
         name: 'Wash Buffer',
         type: 'bottle',
         color: '#e2e8f0',
         volume: '50mL',
         available: hasReagentForStep('wash')
-      });
-    } else if (stepTitle === "Elution") {
-      reagents.push({
+      },
+      {
         id: 'elute',
         name: 'Elution Buffer',
         type: 'bottle',
         color: '#3b82f6',
         volume: '10mL',
         available: hasReagentForStep('elute')
-      });
-    }
+      }
+    ];
 
-    return reagents;
+    return allReagents.filter(r => r.available);
+  };
+
+  const trackMistake = (type, details) => {
+    setMistakes(prev => [...prev, {
+      type,
+      step: currentStep?.title || 'Unknown',
+      stepIndex: protocolIndex,
+      details,
+      timestamp: Date.now()
+    }]);
+  };
+
+  const calculateConsequences = () => {
+    const consequences = [];
+    let yieldPenalty = 0;
+    let purityPenalty = 0;
+    let concentrationPenalty = 0;
+
+    mistakes.forEach(mistake => {
+      let consequence = {
+        severity: 'minor',
+        title: '',
+        description: '',
+        impact: ''
+      };
+
+      if (mistake.type === 'wrong_reagent') {
+        const { expected, actual } = mistake.details;
+
+        if (expected === 'proteinase_k' && actual !== 'proteinase_k') {
+          consequence = {
+            severity: 'critical',
+            title: 'Missing Proteinase K in Lysis',
+            description: `Used ${actual} instead of Proteinase K during tissue digestion.`,
+            impact: 'Cell membranes not digested. DNA remains trapped in intact cells. Complete extraction failure expected.'
+          };
+          yieldPenalty = 100;
+        } else if (expected === 'lysis' && actual !== 'lysis') {
+          consequence = {
+            severity: 'critical',
+            title: 'Wrong Lysis Buffer',
+            description: `Used ${actual} instead of Lysis Buffer.`,
+            impact: 'Cells not lysed properly. DNA yield severely reduced (60-90% loss).'
+          };
+          yieldPenalty += 75;
+        } else if (expected === 'binding' && actual !== 'binding') {
+          consequence = {
+            severity: 'critical',
+            title: 'Wrong Binding Buffer',
+            description: `Used ${actual} instead of Binding Buffer.`,
+            impact: 'DNA not retained on column. Most DNA washed to waste (80-95% loss).'
+          };
+          yieldPenalty += 85;
+        } else if (expected === 'wash' && actual !== 'wash') {
+          consequence = {
+            severity: 'major',
+            title: 'Wrong Wash Buffer',
+            description: `Used ${actual} instead of Wash Buffer.`,
+            impact: 'Contaminants not removed. DNA purity severely compromised (proteins, salts remain).'
+          };
+          purityPenalty += 0.6;
+        } else if (expected === 'elute' && actual !== 'elute') {
+          consequence = {
+            severity: 'major',
+            title: 'Wrong Elution Buffer',
+            description: `Used ${actual} instead of Elution Buffer.`,
+            impact: 'DNA poorly eluted from membrane. Low yield and potential DNA degradation.'
+          };
+          yieldPenalty += 40;
+          purityPenalty += 0.3;
+        }
+      } else if (mistake.type === 'wrong_volume') {
+        const { expected, actual, deviation } = mistake.details;
+        const percentOff = Math.round((deviation / expected) * 100);
+
+        if (percentOff > 50) {
+          consequence = {
+            severity: 'major',
+            title: 'Severe Volume Deviation',
+            description: `Used ${actual}µL instead of ${expected}µL (${percentOff}% deviation).`,
+            impact: 'Reagent concentrations incorrect. May affect binding efficiency and elution completeness.'
+          };
+          if (actual > expected) {
+            concentrationPenalty += 30;
+          } else {
+            yieldPenalty += 20;
+          }
+        } else if (percentOff > 20) {
+          consequence = {
+            severity: 'minor',
+            title: 'Volume Inaccuracy',
+            description: `Used ${actual}µL instead of ${expected}µL (${percentOff}% deviation).`,
+            impact: 'Minor impact on DNA concentration and overall yield.'
+          };
+          concentrationPenalty += 10;
+        }
+      } else if (mistake.type === 'wrong_pipette') {
+        const { expected, actual, volume } = mistake.details;
+        consequence = {
+          severity: 'minor',
+          title: 'Suboptimal Pipette Selection',
+          description: `Used ${actual} pipette instead of ${expected} for ${volume}µL.`,
+          impact: 'Reduced accuracy. May introduce pipetting errors (±5-10%).'
+        };
+        yieldPenalty += 5;
+      }
+
+      if (consequence.title) {
+        consequences.push(consequence);
+      }
+    });
+
+    return { consequences, yieldPenalty, purityPenalty, concentrationPenalty };
   };
 
   useEffect(() => {
@@ -1709,13 +1817,20 @@ export default function App() {
         }
       }
     } else {
-      // Normal yield calculation
-      let yieldPenalty = 1.0;
-      if (missedSpins > 0) yieldPenalty *= 0.1;
-      if (protocolAdherenceCompromised) yieldPenalty *= 0.7;
+      // Calculate mistake-based penalties
+      const { yieldPenalty: mistakeYieldPenalty, purityPenalty: mistakePurityPenalty, concentrationPenalty: mistakeConcentrationPenalty } = calculateConsequences();
 
-      localYield = parseFloat((sampleMass * yieldMultiplier * yieldPenalty).toFixed(2));
-      localConc = parseFloat(((localYield * 1000) / elutionVolume).toFixed(1));
+      // Normal yield calculation
+      let yieldPenaltyPercent = 1.0;
+      if (missedSpins > 0) yieldPenaltyPercent *= 0.1;
+      if (protocolAdherenceCompromised) yieldPenaltyPercent *= 0.7;
+
+      yieldPenaltyPercent *= (1 - mistakeYieldPenalty / 100);
+
+      localYield = parseFloat((sampleMass * yieldMultiplier * yieldPenaltyPercent).toFixed(2));
+
+      let adjustedConcentrationPenalty = 1.0 - (mistakeConcentrationPenalty / 100);
+      localConc = parseFloat(((localYield * 1000 * adjustedConcentrationPenalty) / elutionVolume).toFixed(1));
 
       // PURITY LOGIC: Checking for MIXING and WASH steps
       let purityScore = 1.88;
@@ -1728,6 +1843,8 @@ export default function App() {
 
       // Lysis (Step 3) MUST be mixed
       if (!step3Mixed) purityScore -= 0.4;
+
+      purityScore -= mistakePurityPenalty;
 
       localPurity = Math.max(0.4, purityScore).toFixed(2);
 
@@ -2637,13 +2754,6 @@ export default function App() {
                           animation: 'bounce 1s infinite, drip 2s ease-in-out infinite'
                         }}
                         onClick={() => {
-                          if (!hasReagentForStep(currentStep.reagentRequired)) {
-                            addLog(`Aspiration Error: Missing ${currentStep.reagentRequired} reagent.`, "error");
-                            setMissedReagents(missedReagents + 1);
-                            setPipetteVolume(null);
-                            setActiveTool(null);
-                            return;
-                          }
                           setPipetteHasLiquid(true);
                           addLog(`Aspirated ${pipetteVolume}µL. Click "Press Plunger to Dispense" to add to tube.`, "success");
                         }}
@@ -2802,14 +2912,17 @@ export default function App() {
                           availableReagents={getAvailableReagents(currentStep.title, currentStep.reagentRequired)}
                           onContainerClick={(reagentId, color) => {
                             if (pipetteVolume && activeTool === 'pipette' && !pipetteHasLiquid) {
-                              if (!hasReagentForStep(currentStep.reagentRequired)) {
-                                addLog(`Aspiration Error: Missing ${currentStep.reagentRequired} reagent.`, "error");
-                                setMissedReagents(missedReagents + 1);
-                                setPipetteVolume(null);
-                                setActiveTool(null);
-                                return;
-                              }
                               setPipetteHasLiquid(true);
+                              setPipetteLiquidColor(color);
+
+                              if (reagentId !== currentStep.reagentRequired) {
+                                trackMistake('wrong_reagent', {
+                                  expected: currentStep.reagentRequired,
+                                  actual: reagentId,
+                                  volume: pipetteVolume
+                                });
+                              }
+
                               addLog(`Aspirated ${pipetteVolume}µL from ${reagentId}. Press plunger to dispense.`, "success");
                             }
                           }}
@@ -2827,18 +2940,31 @@ export default function App() {
                             setPipetteVolume(volume);
                             setActiveTool('pipette');
                             setPipetteLiquidColor(getLiquidColor(currentStep.reagentRequired));
-                            addLog(`Pipette set to ${volume}µL. Click pipette tip on tube to aspirate.`, "info");
+
+                            if (currentStep.targetVolume && Math.abs(volume - currentStep.targetVolume) > 50) {
+                              trackMistake('wrong_volume', {
+                                expected: currentStep.targetVolume,
+                                actual: volume,
+                                deviation: Math.abs(volume - currentStep.targetVolume)
+                              });
+                            }
+
+                            if (currentStep.targetVolume) {
+                              const optimalPipette = currentStep.targetVolume <= 10 ? '2.5µL' :
+                                                     currentStep.targetVolume <= 100 ? '20µL' : '1000µL';
+                              if (pipetteSize !== optimalPipette) {
+                                trackMistake('wrong_pipette', {
+                                  expected: optimalPipette,
+                                  actual: pipetteSize,
+                                  volume: volume
+                                });
+                              }
+                            }
+
+                            addLog(`Pipette set to ${volume}µL. Click reagent container to aspirate.`, "info");
                           }
                         }}
                         onDispense={() => {
-                          if (!hasReagentForStep(currentStep.reagentRequired)) {
-                            addLog(`Aspiration Error: Missing ${currentStep.reagentRequired} reagent.`, "error");
-                            setMissedReagents(missedReagents + 1);
-                            setPipetteVolume(null);
-                            setActiveTool(null);
-                            setPipetteHasLiquid(false);
-                            return;
-                          }
                           if (currentStep.isElution) {
                             setElutionVolume(pipetteVolume);
                           }
@@ -2853,10 +2979,6 @@ export default function App() {
                             return prev;
                           });
                           addLog(`Dispensed ${pipetteVolume}µL`, "success");
-                          if (currentStep.targetVolume && Math.abs(pipetteVolume - currentStep.targetVolume) > 50) {
-                            setStoichiometryError(true);
-                            addLog("Warning: Volume deviates significantly from protocol.", "error");
-                          }
                           setPipetteVolume(null);
                           setActiveTool(null);
                           setPipetteHasLiquid(false);
@@ -3124,10 +3246,56 @@ export default function App() {
                   <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-[11px] font-mono">
                     <div><span className="text-slate-500">Elution Volume:</span> <span className="text-white">{elutionVolume}µL</span></div>
                     <div><span className="text-slate-500">Missed Spins:</span> <span className={missedSpins > 0 ? "text-rose-400" : "text-emerald-400"}>{missedSpins}</span></div>
-                    <div><span className="text-slate-500">Missed Reagents:</span> <span className={missedReagents > 0 ? "text-rose-400" : "text-emerald-400"}>{missedReagents}</span></div>
+                    <div><span className="text-slate-500">Protocol Deviations:</span> <span className={mistakes.length > 0 ? "text-rose-400" : "text-emerald-400"}>{mistakes.length}</span></div>
                     <div><span className="text-slate-500">Stoichiometry:</span> <span className={stoichiometryError ? "text-rose-400" : "text-emerald-400"}>{stoichiometryError ? "Error" : "OK"}</span></div>
                   </div>
                 </div>
+
+                {mistakes.length > 0 && (() => {
+                  const { consequences } = calculateConsequences();
+                  return (
+                    <div className="bg-slate-900/50 p-4 rounded-xl border border-rose-500/30 text-left space-y-3">
+                      <div className="flex items-center gap-2 mb-2">
+                        <AlertCircle size={16} className="text-rose-400" />
+                        <h4 className="text-xs font-bold text-rose-400 uppercase">Protocol Deviations & Consequences</h4>
+                      </div>
+                      <p className="text-[10px] text-slate-400 mb-3">
+                        Your protocol had {mistakes.length} deviation{mistakes.length !== 1 ? 's' : ''}. Each mistake affects your final DNA quality and yield.
+                      </p>
+                      <div className="space-y-2 max-h-64 overflow-y-auto">
+                        {consequences.map((consequence, i) => (
+                          <div key={i} className={`p-3 rounded-lg border ${
+                            consequence.severity === 'critical' ? 'bg-rose-900/30 border-rose-500/50' :
+                            consequence.severity === 'major' ? 'bg-amber-900/30 border-amber-500/50' :
+                            'bg-slate-800/50 border-slate-600/50'
+                          }`}>
+                            <div className="flex items-start gap-2 mb-1">
+                              <span className={`text-xs font-black uppercase tracking-wider ${
+                                consequence.severity === 'critical' ? 'text-rose-400' :
+                                consequence.severity === 'major' ? 'text-amber-400' :
+                                'text-slate-400'
+                              }`}>
+                                {consequence.severity}
+                              </span>
+                            </div>
+                            <h5 className="text-xs font-bold text-white mb-1">{consequence.title}</h5>
+                            <p className="text-[10px] text-slate-300 mb-1.5">{consequence.description}</p>
+                            <div className="bg-slate-950/50 p-2 rounded border border-slate-700/50">
+                              <p className="text-[9px] text-slate-400">
+                                <span className="font-bold text-rose-300">Impact:</span> {consequence.impact}
+                              </p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="bg-slate-950/50 p-3 rounded-lg border border-slate-700/50 mt-3">
+                        <p className="text-[10px] text-slate-400">
+                          <span className="font-bold text-emerald-400">Learning Point:</span> In a real lab, these mistakes would compromise your experiment and waste valuable samples. Understanding WHY each step matters helps you become a better scientist.
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })()}
 
                 {difficultyMode === "challenge" && challengeModeErrors.length > 0 && (
                   <div className="bg-amber-900/20 border border-amber-500/30 p-4 rounded-xl text-left">
