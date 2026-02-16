@@ -317,6 +317,20 @@ const SpinColumnVisual = ({ volume, hasDNA, hasSpun = false }) => {
   );
 };
 
+const PipetteAnimationIcon = ({ position }) => (
+  <div
+    className="absolute z-10 animate-bounce"
+    style={{
+      top: position === 'tube' ? '-40px' : '-30px',
+      left: '50%',
+      transform: 'translateX(-50%)',
+      animation: 'bounce 0.5s ease-in-out infinite'
+    }}
+  >
+    <Pipette size={24} className="text-sky-400 drop-shadow-lg" />
+  </div>
+);
+
 const PCRMachineVisual = () => (
   <svg width="50" height="50" viewBox="0 0 60 60" fill="none">
     <rect x="10" y="15" width="40" height="35" rx="2" fill="#475569"/>
@@ -1360,6 +1374,11 @@ export default function App() {
   const [isSpinning, setIsSpinning] = useState(false);
   const [hasSpunThisStep, setHasSpunThisStep] = useState(false);
   const [tubeInCentrifuge, setTubeInCentrifuge] = useState(false);
+  const [selectedPipetteForTransfer, setSelectedPipetteForTransfer] = useState(null);
+  const [hasAspiratedFromTube, setHasAspiratedFromTube] = useState(false);
+  const [liquidInColumn, setLiquidInColumn] = useState(false);
+  const [showPipetteAnimation, setShowPipetteAnimation] = useState(false);
+  const [pipetteAnimationPosition, setPipetteAnimationPosition] = useState('tube');
   const [missedSpins, setMissedSpins] = useState(0);
   const [missedReagents, setMissedReagents] = useState(0);
   const [stoichiometryError, setStoichiometryError] = useState(false);
@@ -3004,10 +3023,15 @@ export default function App() {
                         }
                       } else {
                         // No subtasks - use existing logic
-                        const cond1 = (currentStep.requiresVolume && hasDispensedThisStep) || (currentStep.options) || (!currentStep.requiresVolume && !currentStep.options);
-                        const cond2 = currentStep.requiresSpin || currentStep.requiresIncubation ? hasSpunThisStep : true;
-                        const cond3 = currentStep.requiresMixing ? (currentStep.title === "Lysis & Protein Digestion" ? step2Mixed : currentStep.title === "Binding Preparation" ? step3Mixed : !needsMixing) : true;
-                        canContinue = cond1 && cond2 && cond3;
+                        if (currentStep.title === "Column Binding") {
+                          // Special condition for Column Binding: must load liquid into column and spin
+                          canContinue = liquidInColumn && hasSpunThisStep;
+                        } else {
+                          const cond1 = (currentStep.requiresVolume && hasDispensedThisStep) || (currentStep.options) || (!currentStep.requiresVolume && !currentStep.options);
+                          const cond2 = currentStep.requiresSpin || currentStep.requiresIncubation ? hasSpunThisStep : true;
+                          const cond3 = currentStep.requiresMixing ? (currentStep.title === "Lysis & Protein Digestion" ? step2Mixed : currentStep.title === "Binding Preparation" ? step3Mixed : !needsMixing) : true;
+                          canContinue = cond1 && cond2 && cond3;
+                        }
                       }
 
                       const nextStepNumber = protocolIndex + 2;
@@ -3125,6 +3149,11 @@ export default function App() {
                                 setCurrentStepReagents({});
                                 setCurrentReagentId(null);
                                 setShowMixPrompt(false);
+                                setSelectedPipetteForTransfer(null);
+                                setHasAspiratedFromTube(false);
+                                setLiquidInColumn(false);
+                                setShowPipetteAnimation(false);
+                                setPipetteAnimationPosition('tube');
                                 window.scrollTo({ top: 0, behavior: 'smooth' });
                               }
                             }
@@ -3265,23 +3294,67 @@ export default function App() {
                       <div className={`flex justify-center transition-all duration-500 ${tubeAnimating ? 'opacity-20 scale-75' : 'opacity-100 scale-100'} ${isMixing ? 'animate-[wiggle_0.5s_ease-in-out_4]' : ''}`}>
                         {currentStep.title === "Column Binding" ? (
                           <div className="flex items-center justify-center gap-6">
-                            <div className="flex flex-col items-center">
-                              <TubeVisual
-                                volume={bufferVolume + volumeAddedThisStep}
-                                solidMass={currentSolidMass}
-                                hasPellet={pelletVisible}
-                                showColorChange={currentStep.title === "Lysis & Protein Digestion"}
-                              />
+                            <div className="flex flex-col items-center relative">
+                              <div
+                                className={`relative ${selectedPipetteForTransfer && !hasAspiratedFromTube ? 'cursor-pointer hover:scale-105 transition-transform ring-4 ring-sky-400 ring-opacity-50 animate-pulse' : ''}`}
+                                onClick={() => {
+                                  if (selectedPipetteForTransfer && !hasAspiratedFromTube) {
+                                    setHasAspiratedFromTube(true);
+                                    setShowPipetteAnimation(true);
+                                    setPipetteAnimationPosition('tube');
+                                    addLog(`Aspirated ${bufferVolume + volumeAddedThisStep}µL from sample tube`, "info");
+                                    setTimeout(() => {
+                                      setShowPipetteAnimation(false);
+                                    }, 1500);
+                                  }
+                                }}
+                              >
+                                {showPipetteAnimation && pipetteAnimationPosition === 'tube' && (
+                                  <PipetteAnimationIcon position="tube" />
+                                )}
+                                <TubeVisual
+                                  volume={hasAspiratedFromTube ? 0 : (bufferVolume + volumeAddedThisStep)}
+                                  solidMass={currentSolidMass}
+                                  hasPellet={pelletVisible}
+                                  showColorChange={currentStep.title === "Lysis & Protein Digestion"}
+                                />
+                              </div>
                               <p className="text-[9px] text-slate-400 font-bold uppercase mt-2">Sample Tube</p>
-                              <p className="text-[8px] text-emerald-400 mt-1">{bufferVolume + volumeAddedThisStep}µL</p>
+                              <p className="text-[8px] text-emerald-400 mt-1">
+                                {hasAspiratedFromTube ? '0µL' : `${bufferVolume + volumeAddedThisStep}µL`}
+                              </p>
+                              {selectedPipetteForTransfer && !hasAspiratedFromTube && (
+                                <p className="text-[9px] text-sky-400 mt-1 animate-pulse">Click to aspirate →</p>
+                              )}
                             </div>
                             <div className="text-slate-400 text-2xl">→</div>
-                            <div className="flex flex-col items-center">
-                              <SpinColumnVisual
-                                volume={bufferVolume + volumeAddedThisStep}
-                                hasDNA={false}
-                                hasSpun={hasSpunThisStep}
-                              />
+                            <div className="flex flex-col items-center relative">
+                              <div
+                                className={`relative ${hasAspiratedFromTube && !liquidInColumn ? 'cursor-pointer hover:scale-105 transition-transform ring-4 ring-sky-400 ring-opacity-50 animate-pulse' : ''}`}
+                                onClick={() => {
+                                  if (hasAspiratedFromTube && !liquidInColumn) {
+                                    setLiquidInColumn(true);
+                                    setShowPipetteAnimation(true);
+                                    setPipetteAnimationPosition('column');
+                                    addLog(`Dispensed ${bufferVolume + volumeAddedThisStep}µL into spin column`, "success");
+                                    setTimeout(() => {
+                                      setShowPipetteAnimation(false);
+                                    }, 1500);
+                                  }
+                                }}
+                              >
+                                {showPipetteAnimation && pipetteAnimationPosition === 'column' && (
+                                  <PipetteAnimationIcon position="column" />
+                                )}
+                                <SpinColumnVisual
+                                  volume={liquidInColumn ? (bufferVolume + volumeAddedThisStep) : 0}
+                                  hasDNA={false}
+                                  hasSpun={hasSpunThisStep}
+                                />
+                              </div>
+                              {hasAspiratedFromTube && !liquidInColumn && (
+                                <p className="text-[9px] text-sky-400 mt-1 animate-pulse">Click to dispense →</p>
+                              )}
                             </div>
                           </div>
                         ) : (currentStep.title === "Binding/Column Load" || currentStep.title === "Wash Stage" || currentStep.title === "Wash & Dry") ? (
@@ -3474,7 +3547,50 @@ export default function App() {
 
                 {/* Column 3: Pipettes (35%) */}
                 <div className="md:col-span-1">
-                  {currentStep.requiresVolume && (
+                  {currentStep.title === "Column Binding" ? (
+                    <div className="bg-slate-800 border border-slate-700 p-4 rounded-2xl">
+                      <h3 className="text-sm font-bold text-white uppercase flex items-center gap-2 mb-4">
+                        <Pipette size={16} /> Transfer Tool
+                      </h3>
+                      <div className="space-y-4">
+                        <div className="bg-slate-900/50 border border-slate-600 p-4 rounded-lg">
+                          <p className="text-xs text-slate-300 mb-3">Select 1000µL pipette to transfer sample:</p>
+                          <button
+                            onClick={() => {
+                              setSelectedPipetteForTransfer('1000uL');
+                              addLog("Selected 1000µL pipette for sample transfer", "info");
+                            }}
+                            className={`w-full px-4 py-3 rounded-lg font-bold transition-all ${
+                              selectedPipetteForTransfer === '1000uL'
+                                ? 'bg-sky-600 text-white ring-2 ring-sky-400'
+                                : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                            }`}
+                          >
+                            1000µL Pipette
+                          </button>
+                        </div>
+
+                        {selectedPipetteForTransfer && (
+                          <div className="bg-emerald-900/20 border border-emerald-500/30 p-3 rounded-lg">
+                            <p className="text-xs text-emerald-300">
+                              <strong>Instructions:</strong><br/>
+                              1. Click sample tube to aspirate<br/>
+                              2. Click spin column to dispense
+                            </p>
+                          </div>
+                        )}
+
+                        {liquidInColumn && (
+                          <div className="bg-sky-900/20 border border-sky-500/30 p-3 rounded-lg">
+                            <p className="text-xs text-sky-300">
+                              ✓ Sample loaded into column<br/>
+                              Ready to spin!
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ) : currentStep.requiresVolume && (
                     <div className="bg-slate-800 border border-slate-700 p-4 rounded-2xl space-y-4">
                       <h3 className="text-sm font-bold text-white uppercase flex items-center gap-2"><Pipette size={16} /> Pipettes</h3>
                       <PipetteSelector
