@@ -281,48 +281,49 @@ const SpinColumnVisual = ({ volume, hasDNA }) => {
         <rect x="20" y="40" width="70" height="120" rx="3" fill="#1e293b" stroke="#475569" strokeWidth="2"/>
         <ellipse cx="55" cy="40" rx="35" ry="8" fill="#0f172a" stroke="#475569" strokeWidth="2"/>
 
-        {/* Spin Column Rim/Wings (resting on collection tube edge) */}
-        <ellipse cx="55" cy="40" rx="32" ry="7" fill="#475569" stroke="#64748b" strokeWidth="2"/>
-        <ellipse cx="55" cy="38" rx="32" ry="5" fill="#64748b" stroke="#94a3b8" strokeWidth="1"/>
+        {/* Spin Column Collar/Rim (WIDER than tube, rests on top) */}
+        <ellipse cx="55" cy="40" rx="42" ry="6" fill="#475569" stroke="#94a3b8" strokeWidth="2.5"/>
+        <ellipse cx="55" cy="37" rx="42" ry="4" fill="#64748b"/>
 
-        {/* Spin Column Body (suspended inside collection tube) */}
-        <rect x="38" y="40" width="34" height="85" rx="2" fill="#334155" stroke="#64748b" strokeWidth="1.5"/>
+        {/* Spin Column Body (narrow, short, suspended in upper half only) */}
+        <rect x="40" y="42" width="30" height="48" rx="1" fill="#334155" stroke="#64748b" strokeWidth="1.5"/>
 
-        {/* Column top opening */}
-        <ellipse cx="55" cy="40" rx="17" ry="4" fill="#1e293b" stroke="#64748b" strokeWidth="1.5"/>
+        {/* Column inner opening */}
+        <ellipse cx="55" cy="42" rx="15" ry="3" fill="#1e293b" stroke="#64748b" strokeWidth="1"/>
 
-        {/* Silica Membrane (in upper half of tube - around 30% down) */}
-        <rect x="40" y="75" width="30" height="7" fill="#e2e8f0" opacity="0.8"/>
-        <line x1="40" y1="77" x2="70" y2="77" stroke="#94a3b8" strokeWidth="0.5" strokeDasharray="2 1"/>
-        <line x1="40" y1="80" x2="70" y2="80" stroke="#94a3b8" strokeWidth="0.5" strokeDasharray="2 1"/>
+        {/* Silica Membrane (upper portion of column) */}
+        <rect x="42" y="60" width="26" height="6" fill="#e2e8f0" opacity="0.9"/>
+        <line x1="42" y1="62" x2="68" y2="62" stroke="#94a3b8" strokeWidth="0.4" strokeDasharray="1.5 1"/>
+        <line x1="42" y1="64" x2="68" y2="64" stroke="#94a3b8" strokeWidth="0.4" strokeDasharray="1.5 1"/>
 
-        {/* DNA bound to membrane indicator */}
+        {/* DNA bound to membrane */}
         {hasDNA && (
           <g>
-            <rect x="42" y="76" width="26" height="5" fill="#10b981" opacity="0.6" className="animate-pulse"/>
-            <text x="55" y="80" textAnchor="middle" fontSize="6" fill="#10b981" fontWeight="bold">DNA</text>
+            <rect x="44" y="61" width="22" height="4" fill="#10b981" opacity="0.7" className="animate-pulse"/>
+            <text x="55" y="64.5" textAnchor="middle" fontSize="5" fill="#10b981" fontWeight="bold">DNA</text>
           </g>
         )}
 
-        {/* Column bottom tip (tapered, suspended in air) */}
+        {/* Column tip (tapered, ends at y=95 in upper half) */}
         <path
-          d="M 38 125 L 38 122 L 42 120 L 68 120 L 72 122 L 72 125 Q 72 128 55 130 Q 38 128 38 125"
+          d="M 40 90 L 42 92 L 48 95 L 62 95 L 68 92 L 70 90 L 70 90 L 40 90"
           fill="#334155"
           stroke="#64748b"
           strokeWidth="1.5"
         />
 
-        {/* Liquid in collection tube (at bottom with clear separation) */}
+        {/* Liquid in collection tube (pools at bottom, far from tip) */}
         {volume > 0 && (
-          <rect x="22" y={`${155 - fillPercent}`} width="66" height={fillPercent} fill="#38bdf8" opacity="0.4"/>
+          <rect x="22" y={`${155 - fillPercent}`} width="66" height={fillPercent} fill="#38bdf8" opacity="0.5"/>
         )}
 
-        {/* Air gap visualization */}
-        <g opacity="0.4">
-          <line x1="25" y1="130" x2="38" y2="130" stroke="#64748b" strokeWidth="0.5" strokeDasharray="2 2"/>
-          <line x1="72" y1="130" x2="85" y2="130" stroke="#64748b" strokeWidth="0.5" strokeDasharray="2 2"/>
-          <text x="55" y="140" textAnchor="middle" fontSize="7" fill="#64748b" fontWeight="bold">AIR GAP</text>
-          <line x1="55" y1="130" x2="55" y2="145" stroke="#64748b" strokeWidth="0.5" strokeDasharray="1 1"/>
+        {/* LARGE AIR GAP visualization (60+ units of empty space) */}
+        <g opacity="0.5">
+          <line x1="25" y1="100" x2="40" y2="100" stroke="#64748b" strokeWidth="0.5" strokeDasharray="3 2"/>
+          <line x1="70" y1="100" x2="85" y2="100" stroke="#64748b" strokeWidth="0.5" strokeDasharray="3 2"/>
+          <text x="55" y="120" textAnchor="middle" fontSize="9" fill="#94a3b8" fontWeight="bold">LARGE</text>
+          <text x="55" y="128" textAnchor="middle" fontSize="9" fill="#94a3b8" fontWeight="bold">AIR GAP</text>
+          <line x1="55" y1="100" x2="55" y2="150" stroke="#94a3b8" strokeWidth="0.5" strokeDasharray="2 3" opacity="0.6"/>
         </g>
       </svg>
       <p className="text-[9px] text-slate-500 font-bold uppercase mt-1">Spin Column</p>
