@@ -110,54 +110,115 @@ const TubeVisual = ({ volume, solidMass, hasPellet, showSeparation, onSupernatan
   return (
     <div className="relative flex flex-col items-center p-2">
       <svg width="60" height="120" viewBox="0 0 100 180" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M20 10C20 10 20 150 50 170C80 150 80 10 80 10" stroke="#475569" strokeWidth="4" strokeLinecap="round"/>
-        <line x1="15" y1="10" x2="85" y2="10" stroke="#475569" strokeWidth="4" strokeLinecap="round"/>
+        {/* Tube outline - make it more prominent */}
+        <path d="M23 10 L23 155 Q23 162 30 165 Q50 172 70 165 Q77 162 77 155 L77 10"
+              stroke="#334155" strokeWidth="2.5" fill="none" strokeLinecap="round"/>
+        <line x1="18" y1="10" x2="82" y2="10" stroke="#334155" strokeWidth="3" strokeLinecap="round"/>
 
         {showSeparation && volume > 0 ? (
           <>
-            {/* Supernatant (top layer) */}
+            {/* Supernatant (top layer) - properly inside tube */}
             <path
-              d={`M25 ${150 - fillPercent}C25 ${150 - fillPercent} 25 ${150 - pelletHeight} 50 ${165 - pelletHeight}C75 ${150 - pelletHeight} 75 ${150 - fillPercent} 75 ${150 - fillPercent}`}
+              d={`M26 ${155 - fillPercent} L26 ${155 - pelletHeight} Q26 ${158 - pelletHeight} 32 ${160 - pelletHeight} Q50 ${165 - pelletHeight} 68 ${160 - pelletHeight} Q74 ${158 - pelletHeight} 74 ${155 - pelletHeight} L74 ${155 - fillPercent} L26 ${155 - fillPercent} Z`}
               fill={supernatantColor}
-              fillOpacity="0.6"
+              fillOpacity="0.65"
               className={onSupernatantClick ? "cursor-pointer hover:opacity-80 transition-all" : ""}
               onClick={onSupernatantClick}
             />
-            <text x="50" y={`${140 - fillPercent + 15}`} textAnchor="middle" fontSize="7" fill="#854d0e" fontWeight="bold">Supernatant</text>
+            <text x="50" y={`${145 - fillPercent + 15}`} textAnchor="middle" fontSize="8" fill="#78350f" fontWeight="600">Supernatant</text>
 
-            {/* Pellet (bottom layer) */}
-            <path
-              d={`M25 ${150 - pelletHeight}C25 ${150 - pelletHeight} 25 150 50 165C75 150 75 ${150 - pelletHeight} 75 ${150 - pelletHeight}`}
+            {/* Pellet (bottom layer) - small compact mass */}
+            <ellipse cx="50" cy="163" rx="12" ry="4"
               fill={pelletColor}
-              fillOpacity="0.85"
-              className={onPelletClick ? "cursor-pointer hover:opacity-90 transition-all" : ""}
+              fillOpacity="0.9"
+              className={onPelletClick ? "cursor-pointer hover:opacity-95 transition-all" : ""}
               onClick={onPelletClick}
             />
-            <text x="50" y={`${158}`} textAnchor="middle" fontSize="7" fill="#fbbf24" fontWeight="bold">Pellet</text>
+            <text x="50" y="166" textAnchor="middle" fontSize="7" fill="#fbbf24" fontWeight="600">Pellet</text>
           </>
         ) : (
           <>
-            {/* Homogeneous liquid (no separation) */}
+            {/* Homogeneous liquid (no separation) - properly inside tube */}
             {volume > 0 && (
               <path
-                d={`M25 ${150 - fillPercent}C25 ${150 - fillPercent} 25 150 50 165C75 150 75 ${150 - fillPercent} 75 ${150 - fillPercent}`}
+                d={`M26 ${155 - fillPercent} L26 155 Q26 159 32 162 Q50 168 68 162 Q74 159 74 155 L74 ${155 - fillPercent} L26 ${155 - fillPercent} Z`}
                 fill={liquidColor}
                 fillOpacity={liquidOpacity}
               />
             )}
             {/* Solid tissue chunks (only for initial state) */}
             {solidMass > 0 && (
-              <path
-                d={`M35 ${165 - solidPercent}C35 ${165 - solidPercent} 40 165 50 170C60 165 65 ${165 - solidPercent} 65 ${165 - solidPercent}L35 ${165 - solidPercent}Z`}
+              <ellipse cx="50" cy="163" rx="10" ry="3.5"
                 fill="#8B4513"
-                className="opacity-80"
+                fillOpacity="0.85"
               />
             )}
           </>
         )}
 
-        {hasPellet && <g><circle cx="50" cy="166" r="3.5" fill="white" className="animate-pulse" /><circle cx="50" cy="166" r="6" stroke="white" strokeWidth="0.5" strokeDasharray="2 2" className="animate-spin" style={{ animationDuration: '3s' }} /></g>}
+        {hasPellet && <g><circle cx="50" cy="163" r="3.5" fill="white" className="animate-pulse" /><circle cx="50" cy="163" r="6" stroke="white" strokeWidth="0.5" strokeDasharray="2 2" className="animate-spin" style={{ animationDuration: '3s' }} /></g>}
       </svg>
+    </div>
+  );
+};
+
+const DualTubeVisual = ({ oldTubeHasSupernatant, freshTubeVolume, freshTubeColor = "#E6F3FF" }) => {
+  const supernatantFill = oldTubeHasSupernatant ? 30 : 0;
+  const freshFill = Math.min((freshTubeVolume / 2000) * 85, 85);
+
+  return (
+    <div className="flex items-center justify-center gap-8 p-4">
+      {/* LEFT TUBE - Old tube with pellet */}
+      <div className="flex flex-col items-center">
+        <p className="text-[9px] text-slate-400 font-bold uppercase mb-2">Step 2 Tube (Waste)</p>
+        <svg width="60" height="120" viewBox="0 0 100 180" fill="none" xmlns="http://www.w3.org/2000/svg">
+          {/* Tube outline */}
+          <path d="M23 10 L23 155 Q23 162 30 165 Q50 172 70 165 Q77 162 77 155 L77 10"
+                stroke="#334155" strokeWidth="2.5" fill="none" strokeLinecap="round"/>
+          <line x1="18" y1="10" x2="82" y2="10" stroke="#334155" strokeWidth="3" strokeLinecap="round"/>
+
+          {/* Remaining supernatant (if any) */}
+          {supernatantFill > 0 && (
+            <path
+              d={`M26 ${155 - supernatantFill} L26 155 Q26 159 32 161 Q50 166 68 161 Q74 159 74 155 L74 ${155 - supernatantFill} L26 ${155 - supernatantFill} Z`}
+              fill="#F5DEB3"
+              fillOpacity="0.5"
+            />
+          )}
+
+          {/* Brown pellet at bottom */}
+          <ellipse cx="50" cy="163" rx="12" ry="4" fill="#654321" fillOpacity="0.9" />
+          <text x="50" y="166" textAnchor="middle" fontSize="7" fill="#fbbf24" fontWeight="600">Pellet</text>
+        </svg>
+      </div>
+
+      {/* ARROW */}
+      <div className="flex flex-col items-center">
+        <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M5 20 L30 20 M30 20 L23 13 M30 20 L23 27" stroke="#10b981" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+        <p className="text-[8px] text-emerald-500 font-semibold mt-1">Transfer</p>
+      </div>
+
+      {/* RIGHT TUBE - Fresh tube */}
+      <div className="flex flex-col items-center">
+        <p className="text-[9px] text-emerald-400 font-bold uppercase mb-2">Fresh Tube</p>
+        <svg width="60" height="120" viewBox="0 0 100 180" fill="none" xmlns="http://www.w3.org/2000/svg">
+          {/* Tube outline */}
+          <path d="M23 10 L23 155 Q23 162 30 165 Q50 172 70 165 Q77 162 77 155 L77 10"
+                stroke="#334155" strokeWidth="2.5" fill="none" strokeLinecap="round"/>
+          <line x1="18" y1="10" x2="82" y2="10" stroke="#334155" strokeWidth="3" strokeLinecap="round"/>
+
+          {/* Fresh tube contents */}
+          {freshFill > 0 && (
+            <path
+              d={`M26 ${155 - freshFill} L26 155 Q26 159 32 162 Q50 168 68 162 Q74 159 74 155 L74 ${155 - freshFill} L26 ${155 - freshFill} Z`}
+              fill={freshTubeColor}
+              fillOpacity="0.7"
+            />
+          )}
+        </svg>
+      </div>
     </div>
   );
 };
@@ -1927,7 +1988,7 @@ export default function App() {
         ],
         kitNote: "📋 Kit Reality Check: Your DNA extraction kit includes concentrated wash buffer. In real labs, you would add ethanol from your lab stock before using it. In BioSim Lab, we assume this step is already done - your wash buffer is ready to use.",
         successCriteria: "Binding Buffer added (200 µL), Ethanol added (200 µL), Mixed gently",
-        educationalNote: "💡 Using a fresh tube ensures no debris contaminates your DNA. The supernatant contains your purified DNA."
+        educationalNote: "💡 Transfer ONLY the clear supernatant to the fresh tube. Leave the brown pellet behind - it contains debris, not DNA."
       },
       {
         title: "Column Binding",
@@ -3532,6 +3593,40 @@ export default function App() {
                             hasDNA={true}
                             stepTitle={currentStep.title}
                           />
+                        ) : currentStep.title === "Binding Preparation" ? (
+                          <div className="relative">
+                            <DualTubeVisual
+                              oldTubeHasSupernatant={showPhaseSeparation}
+                              freshTubeVolume={bufferVolume + volumeAddedThisStep}
+                              freshTubeColor="#E6F3FF"
+                            />
+                            {showMixPrompt && (
+                              <div className="absolute top-0 left-1/2 transform -translate-x-1/2 bg-emerald-600 text-white text-xs font-bold px-3 py-1 rounded-lg animate-pulse whitespace-nowrap z-10">
+                                👆 Click fresh tube to mix
+                              </div>
+                            )}
+                            <div
+                              className={`${showMixPrompt ? 'cursor-pointer hover:opacity-80 transition-opacity' : ''} absolute inset-0`}
+                              onClick={() => {
+                                if (showMixPrompt && !isMixing) {
+                                  setIsMixing(true);
+                                  if (difficultyMode !== "challenge") {
+                                    addLog("Mixing by inversion...", "info");
+                                  }
+                                  setTimeout(() => {
+                                    setIsMixing(false);
+                                    setShowMixPrompt(false);
+                                    setNeedsMixing(false);
+                                    setStep3SubActions(prev => ({ ...prev, mixed: true }));
+                                    setStep3Mixed(true);
+                                    if (difficultyMode !== "challenge") {
+                                      addLog("✓ Mixed. Ready for column binding.", "success");
+                                    }
+                                  }, 2000);
+                                }
+                              }}
+                            />
+                          </div>
                         ) : (
                           <div className="relative">
                             <div
@@ -3557,12 +3652,6 @@ export default function App() {
                                       setStep2Mixed(true);
                                       if (difficultyMode !== "challenge") {
                                         addLog("✓ Mixed. Proceed to incubate at 56°C.", "success");
-                                      }
-                                    } else if (currentStep.title === "Binding Preparation") {
-                                      setStep3SubActions(prev => ({ ...prev, mixed: true }));
-                                      setStep3Mixed(true);
-                                      if (difficultyMode !== "challenge") {
-                                        addLog("✓ Mixed. Ready for column binding.", "success");
                                       }
                                     }
                                   }, 2000);
@@ -3591,6 +3680,8 @@ export default function App() {
                     <div className="text-center text-xs text-slate-400 font-mono space-y-1">
                       {currentSolidMass > 0 && (bufferVolume + volumeAddedThisStep === 0) ? (
                         <p className="text-sm font-bold">{currentSolidMass} mg tissue</p>
+                      ) : currentStep.title === "Binding Preparation" ? (
+                        <p className="text-sm font-bold text-emerald-400">Fresh Tube: {bufferVolume + volumeAddedThisStep} µl</p>
                       ) : (
                         <p className="text-sm font-bold">{bufferVolume + volumeAddedThisStep} µl</p>
                       )}
