@@ -501,6 +501,177 @@ const FreezerVisual = () => (
   </svg>
 );
 
+const LN2SafetyModal = ({ onAccept }) => (
+  <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+    <div className="bg-slate-800 border-2 border-amber-500 rounded-2xl p-6 max-w-md w-full">
+      <div className="flex items-center gap-3 mb-4">
+        <ShieldAlert className="text-amber-500" size={32} />
+        <h2 className="text-xl font-black text-white uppercase">Safety Warning</h2>
+      </div>
+      <div className="bg-slate-900 p-4 rounded-xl mb-4">
+        <h3 className="text-sm font-bold text-amber-400 mb-2">Liquid Nitrogen Safety:</h3>
+        <ul className="text-xs text-slate-300 space-y-2">
+          <li className="flex items-start gap-2">
+            <Thermometer size={14} className="text-cyan-400 mt-0.5 flex-shrink-0" />
+            <span><b>Temperature:</b> -196°C (-321°F)</span>
+          </li>
+          <li className="flex items-start gap-2">
+            <ShieldCheck size={14} className="text-emerald-400 mt-0.5 flex-shrink-0" />
+            <span><b>Required PPE:</b> Insulated gloves + safety goggles</span>
+          </li>
+          <li className="flex items-start gap-2">
+            <AlertCircle size={14} className="text-red-400 mt-0.5 flex-shrink-0" />
+            <span><b>Hazard:</b> Severe frostbite on skin contact</span>
+          </li>
+          <li className="flex items-start gap-2">
+            <Activity size={14} className="text-blue-400 mt-0.5 flex-shrink-0" />
+            <span><b>Ventilation:</b> Use in well-ventilated area</span>
+          </li>
+          <li className="flex items-start gap-2">
+            <X size={14} className="text-orange-400 mt-0.5 flex-shrink-0" />
+            <span><b>Never:</b> Seal in closed container (explosion risk)</span>
+          </li>
+        </ul>
+      </div>
+      <button
+        onClick={onAccept}
+        className="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-3 px-4 rounded-xl font-bold uppercase transition-all"
+      >
+        I Understand - Proceed
+      </button>
+    </div>
+  </div>
+);
+
+const BufferWarmingVisual = ({ isWarming, temperature }) => (
+  <div className="flex flex-col items-center justify-center p-6">
+    <svg width="180" height="200" viewBox="0 0 180 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect x="30" y="60" width="120" height="100" rx="8" fill="#1e293b" stroke="#475569" strokeWidth="2"/>
+      <rect x="40" y="70" width="100" height="70" rx="4" fill={isWarming ? "#ff6b35" : "#334155"} fillOpacity={isWarming ? 0.3 : 0.5}/>
+      <rect x="60" y="100" width="20" height="35" rx="2" fill="#3b82f6" fillOpacity="0.6" stroke="#38bdf8" strokeWidth="1.5"/>
+      <ellipse cx="70" cy="98" rx="12" ry="4" fill="#38bdf8" fillOpacity="0.8"/>
+      {isWarming && (
+        <>
+          <circle cx="50" cy="110" r="2" fill="#ff6b35" opacity="0.7" className="animate-ping"/>
+          <circle cx="90" cy="115" r="2.5" fill="#ff6b35" opacity="0.8" className="animate-ping" style={{animationDelay: '0.2s'}}/>
+          <circle cx="70" cy="125" r="2" fill="#ff6b35" opacity="0.6" className="animate-ping" style={{animationDelay: '0.4s'}}/>
+        </>
+      )}
+      <text x="90" y="110" textAnchor="middle" fontSize="10" fill="#fbbf24" fontWeight="bold">
+        {isWarming ? `${temperature}°C` : 'Heat Block'}
+      </text>
+      <rect x="130" y="80" width="8" height="50" rx="4" fill="#334155" stroke="#475569" strokeWidth="1.5"/>
+      <rect x="132" y={isWarming ? 110 : 85} width="4" height={isWarming ? 20 : 45} rx="2" fill={isWarming ? "#ff6b35" : "#3b82f6"}/>
+      <circle cx="134" cy="75" r="6" fill="#334155" stroke="#475569" strokeWidth="1.5"/>
+      <circle cx="134" cy="75" r="4" fill={isWarming ? "#ff6b35" : "#3b82f6"}/>
+    </svg>
+    <p className="text-sm font-bold text-center mt-4">
+      {isWarming ? (
+        <span className="text-amber-400 animate-pulse">Warming buffer to 56°C...</span>
+      ) : (
+        <span className="text-slate-400">Place buffer in heat block</span>
+      )}
+    </p>
+    <p className="text-xs text-slate-500 text-center mt-2 max-w-xs">
+      🌡️ Pre-warming elution buffer to 56°C is especially important for plant DNA. Plant DNA is very long and 'sticky' - heat helps release it from the silica membrane, increasing your yield by 15-20%.
+    </p>
+  </div>
+);
+
+const EnhancedGrindingVisual = ({ ln2Added, vaporCleared, isGrinding, grindingStage }) => {
+  const getLeafColor = () => {
+    if (grindingStage >= 3) return "#2d5016";
+    if (grindingStage >= 2) return "#3d6b1f";
+    if (grindingStage >= 1) return "#4d7c2f";
+    if (vaporCleared) return "#2f5016";
+    return "#4ade80";
+  };
+
+  const getLeafShape = () => {
+    if (grindingStage === 4) return "Fine Powder";
+    if (grindingStage === 3) return "Coarse Pieces";
+    if (grindingStage === 2) return "Small Chunks";
+    if (grindingStage === 1) return "Large Pieces";
+    return "Whole Leaf";
+  };
+
+  return (
+    <div className="relative">
+      <svg width="200" height="280" viewBox="0 0 200 280" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <ellipse cx="100" cy="200" rx="70" ry="18" fill="#475569" opacity="0.6" />
+        <path d="M40 200 Q30 165 35 130 L165 130 Q170 165 160 200 Z" fill="#64748b" stroke="#475569" strokeWidth="2.5" />
+
+        {grindingStage === 0 && !vaporCleared && (
+          <path d="M70 165 Q65 150 75 140 L75 135 Q75 130 85 130 Q90 135 90 140 L90 145 Q100 150 110 145 L110 140 Q110 135 120 130 Q125 130 125 135 L125 140 Q130 150 125 165 Q120 170 110 175 Q100 180 90 175 Q80 170 70 165 Z" fill={getLeafColor()} stroke="#2d5016" strokeWidth="1.5" />
+        )}
+
+        {grindingStage >= 1 && grindingStage < 4 && (
+          <>
+            <circle cx="70" cy="160" r={grindingStage >= 3 ? 2 : 4} fill={getLeafColor()} opacity="0.8" />
+            <circle cx="90" cy="155" r={grindingStage >= 3 ? 2 : 5} fill={getLeafColor()} opacity="0.8" />
+            <circle cx="110" cy="165" r={grindingStage >= 3 ? 1.5 : 4} fill={getLeafColor()} opacity="0.8" />
+            <circle cx="130" cy="160" r={grindingStage >= 3 ? 2 : 4.5} fill={getLeafColor()} opacity="0.8" />
+            <circle cx="80" cy="170" r={grindingStage >= 3 ? 1.5 : 3.5} fill={getLeafColor()} opacity="0.8" />
+            <circle cx="120" cy="170" r={grindingStage >= 3 ? 2 : 4} fill={getLeafColor()} opacity="0.8" />
+            {grindingStage >= 2 && (
+              <>
+                <circle cx="100" cy="175" r="2" fill={getLeafColor()} opacity="0.7" />
+                <circle cx="85" cy="178" r="1.5" fill={getLeafColor()} opacity="0.7" />
+                <circle cx="115" cy="177" r="1.5" fill={getLeafColor()} opacity="0.7" />
+              </>
+            )}
+            {grindingStage >= 3 && (
+              <>
+                <circle cx="75" cy="180" r="1" fill={getLeafColor()} opacity="0.6" />
+                <circle cx="95" cy="182" r="1" fill={getLeafColor()} opacity="0.6" />
+                <circle cx="105" cy="183" r="1" fill={getLeafColor()} opacity="0.6" />
+                <circle cx="125" cy="181" r="1" fill={getLeafColor()} opacity="0.6" />
+              </>
+            )}
+          </>
+        )}
+
+        {grindingStage >= 4 && (
+          <path d="M45 180 Q45 175 160 175 L160 195 Q160 195 45 195 Z" fill={getLeafColor()} fillOpacity="0.9" />
+        )}
+
+        {ln2Added && !vaporCleared && (
+          <>
+            <circle cx="60" cy="150" r="8" fill="#e0f2fe" opacity="0.7" className="animate-ping" />
+            <circle cx="80" cy="145" r="10" fill="#e0f2fe" opacity="0.6" className="animate-ping" style={{animationDelay: '0.2s'}} />
+            <circle cx="100" cy="140" r="12" fill="#e0f2fe" opacity="0.8" className="animate-ping" style={{animationDelay: '0.1s'}} />
+            <circle cx="120" cy="145" r="9" fill="#e0f2fe" opacity="0.7" className="animate-ping" style={{animationDelay: '0.3s'}} />
+            <circle cx="140" cy="150" r="8" fill="#e0f2fe" opacity="0.6" className="animate-ping" style={{animationDelay: '0.15s'}} />
+            <circle cx="70" cy="135" r="7" fill="#e0f2fe" opacity="0.75" className="animate-ping" style={{animationDelay: '0.25s'}} />
+            <circle cx="130" cy="138" r="7" fill="#e0f2fe" opacity="0.75" className="animate-ping" style={{animationDelay: '0.35s'}} />
+          </>
+        )}
+
+        <path
+          d="M75 50 L95 155 L105 155 L125 50 Q115 45 100 45 Q85 45 75 50 Z"
+          fill="#94a3b8"
+          stroke="#64748b"
+          strokeWidth="2"
+          className={isGrinding ? "animate-pulse" : ""}
+          style={{
+            transformOrigin: '100px 155px',
+            transform: isGrinding ? 'rotate(-10deg)' : 'rotate(0deg)',
+            transition: 'transform 0.15s ease-in-out'
+          }}
+        />
+        <ellipse cx="100" cy="45" rx="30" ry="12" fill="#cbd5e1" stroke="#64748b" strokeWidth="2" />
+      </svg>
+
+      <div className="text-center mt-2">
+        {!ln2Added && <p className="text-xs text-cyan-400 font-bold animate-pulse">Click to add liquid nitrogen</p>}
+        {ln2Added && !vaporCleared && <p className="text-xs text-cyan-400 font-bold animate-pulse">Waiting for vapor to clear...</p>}
+        {vaporCleared && !isGrinding && <p className="text-xs text-emerald-400 font-bold animate-pulse">Leaf frozen! Click to begin grinding</p>}
+        {isGrinding && <p className="text-xs text-amber-400 font-bold">Grinding: {getLeafShape()}</p>}
+      </div>
+    </div>
+  );
+};
+
 const ElutionVolumeSelector = ({ onSelect, selectedVolume }) => {
   const volumes = [20, 30, 50];
 
@@ -1013,10 +1184,54 @@ const ProtocolBookOverlay = ({ onClose }) => (
               <li><b>Lysis:</b> Add ~500µL lysis buffer (CTAB or kit buffer). <span className="text-emerald-400">MIX</span>. SPIN.</li>
               <li><b>Binding/Column Load:</b> Add 500µL binding buffer. Load onto spin column. SPIN.</li>
               <li><b>Wash:</b> Add 500µL wash buffer to column. SPIN.</li>
-              <li><b>Elute:</b> Add 50µL elution buffer. SPIN.</li>
+              <li><b>Elute:</b> Pre-warm elution buffer to <span className="text-amber-400">56°C</span>, then add 50µL warm buffer. SPIN.</li>
               <li><b>Success Range:</b> 200-350 ng/µL, purity ≥1.7</li>
               <li><b>Verify:</b> Use <span className="text-amber-400">BOTH</span> Nanodrop <span className="text-amber-400">AND</span> Gel (both required)</li>
             </ul>
+          </section>
+          <section className="space-y-4 pb-4">
+            <div className="flex items-center gap-2 text-white"><ShieldCheck size={16} className="text-cyan-400"/><h4 className="text-white font-black uppercase text-lg font-sans">Cassava vs Animal - Key Differences</h4></div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs border-collapse">
+                <thead>
+                  <tr className="border-b border-slate-600">
+                    <th className="text-left py-2 px-3 text-slate-300 font-bold">Step</th>
+                    <th className="text-left py-2 px-3 text-emerald-400 font-bold">Cassava (Plant)</th>
+                    <th className="text-left py-2 px-3 text-rose-400 font-bold">Animal Tissue</th>
+                  </tr>
+                </thead>
+                <tbody className="text-slate-400">
+                  <tr className="border-b border-slate-700">
+                    <td className="py-2 px-3 font-bold">1. Disruption</td>
+                    <td className="py-2 px-3">Mortar + LN₂ grinding</td>
+                    <td className="py-2 px-3">Minced tissue + Proteinase K</td>
+                  </tr>
+                  <tr className="border-b border-slate-700">
+                    <td className="py-2 px-3 font-bold">Lysis</td>
+                    <td className="py-2 px-3">Zymo BashingBead Buffer</td>
+                    <td className="py-2 px-3">Buffer ATL</td>
+                  </tr>
+                  <tr className="border-b border-slate-700">
+                    <td className="py-2 px-3 font-bold">Key enzyme</td>
+                    <td className="py-2 px-3">None (mechanical only)</td>
+                    <td className="py-2 px-3">Proteinase K</td>
+                  </tr>
+                  <tr className="border-b border-slate-700">
+                    <td className="py-2 px-3 font-bold">Debris</td>
+                    <td className="py-2 px-3">Large green pellet</td>
+                    <td className="py-2 px-3">Small brown pellet</td>
+                  </tr>
+                  <tr>
+                    <td className="py-2 px-3 font-bold">6. Elution</td>
+                    <td className="py-2 px-3"><span className="text-amber-400">Pre-warm buffer to 56°C</span></td>
+                    <td className="py-2 px-3">Room temp buffer OK</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <p className="text-xs text-slate-500 italic mt-3">
+              💡 Why the differences? Plant cells have tough cellulose walls requiring mechanical disruption. Plant DNA is longer and more "sticky" than animal DNA, requiring heat for efficient elution. Animal proteins need enzymatic breakdown, which isn't necessary for plants.
+            </p>
           </section>
         </div>
         <div className="p-6 bg-slate-900/50 border-t border-slate-700 font-mono"><button onClick={onClose} className="w-full bg-emerald-600 py-4 rounded-2xl font-black text-white border-0 cursor-pointer font-bold uppercase tracking-widest">Acknowledge</button></div>
@@ -1050,23 +1265,23 @@ const ProtocolGuideOverlay = ({ onClose, missionId }) => {
     },
     B: {
       title: "Cassava Extraction Protocol",
-      subtitle: "Plant DNA Extraction - Select the Zymo kit for tough plant tissues (e.g., 20-100mg cassava). Volumes: 500/500/20 µl.",
+      subtitle: "Plant DNA Extraction - Select the Zymo kit for tough plant tissues (e.g., 20-100mg cassava). Volumes: 500/500/50 µl.",
       steps: [
         {
-          title: "Tissue Disruption (Manual Grinding + Liquid N₂)",
-          content: "Grind in mortar/pestle with LN₂ (no Proteinase K). Flash-freezes to brittle tissue, preventing phenolic oxidation—key for plants but not animals."
+          title: "Step 1: Tissue Disruption (Manual Grinding + Liquid N₂)",
+          content: "⚠️ SAFETY FIRST: Review liquid nitrogen safety (cryogenic hazard). Add LN₂ to mortar, wait for vapor to clear (~5 sec), then use CIRCULAR grinding motion along mortar sides. This shearing action pulverizes tough cellulose fibers. Grind until fine powder (chunks → coarse → fine). No Proteinase K needed for plants."
         },
         {
-          title: "Lysis & Binding",
-          content: "Add lysis buffer (500µl). Mix and spin. Add binding buffer (500µl) to column and spin. Skips chloroform:isoamyl alcohol (for phenolic removal in CTAB methods) for safety and speed via column binding."
+          title: "Step 2-5: Lysis, Binding, & Washing",
+          content: "Add lysis buffer (500µl), mix and spin. Transfer clear supernatant (leave green pellet). Add binding buffer (500µl) + ethanol (200µl), mix and load onto column. Spin. Wash twice (500µl each), spin thoroughly to remove ethanol."
         },
         {
-          title: "Wash & Elute",
-          content: "Wash (500µl, repeat) and spin. Elute in 20µl, spin, NanoDrop. No β-mercaptoethanol (BME; reduces oxidation) as small samples/low phenolics rely on buffer additives like PVP."
+          title: "Step 6: Elution (Pre-warming REQUIRED)",
+          content: "🌡️ CRITICAL FOR PLANT DNA: Pre-warm elution buffer to 56°C in heat block (2-3 min). Plant DNA is very long and 'sticky' - heat helps release it from silica membrane, increasing yield 15-20%. Add 50µl warm buffer to membrane center, wait 1-5 min, then spin. Transfer to fresh tube first!"
         },
         {
           title: "Equipment",
-          content: "Mortar/pestle, LN₂ (safety kit for cryogenics), microcentrifuge, NanoDrop, pipettes/tips."
+          content: "Mortar/pestle, LN₂ (safety kit for cryogenics), heat block/thermocycler, microcentrifuge, NanoDrop, pipettes/tips, spin columns."
         }
       ]
     }
@@ -1558,6 +1773,14 @@ export default function App() {
   const [showProtocolGuide, setShowProtocolGuide] = useState(false);
   const [guestModeDismissed, setGuestModeDismissed] = useState(false);
   const [equipmentUsageLog, setEquipmentUsageLog] = useState([]);
+  const [showLN2SafetyModal, setShowLN2SafetyModal] = useState(false);
+  const [ln2Added, setLn2Added] = useState(false);
+  const [vaporCleared, setVaporCleared] = useState(false);
+  const [leafFrozen, setLeafFrozen] = useState(false);
+  const [grindingStage, setGrindingStage] = useState(0);
+  const [elutionBufferPreWarmed, setElutionBufferPreWarmed] = useState(false);
+  const [showElutionWarmingStep, setShowElutionWarmingStep] = useState(false);
+  const [isWarmingBuffer, setIsWarmingBuffer] = useState(false);
 
   const anonymousUser = useAnonymousUser();
 
@@ -2010,16 +2233,23 @@ export default function App() {
       },
       {
         title: "Elution",
-        prompt: "Transfer column to fresh tube. Add 50 µL Elution Buffer to membrane center, wait 1-5 minutes, then SPIN at 12,000 g for 1 minute.",
-        science: "Low-salt buffer (TE-based) releases pure DNA from the column. TE buffer (Tris-EDTA) protects DNA - the EDTA 'handcuffs' DNase enzymes that would chew up your DNA. Optional: Pre-warm buffer to 56°C for +10-15% yield. ⚠️ CRITICAL: The previous collection tube contains waste (salts, ethanol, proteins). Always transfer the column to a fresh, empty tube before elution - otherwise contaminants wick back into the membrane and re-contaminate your purified DNA.",
+        prompt: missionId === 'B'
+          ? "FIRST: Pre-warm Elution Buffer to 56°C in heat block (2-3 min). THEN: Transfer column to fresh tube, add 50 µL warm buffer to membrane center, wait 1-5 minutes, and SPIN at 12,000 g for 1 minute."
+          : "Transfer column to fresh tube. Add 50 µL Elution Buffer to membrane center, wait 1-5 minutes, then SPIN at 12,000 g for 1 minute.",
+        science: missionId === 'B'
+          ? "Low-salt buffer (TE-based) releases pure DNA from the column. 🌡️ IMPORTANT FOR PLANT DNA: Pre-warming to 56°C is REQUIRED for plant extractions. Plant DNA is very long and 'sticky' - heat helps release it from the silica membrane, increasing yield by 15-20%. ⚠️ CRITICAL: Always transfer column to a fresh, empty tube before elution - otherwise contaminants re-contaminate your DNA."
+          : "Low-salt buffer (TE-based) releases pure DNA from the column. TE buffer (Tris-EDTA) protects DNA - the EDTA 'handcuffs' DNase enzymes that would chew up your DNA. Optional: Pre-warm buffer to 56°C for +10-15% yield. ⚠️ CRITICAL: The previous collection tube contains waste (salts, ethanol, proteins). Always transfer the column to a fresh, empty tube before elution - otherwise contaminants wick back into the membrane and re-contaminate your purified DNA.",
         requiresVolume: true,
         requiresSpin: true,
         isElution: true,
+        requiresBufferWarming: missionId === 'B',
         reagents: [
-          { id: "elute", name: "Elution Buffer", targetVolume: missionId === 'A' ? 20 : 50, tolerance: 5, color: "#3b82f6" }
+          { id: "elute", name: missionId === 'B' ? "Elution Buffer (Pre-warmed 56°C)" : "Elution Buffer", targetVolume: missionId === 'A' ? 20 : 50, tolerance: 5, color: "#3b82f6" }
         ],
         storageNote: "Store DNA at 4°C (short-term, days-weeks) or -20°C/-80°C (long-term, years)",
-        educationalNote: "💡 Why a fresh tube? The old tube contains waste liquid (salts, ethanol, proteins) from washing. If the column touches this liquid, contaminants wick back up into the silica membrane, re-contaminating your DNA. This is a common beginner mistake that ruins otherwise perfect extractions!"
+        educationalNote: missionId === 'B'
+          ? "🌡️ Plant DNA is much longer than bacterial/animal DNA and binds more tightly to the silica. Warming helps it release efficiently. This step can mean the difference between 200 ng/µL and 300+ ng/µL!"
+          : "💡 Why a fresh tube? The old tube contains waste liquid (salts, ethanol, proteins) from washing. If the column touches this liquid, contaminants wick back up into the silica membrane, re-contaminating your DNA. This is a common beginner mistake that ruins otherwise perfect extractions!"
       },
       {
         title: "Quality Check (NanoDrop)",
@@ -2097,6 +2327,16 @@ export default function App() {
     setChallengeModeErrors([]);
     setMistakes([]);
     setEquipmentUsageLog([]);
+    setShowLN2SafetyModal(false);
+    setLn2Added(false);
+    setVaporCleared(false);
+    setLeafFrozen(false);
+    setGrindingStage(0);
+    setIsGrinding(false);
+    setShowGrindingSetup(false);
+    setElutionBufferPreWarmed(false);
+    setShowElutionWarmingStep(false);
+    setIsWarmingBuffer(false);
     setScreen("briefing");
     setShowReadinessModal(true);
   };
@@ -2498,6 +2738,26 @@ export default function App() {
       {showManual && <LabManualOverlay onClose={() => setShowManual(false)} />}
       {showProtocol && <ProtocolBookOverlay onClose={() => setShowProtocol(false)} />}
       {showProtocolGuide && <ProtocolGuideOverlay onClose={() => setShowProtocolGuide(false)} missionId={missionId} />}
+      {showLN2SafetyModal && (
+        <LN2SafetyModal
+          onAccept={() => {
+            setShowLN2SafetyModal(false);
+            setLn2Added(true);
+            if (difficultyMode !== "challenge") {
+              addLog("Adding liquid nitrogen to mortar...", "info");
+              addLog("⚠️ Wait for the liquid nitrogen to evaporate before grinding. Grinding while LN₂ is still boiling can cause the sample to pop out of the mortar.", "error");
+            }
+            setTimeout(() => {
+              setVaporCleared(true);
+              setLeafFrozen(true);
+              if (difficultyMode !== "challenge") {
+                addLog("✓ LN₂ vapor cleared. Leaf is now frozen and ready for grinding.", "success");
+                addLog("💡 Use a circular grinding motion against the mortar sides. This shearing action pulverizes the tough cellulose fibers more effectively than simple crushing.", "info");
+              }
+            }, 5000);
+          }}
+        />
+      )}
       {showReadinessModal && <ReadinessOverlay onClose={() => {
         setShowReadinessModal(false);
         setScreen("briefing");
@@ -3395,38 +3655,46 @@ export default function App() {
                   <div className="bg-slate-800 border border-slate-700 p-4 rounded-2xl relative">
                     <h3 className="text-sm font-bold text-white uppercase mb-3 flex items-center gap-2"><FlaskConical size={16} /> {showGrindingSetup ? "Manual Grinding" : currentStep.title === "Column Binding" ? "Sample & Column" : (currentStep.title === "Binding/Column Load" || currentStep.title === "Wash Stage" || currentStep.title === "Wash & Dry") ? "Filter Column" : "Sample Tube"}</h3>
                     {showGrindingSetup ? (
-                      <div className="flex justify-center items-center min-h-[300px]">
-                        <div className="relative">
-                          <svg width="200" height="250" viewBox="0 0 200 250" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <ellipse cx="100" cy="180" rx="60" ry="15" fill="#475569" opacity="0.6" />
-                            <path d="M50 180 Q40 150 45 120 L155 120 Q160 150 150 180 Z" fill="#64748b" stroke="#475569" strokeWidth="2" />
-                            {isGrinding && (
-                              <>
-                                <circle cx="70" cy="140" r="3" fill="#60a5fa" opacity="0.7" className="animate-ping" />
-                                <circle cx="90" cy="150" r="2" fill="#60a5fa" opacity="0.6" className="animate-ping" style={{animationDelay: '0.2s'}} />
-                                <circle cx="110" cy="145" r="2.5" fill="#60a5fa" opacity="0.8" className="animate-ping" style={{animationDelay: '0.4s'}} />
-                                <circle cx="130" cy="155" r="2" fill="#60a5fa" opacity="0.7" className="animate-ping" style={{animationDelay: '0.1s'}} />
-                              </>
-                            )}
-                            <rect x="85" y="140" width="30" height="35" rx="2" fill="#1e293b" opacity="0.8" />
-                            <text x="100" y="160" textAnchor="middle" fill="#22c55e" fontSize="8" fontWeight="bold">LN₂ GAS</text>
-                            <path
-                              d="M80 60 L100 140 L120 60"
-                              fill="#94a3b8"
-                              stroke="#64748b"
-                              strokeWidth="2"
-                              className={isGrinding ? "animate-pulse" : ""}
-                              style={{
-                                transform: isGrinding ? 'translateY(10px)' : 'translateY(0)',
-                                transition: 'transform 0.3s ease-in-out'
-                              }}
-                            />
-                            <ellipse cx="100" cy="55" rx="25" ry="10" fill="#cbd5e1" stroke="#64748b" strokeWidth="2" />
-                          </svg>
-                          <p className="text-center text-xs text-emerald-400 font-bold mt-2 animate-pulse">
-                            {isGrinding ? "Grinding tissue..." : "Adding liquid nitrogen..."}
-                          </p>
-                        </div>
+                      <div
+                        className="flex justify-center items-center min-h-[300px] cursor-pointer"
+                        onClick={() => {
+                          if (!ln2Added) {
+                            if (!showLN2SafetyModal) {
+                              setShowLN2SafetyModal(true);
+                            }
+                          } else if (vaporCleared && !isGrinding) {
+                            setIsGrinding(true);
+                            if (difficultyMode !== "challenge") {
+                              addLog("Using circular grinding motion...", "info");
+                            }
+                            const stages = [1, 2, 3, 4];
+                            stages.forEach((stage, index) => {
+                              setTimeout(() => {
+                                setGrindingStage(stage);
+                                if (stage === 4) {
+                                  setTimeout(() => {
+                                    setIsGrinding(false);
+                                    setShowGrindingSetup(false);
+                                    setLn2Added(false);
+                                    setVaporCleared(false);
+                                    setLeafFrozen(false);
+                                    setGrindingStage(0);
+                                    if (difficultyMode !== "challenge") {
+                                      addLog("✓ Cassava leaf ground to fine powder. Ready for lysis.", "success");
+                                    }
+                                  }, 2000);
+                                }
+                              }, index * 5000);
+                            });
+                          }
+                        }}
+                      >
+                        <EnhancedGrindingVisual
+                          ln2Added={ln2Added}
+                          vaporCleared={vaporCleared}
+                          isGrinding={isGrinding}
+                          grindingStage={grindingStage}
+                        />
                       </div>
                     ) : (
                       <div className={`flex justify-center transition-all duration-500 ${tubeAnimating ? 'opacity-20 scale-75' : 'opacity-100 scale-100'} ${isMixing ? 'animate-[wiggle_0.5s_ease-in-out_4]' : ''}`}>
@@ -3688,7 +3956,40 @@ export default function App() {
 
                 {/* Column 2: Reagents (35%) */}
                 <div className="md:col-span-1 space-y-4">
-                  {currentStep.requiresVolume && (
+                  {currentStep.requiresBufferWarming && !elutionBufferPreWarmed && (
+                    <div className="bg-slate-800 border-2 border-amber-500 p-4 rounded-2xl">
+                      <h3 className="text-sm font-bold text-amber-400 uppercase mb-3 flex items-center gap-2">
+                        <Thermometer size={16} /> Pre-warm Elution Buffer
+                      </h3>
+                      <div
+                        className={`${!isWarmingBuffer && !elutionBufferPreWarmed ? 'cursor-pointer hover:opacity-80 transition-opacity' : ''}`}
+                        onClick={() => {
+                          if (!isWarmingBuffer && !elutionBufferPreWarmed) {
+                            setIsWarmingBuffer(true);
+                            setShowElutionWarmingStep(true);
+                            if (difficultyMode !== "challenge") {
+                              addLog("Placing elution buffer in heat block at 56°C...", "info");
+                            }
+                            setTimeout(() => {
+                              setIsWarmingBuffer(false);
+                              setElutionBufferPreWarmed(true);
+                              if (difficultyMode !== "challenge") {
+                                addLog("✓ Elution buffer pre-warmed to 56°C. Ready to use.", "success");
+                              }
+                            }, 3000);
+                          }
+                        }}
+                      >
+                        <BufferWarmingVisual isWarming={isWarmingBuffer} temperature={isWarmingBuffer ? 56 : 25} />
+                      </div>
+                      {!isWarmingBuffer && !elutionBufferPreWarmed && (
+                        <p className="text-xs text-amber-300 text-center mt-2 animate-pulse">
+                          Click to place buffer in heat block
+                        </p>
+                      )}
+                    </div>
+                  )}
+                  {currentStep.requiresVolume && (!currentStep.requiresBufferWarming || elutionBufferPreWarmed) && (
                     <div className="bg-slate-800 border border-slate-700 p-4 rounded-2xl">
                       <h3 className="text-sm font-bold text-white uppercase mb-3 flex items-center gap-2">
                         <FlaskConical size={16} /> Available Reagents
