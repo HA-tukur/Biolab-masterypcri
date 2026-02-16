@@ -1766,6 +1766,8 @@ export default function App() {
   const [yieldQuality, setYieldQuality] = useState(null);
   const [isGrinding, setIsGrinding] = useState(false);
   const [showGrindingSetup, setShowGrindingSetup] = useState(false);
+  const [grindingStage, setGrindingStage] = useState('idle');
+  const [grindingProgress, setGrindingProgress] = useState(0);
   const [difficultyMode, setDifficultyMode] = useState("learning");
   const [toastMessage, setToastMessage] = useState(null);
   const [showToast, setShowToast] = useState(false);
@@ -1777,7 +1779,6 @@ export default function App() {
   const [ln2Added, setLn2Added] = useState(false);
   const [vaporCleared, setVaporCleared] = useState(false);
   const [leafFrozen, setLeafFrozen] = useState(false);
-  const [grindingStage, setGrindingStage] = useState(0);
   const [elutionBufferPreWarmed, setElutionBufferPreWarmed] = useState(false);
   const [showElutionWarmingStep, setShowElutionWarmingStep] = useState(false);
   const [isWarmingBuffer, setIsWarmingBuffer] = useState(false);
@@ -2194,20 +2195,7 @@ export default function App() {
       requiresVolume: false,
       requiresMixing: false,
       requiresSpin: false,
-      options: [
-        {
-          method: 'manual',
-          label: '🧊 Manual Grinding (Mortar & Pestle + LN₂)',
-          log: 'Selected manual grinding with liquid nitrogen for plant tissue disruption.',
-          ok: true
-        },
-        {
-          method: 'enzymatic',
-          label: '🧬 Enzymatic Digestion (Proteinase K)',
-          log: 'WARNING: Enzymatic digestion is not suitable for tough plant tissue.',
-          ok: false
-        }
-      ],
+      requiresGrinding: true,
       successCriteria: "Leaf ground to fine powder, transferred to tube",
       educationalNote: "💡 Use a circular grinding motion against the mortar sides. This shearing action pulverizes the tough cellulose fibers more effectively than simple crushing. Wait for LN₂ vapor to clear before grinding to prevent sample from popping out."
     };
@@ -4068,84 +4056,293 @@ export default function App() {
                     </div>
                   )}
 
-                  {currentStep.options && protocolIndex === 0 && (
+                  {currentStep.requiresGrinding && protocolIndex === 0 && (
                     <div className="bg-slate-800 border border-slate-700 p-4 rounded-2xl">
-                      <h3 className="text-sm font-bold text-white uppercase mb-3 text-center">Tissue Disruption Equipment</h3>
-                      <div className="flex justify-center gap-8 mb-3">
-                        <div className="flex flex-col items-center">
-                          <MortarPestleVisual />
-                          <p className="text-[9px] text-slate-400 font-bold uppercase mt-1">Mortar & Pestle</p>
+                      <h3 className="text-sm font-bold text-white uppercase mb-4 text-center">Physical Disruption Station</h3>
+
+                      <div className="space-y-4">
+                        {/* Equipment Display */}
+                        <div className="flex justify-center gap-6 mb-4">
+                          <div
+                            className={`flex flex-col items-center transition-all cursor-pointer ${grindingStage === 'idle' ? 'opacity-100 hover:scale-110' : 'opacity-40'}`}
+                            onClick={() => {
+                              if (grindingStage === 'idle') {
+                                setGrindingStage('leaf_loaded');
+                                addLog("Placed cassava leaf into mortar", "success");
+                              }
+                            }}
+                          >
+                            <div className="relative">
+                              <svg width="60" height="60" viewBox="0 0 60 60" fill="none">
+                                <ellipse cx="30" cy="45" rx="15" ry="4" fill="#15803d"/>
+                                <path d="M20 25 Q 25 28, 30 27 Q 35 26, 40 29 L 38 35 Q 30 32, 22 35 Z"
+                                  fill={grindingStage === 'idle' ? '#16a34a' : grindingStage === 'leaf_loaded' ? '#22c55e' : '#86efac'}
+                                  stroke="#14532d" strokeWidth="1"/>
+                                <path d="M25 25 L 27 20 L 29 25 M 32 27 L 34 22 L 36 27"
+                                  stroke="#14532d" strokeWidth="1.5" fill="none"/>
+                              </svg>
+                              {grindingStage === 'idle' && (
+                                <div className="absolute -top-1 -right-1">
+                                  <div className="w-4 h-4 bg-green-500 rounded-full animate-pulse flex items-center justify-center">
+                                    <span className="text-[8px] font-bold text-white">1</span>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                            <p className="text-[9px] text-slate-400 font-bold uppercase mt-1">Cassava Leaf</p>
+                          </div>
+
+                          <div className="flex flex-col items-center">
+                            <div className="relative">
+                              <svg width="60" height="60" viewBox="0 0 60 60" fill="none">
+                                <ellipse cx="30" cy="50" rx="18" ry="5" fill="#334155"/>
+                                <path d="M18 35 Q 30 42 42 35 L 42 50 Q 30 54 18 50 Z"
+                                  fill={grindingStage === 'leaf_loaded' || grindingStage === 'frozen' ? '#475569' : '#334155'}
+                                  stroke="#1e293b" strokeWidth="2"/>
+                                {grindingStage === 'leaf_loaded' && (
+                                  <ellipse cx="30" cy="40" rx="8" ry="3" fill="#22c55e" opacity="0.8"/>
+                                )}
+                                {grindingStage === 'frozen' && (
+                                  <ellipse cx="30" cy="40" rx="8" ry="3" fill="#0f766e" opacity="0.9"/>
+                                )}
+                                {grindingStage === 'grinding' && (
+                                  <>
+                                    <ellipse cx="30" cy="42" rx="6" ry="2" fill="#86efac" opacity="0.7"/>
+                                    <circle cx="28" cy="43" r="1" fill="#22c55e"/>
+                                    <circle cx="32" cy="43" r="1" fill="#22c55e"/>
+                                    <circle cx="30" cy="44" r="0.5" fill="#16a34a"/>
+                                  </>
+                                )}
+                                {grindingStage === 'powder_ready' && (
+                                  <>
+                                    <ellipse cx="30" cy="44" rx="10" ry="3" fill="#86efac" opacity="0.8"/>
+                                    <circle cx="26" cy="44" r="1" fill="#22c55e"/>
+                                    <circle cx="30" cy="44" r="1" fill="#22c55e"/>
+                                    <circle cx="34" cy="44" r="1" fill="#22c55e"/>
+                                    <circle cx="28" cy="45" r="0.7" fill="#16a34a"/>
+                                    <circle cx="32" cy="45" r="0.7" fill="#16a34a"/>
+                                  </>
+                                )}
+                              </svg>
+                            </div>
+                            <p className="text-[9px] text-slate-400 font-bold uppercase mt-1">Mortar</p>
+                          </div>
+
+                          <div
+                            className={`flex flex-col items-center transition-all cursor-pointer ${grindingStage === 'leaf_loaded' ? 'opacity-100 hover:scale-110' : 'opacity-40'}`}
+                            onClick={() => {
+                              if (grindingStage === 'leaf_loaded') {
+                                setGrindingStage('frozen');
+                                addLog("Added liquid nitrogen - leaf flash-frozen to -196°C", "success");
+                                setTimeout(() => {
+                                  addLog("Vapor clearing... Safe to proceed with grinding", "info");
+                                }, 2000);
+                              }
+                            }}
+                          >
+                            <div className="relative">
+                              <LiquidNitrogenVisual />
+                              {grindingStage === 'leaf_loaded' && (
+                                <div className="absolute -top-1 -right-1">
+                                  <div className="w-4 h-4 bg-cyan-500 rounded-full animate-pulse flex items-center justify-center">
+                                    <span className="text-[8px] font-bold text-white">2</span>
+                                  </div>
+                                </div>
+                              )}
+                              {grindingStage === 'frozen' && (
+                                <div className="absolute inset-0 pointer-events-none">
+                                  <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2">
+                                    <div className="w-8 h-8 bg-cyan-200 rounded-full opacity-30 animate-ping"></div>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                            <p className="text-[9px] text-slate-400 font-bold uppercase mt-1">Liquid N₂</p>
+                          </div>
+
+                          <div
+                            className={`flex flex-col items-center transition-all cursor-pointer ${grindingStage === 'frozen' || grindingStage === 'grinding' ? 'opacity-100 hover:scale-110' : 'opacity-40'}`}
+                            onClick={() => {
+                              if (grindingStage === 'frozen') {
+                                setGrindingStage('grinding');
+                                setGrindingProgress(0);
+                                addLog("Grinding with circular motion along mortar sides...", "info");
+
+                                const grindInterval = setInterval(() => {
+                                  setGrindingProgress(prev => {
+                                    if (prev >= 100) {
+                                      clearInterval(grindInterval);
+                                      setGrindingStage('powder_ready');
+                                      addLog("Leaf pulverized into fine powder!", "success");
+                                      return 100;
+                                    }
+                                    return prev + 10;
+                                  });
+                                }, 300);
+                              }
+                            }}
+                          >
+                            <div className="relative">
+                              <svg width="60" height="60" viewBox="0 0 60 60" fill="none">
+                                <rect x="26" y="10" width="8" height="35" rx="3"
+                                  fill={grindingStage === 'grinding' ? '#94a3b8' : '#64748b'}
+                                  transform={grindingStage === 'grinding' ? 'rotate(25 30 27)' : 'rotate(15 30 27)'}
+                                />
+                                <ellipse cx="30" cy="10" rx="5" ry="4"
+                                  fill={grindingStage === 'grinding' ? '#cbd5e1' : '#94a3b8'}
+                                />
+                              </svg>
+                              {grindingStage === 'frozen' && (
+                                <div className="absolute -top-1 -right-1">
+                                  <div className="w-4 h-4 bg-indigo-500 rounded-full animate-pulse flex items-center justify-center">
+                                    <span className="text-[8px] font-bold text-white">3</span>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                            <p className="text-[9px] text-slate-400 font-bold uppercase mt-1">Pestle</p>
+                          </div>
                         </div>
-                        <div className="flex flex-col items-center">
-                          <LiquidNitrogenVisual />
-                          <p className="text-[9px] text-slate-400 font-bold uppercase mt-1">Liquid Nitrogen</p>
+
+                        {/* Progress Bar */}
+                        {grindingStage === 'grinding' && (
+                          <div className="bg-slate-900 p-3 rounded-lg">
+                            <div className="flex items-center justify-between mb-2">
+                              <span className="text-xs text-slate-300 font-bold">Grinding Progress</span>
+                              <span className="text-xs text-emerald-400 font-bold">{grindingProgress}%</span>
+                            </div>
+                            <div className="w-full bg-slate-700 rounded-full h-2">
+                              <div
+                                className="bg-gradient-to-r from-emerald-500 to-green-400 h-2 rounded-full transition-all duration-300"
+                                style={{ width: `${grindingProgress}%` }}
+                              ></div>
+                            </div>
+                            <p className="text-[10px] text-slate-400 mt-2 text-center">Use circular shearing motion against mortar sides</p>
+                          </div>
+                        )}
+
+                        {/* Transfer Button */}
+                        {grindingStage === 'powder_ready' && (
+                          <button
+                            onClick={() => {
+                              addLog("Transferred fine green powder to 1.5mL tube", "success");
+                              setStep1Method('manual');
+                              setGrindingStage('transferred');
+
+                              setTimeout(() => {
+                                setProtocolIndex(protocolIndex + 1);
+                                setHasDispensedThisStep(false);
+                                setHasSpunThisStep(false);
+                                setNeedsMixing(false);
+                                setIsMixing(false);
+                                setCurrentStepReagents({});
+                                setCurrentReagentId(null);
+                                setVolumeAddedThisStep(0);
+                                setGrindingStage('idle');
+                                setGrindingProgress(0);
+                              }, 500);
+                            }}
+                            className="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-3 px-4 rounded-xl font-bold uppercase transition-all cursor-pointer border-0 flex items-center justify-center gap-2 animate-pulse"
+                          >
+                            <FlaskConical size={18} />
+                            Transfer Powder to Tube
+                          </button>
+                        )}
+
+                        {/* Instructions */}
+                        <div className="bg-slate-900/50 p-3 rounded-lg border border-slate-700">
+                          <p className="text-[10px] text-slate-300 leading-relaxed">
+                            {grindingStage === 'idle' && "Click the cassava leaf to place it in the mortar"}
+                            {grindingStage === 'leaf_loaded' && "Click the liquid nitrogen cylinder to freeze the leaf"}
+                            {grindingStage === 'frozen' && "Click the pestle to begin grinding"}
+                            {grindingStage === 'grinding' && "Grinding in progress... The pestle uses circular motion to pulverize tough cellulose fibers"}
+                            {grindingStage === 'powder_ready' && "Perfect! Transfer the fine green powder to your sample tube"}
+                          </p>
                         </div>
                       </div>
                     </div>
                   )}
 
                   {currentStep.options && (
-                    <div className="bg-slate-800 border border-slate-700 p-4 rounded-2xl space-y-3">
-                      <h3 className="text-sm font-bold text-white uppercase mb-3">Select Action</h3>
-                      {currentStep.options.map((opt, idx) => (
-                        <button key={idx} onClick={() => {
-                          if (opt.ok === false) {
-                            addLog(`Cannot proceed: ${opt.label} - Missing required equipment.`, "error");
-                            return;
-                          }
+                    <>
+                      {protocolIndex === 0 && (
+                        <div className="bg-slate-800 border border-slate-700 p-4 rounded-2xl">
+                          <h3 className="text-sm font-bold text-white uppercase mb-3 text-center">Tissue Disruption Equipment</h3>
+                          <div className="flex justify-center gap-8 mb-3">
+                            <div className="flex flex-col items-center">
+                              <MortarPestleVisual />
+                              <p className="text-[9px] text-slate-400 font-bold uppercase mt-1">Mortar & Pestle</p>
+                            </div>
+                            <div className="flex flex-col items-center">
+                              <LiquidNitrogenVisual />
+                              <p className="text-[9px] text-slate-400 font-bold uppercase mt-1">Liquid Nitrogen</p>
+                            </div>
+                          </div>
+                        </div>
+                      )}
 
-                          if (protocolIndex === 0) {
-                            setStep1Method(opt.method);
-                            if (missionId === 'A' && opt.method === 'manual') {
-                              setProtocolAdherenceCompromised(true);
-                              addLog("WARNING: For Mission A (biopsy), enzymatic digestion is required. Manual grinding compromises protocol adherence.", "error");
+                      <div className="bg-slate-800 border border-slate-700 p-4 rounded-2xl space-y-3">
+                        <h3 className="text-sm font-bold text-white uppercase mb-3">Select Action</h3>
+                        {currentStep.options.map((opt, idx) => (
+                          <button key={idx} onClick={() => {
+                            if (opt.ok === false) {
+                              addLog(`Cannot proceed: ${opt.label} - Missing required equipment.`, "error");
+                              return;
                             }
-                            if (missionId === 'B' && opt.method === 'enzymatic') {
-                              setProtocolAdherenceCompromised(true);
-                              addLog("WARNING: For Mission B (cassava), manual grinding with mortar & pestle is required. Enzymatic digestion compromises protocol adherence.", "error");
-                            }
-                            if (opt.method === 'manual') {
-                              setShowGrindingSetup(true);
-                              setTimeout(() => {
-                                setIsGrinding(true);
+
+                            if (protocolIndex === 0) {
+                              setStep1Method(opt.method);
+                              if (missionId === 'A' && opt.method === 'manual') {
+                                setProtocolAdherenceCompromised(true);
+                                addLog("WARNING: For Mission A (biopsy), enzymatic digestion is required. Manual grinding compromises protocol adherence.", "error");
+                              }
+                              if (missionId === 'B' && opt.method === 'enzymatic') {
+                                setProtocolAdherenceCompromised(true);
+                                addLog("WARNING: For Mission B (cassava), manual grinding with mortar & pestle is required. Enzymatic digestion compromises protocol adherence.", "error");
+                              }
+                              if (opt.method === 'manual') {
+                                setShowGrindingSetup(true);
                                 setTimeout(() => {
-                                  setIsGrinding(false);
-                                  setShowGrindingSetup(false);
-                                }, 3000);
-                              }, 1000);
+                                  setIsGrinding(true);
+                                  setTimeout(() => {
+                                    setIsGrinding(false);
+                                    setShowGrindingSetup(false);
+                                  }, 3000);
+                                }, 1000);
+                              }
                             }
-                          }
 
-                          addLog(opt.log, "success");
-                          if (opt.triggerReset) {
-                            setBufferVolume(0);
-                            setVolumeAddedThisStep(0);
-                          }
+                            addLog(opt.log, "success");
+                            if (opt.triggerReset) {
+                              setBufferVolume(0);
+                              setVolumeAddedThisStep(0);
+                            }
 
-                          if (currentStep.requiresVolume && currentStep.requiresMixing) {
-                            setProtocolIndex(protocolIndex + 1);
-                            setHasDispensedThisStep(false);
-                            setHasSpunThisStep(false);
-                            setNeedsMixing(false);
-                            setIsMixing(false);
-                            setCurrentStepReagents({});
-                            setCurrentReagentId(null);
-                            setVolumeAddedThisStep(0);
-                          } else {
-                            setProtocolIndex(protocolIndex + 1);
-                            setHasDispensedThisStep(false);
-                            setHasSpunThisStep(false);
-                            setNeedsMixing(false);
-                            setIsMixing(false);
-                            setCurrentStepReagents({});
-                            setCurrentReagentId(null);
-                            setVolumeAddedThisStep(0);
-                          }
-                        }} className="w-full bg-indigo-600 hover:bg-indigo-500 text-white py-3 px-4 rounded-xl font-bold uppercase transition-all cursor-pointer border-0">
-                          {opt.label}
-                        </button>
-                      ))}
-                    </div>
+                            if (currentStep.requiresVolume && currentStep.requiresMixing) {
+                              setProtocolIndex(protocolIndex + 1);
+                              setHasDispensedThisStep(false);
+                              setHasSpunThisStep(false);
+                              setNeedsMixing(false);
+                              setIsMixing(false);
+                              setCurrentStepReagents({});
+                              setCurrentReagentId(null);
+                              setVolumeAddedThisStep(0);
+                            } else {
+                              setProtocolIndex(protocolIndex + 1);
+                              setHasDispensedThisStep(false);
+                              setHasSpunThisStep(false);
+                              setNeedsMixing(false);
+                              setIsMixing(false);
+                              setCurrentStepReagents({});
+                              setCurrentReagentId(null);
+                              setVolumeAddedThisStep(0);
+                            }
+                          }} className="w-full bg-indigo-600 hover:bg-indigo-500 text-white py-3 px-4 rounded-xl font-bold uppercase transition-all cursor-pointer border-0">
+                            {opt.label}
+                          </button>
+                        ))}
+                      </div>
+                    </>
                   )}
                 </div>
 
