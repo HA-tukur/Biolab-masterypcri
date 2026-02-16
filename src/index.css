@@ -15,4 +15,19 @@
   .animate-continue-pulse {
     animation: continueButtonPulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
   }
+
+  @keyframes tilt {
+    0%, 100% {
+      transform: rotate(0deg);
+    }
+    25% {
+      transform: rotate(-15deg);
+    }
+    50% {
+      transform: rotate(-20deg);
+    }
+    75% {
+      transform: rotate(-15deg);
+    }
+  }
 }

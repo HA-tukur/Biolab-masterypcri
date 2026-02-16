@@ -123,12 +123,19 @@ const TubeVisual = ({ volume, solidMass, hasPellet, showSeparation, onSupernatan
   );
 };
 
-const FilterColumnVisual = ({ volume, hasDNA, showSeparation }) => {
+const FilterColumnVisual = ({ volume, hasDNA, showSeparation, wasteInTube = false, isDiscarding = false }) => {
   const collectionFillPercent = Math.min((volume / 2000) * 100, 70);
 
   return (
     <div className="relative flex flex-col items-center p-2">
-      <svg width="90" height="160" viewBox="0 0 120 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <svg
+        width="90"
+        height="160"
+        viewBox="0 0 120 200"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+        className={isDiscarding ? 'animate-[tilt_0.5s_ease-in-out]' : ''}
+      >
         {/* Collection Tube (narrower with U-shaped rounded bottom) */}
         <path
           d="M 35 95 L 35 175 Q 35 185 60 190 Q 85 185 85 175 L 85 95"
@@ -138,8 +145,8 @@ const FilterColumnVisual = ({ volume, hasDNA, showSeparation }) => {
         />
         <ellipse cx="60" cy="95" rx="25" ry="7" fill="#0f172a" stroke="#475569" strokeWidth="2.5"/>
 
-        {/* Liquid in collection tube (flow-through) */}
-        {volume > 0 && (
+        {/* Liquid in collection tube (flow-through) - only show if wasteInTube and not discarding */}
+        {wasteInTube && !isDiscarding && (
           <>
             <path
               d={`M 37 ${180 - collectionFillPercent} L 37 175 Q 37 183 60 187 Q 83 183 83 175 L 83 ${180 - collectionFillPercent}`}
@@ -272,10 +279,17 @@ const TubeWithFilterColumnVisual = ({ volume, hasDNA, stepTitle }) => {
   );
 };
 
-const SpinColumnVisual = ({ volume, hasDNA, hasSpun = false }) => {
+const SpinColumnVisual = ({ volume, hasDNA, hasSpun = false, wasteInTube = false, isDiscarding = false }) => {
   return (
     <div className="relative flex flex-col items-center p-4">
-      <svg width="90" height="160" viewBox="0 0 120 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <svg
+        width="90"
+        height="160"
+        viewBox="0 0 120 200"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+        className={isDiscarding ? 'animate-[tilt_0.5s_ease-in-out]' : ''}
+      >
         {/* Collection tube (outer, wider tube) */}
         <path d="M 35 95 L 35 175 Q 35 185 60 190 Q 85 185 85 175 L 85 95" fill="#1e293b" stroke="#475569" strokeWidth="2.5"></path>
         <ellipse cx="60" cy="95" rx="25" ry="7" fill="#0f172a" stroke="#475569" strokeWidth="2.5"></ellipse>
@@ -305,7 +319,7 @@ const SpinColumnVisual = ({ volume, hasDNA, hasSpun = false }) => {
         <line x1="74" y1="95" x2="85" y2="95" stroke="#475569" strokeWidth="1" strokeDasharray="3 2" opacity="0.5"></line>
 
         {/* Flow-through liquid at bottom of collection tube (after spinning) */}
-        {volume > 0 && hasSpun && (
+        {wasteInTube && !isDiscarding && (
           <>
             <path d="M 37 154.25 L 37 175 Q 37 183 60 187 Q 83 183 83 175 L 83 154.25" fill="#38bdf8" opacity="0.4"></path>
             <ellipse cx="60" cy="154.25" rx="23" ry="6" fill="#38bdf8" opacity="0.3"></ellipse>
@@ -1379,6 +1393,9 @@ export default function App() {
   const [liquidInColumn, setLiquidInColumn] = useState(false);
   const [showPipetteAnimation, setShowPipetteAnimation] = useState(false);
   const [pipetteAnimationPosition, setPipetteAnimationPosition] = useState('tube');
+  const [hasDiscardedWaste, setHasDiscardedWaste] = useState(false);
+  const [isDiscardingWaste, setIsDiscardingWaste] = useState(false);
+  const [wasteInCollectionTube, setWasteInCollectionTube] = useState(false);
   const [missedSpins, setMissedSpins] = useState(0);
   const [missedReagents, setMissedReagents] = useState(0);
   const [stoichiometryError, setStoichiometryError] = useState(false);
@@ -1651,6 +1668,13 @@ export default function App() {
         setIsSpinning(false);
         setHasSpunThisStep(true);
         setPelletVisible(currentStep?.requiresSpin || false);
+
+        // For Column Binding and Wash steps, liquid goes to collection tube as waste
+        if (currentStep?.title === "Column Binding" || currentStep?.title === "Wash & Dry") {
+          setWasteInCollectionTube(true);
+          setHasDiscardedWaste(false);
+          addLog("Spin complete. Flow-through collected at bottom of tube.", "success");
+        }
       }, 2500);
     } else if (action === 'start' && equipment === 'thermocycler') {
       if (settings.temp !== undefined) {
@@ -3024,8 +3048,8 @@ export default function App() {
                       } else {
                         // No subtasks - use existing logic
                         if (currentStep.title === "Column Binding") {
-                          // Special condition for Column Binding: must load liquid into column and spin
-                          canContinue = liquidInColumn && hasSpunThisStep;
+                          // Special condition for Column Binding: must load liquid, spin, and discard waste
+                          canContinue = liquidInColumn && hasSpunThisStep && hasDiscardedWaste;
                         } else {
                           const cond1 = (currentStep.requiresVolume && hasDispensedThisStep) || (currentStep.options) || (!currentStep.requiresVolume && !currentStep.options);
                           const cond2 = currentStep.requiresSpin || currentStep.requiresIncubation ? hasSpunThisStep : true;
@@ -3154,6 +3178,9 @@ export default function App() {
                                 setLiquidInColumn(false);
                                 setShowPipetteAnimation(false);
                                 setPipetteAnimationPosition('tube');
+                                setHasDiscardedWaste(false);
+                                setIsDiscardingWaste(false);
+                                setWasteInCollectionTube(false);
                                 window.scrollTo({ top: 0, behavior: 'smooth' });
                               }
                             }
@@ -3350,19 +3377,102 @@ export default function App() {
                                   volume={liquidInColumn ? (bufferVolume + volumeAddedThisStep) : 0}
                                   hasDNA={false}
                                   hasSpun={hasSpunThisStep}
+                                  wasteInTube={wasteInCollectionTube}
+                                  isDiscarding={isDiscardingWaste}
                                 />
                               </div>
                               {hasAspiratedFromTube && !liquidInColumn && (
                                 <p className="text-[9px] text-sky-400 mt-1 animate-pulse">Click to dispense →</p>
                               )}
+
+                              {/* Discard Waste Button */}
+                              {wasteInCollectionTube && !hasDiscardedWaste && (
+                                <button
+                                  onClick={() => {
+                                    setIsDiscardingWaste(true);
+                                    addLog("Discarding flow-through waste...", "info");
+                                    setTimeout(() => {
+                                      setWasteInCollectionTube(false);
+                                      setIsDiscardingWaste(false);
+                                      setHasDiscardedWaste(true);
+                                      addLog("✓ Waste discarded. DNA remains safely bound to silica membrane.", "success");
+                                    }, 800);
+                                  }}
+                                  className="mt-2 px-4 py-2 bg-orange-600 hover:bg-orange-500 text-white rounded-lg text-xs font-bold uppercase transition-all cursor-pointer border-0 flex items-center gap-2 animate-pulse"
+                                >
+                                  <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    width="16"
+                                    height="16"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeWidth="2"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                  >
+                                    <path d="M3 6h18" />
+                                    <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+                                    <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+                                  </svg>
+                                  DISCARD WASTE
+                                </button>
+                              )}
                             </div>
                           </div>
                         ) : (currentStep.title === "Binding/Column Load" || currentStep.title === "Wash Stage" || currentStep.title === "Wash & Dry") ? (
-                          <FilterColumnVisual
-                            volume={bufferVolume + volumeAddedThisStep}
-                            hasDNA={currentStep.title === "Wash Stage" || currentStep.title === "Wash & Dry"}
-                            showSeparation={showPhaseSeparation}
-                          />
+                          <div className="flex flex-col items-center">
+                            <FilterColumnVisual
+                              volume={bufferVolume + volumeAddedThisStep}
+                              hasDNA={currentStep.title === "Wash Stage" || currentStep.title === "Wash & Dry"}
+                              showSeparation={showPhaseSeparation}
+                              wasteInTube={wasteInCollectionTube}
+                              isDiscarding={isDiscardingWaste}
+                            />
+
+                            {/* Discard Waste Button for Wash & Dry step */}
+                            {currentStep.title === "Wash & Dry" && wasteInCollectionTube && !hasDiscardedWaste && (
+                              <button
+                                onClick={() => {
+                                  setIsDiscardingWaste(true);
+                                  addLog("Discarding flow-through waste...", "info");
+                                  setTimeout(() => {
+                                    setWasteInCollectionTube(false);
+                                    setIsDiscardingWaste(false);
+                                    setHasDiscardedWaste(true);
+                                    addLog("✓ Waste discarded. DNA remains safely bound to silica membrane.", "success");
+                                  }, 800);
+                                }}
+                                className="mt-2 px-4 py-2 bg-orange-600 hover:bg-orange-500 text-white rounded-lg text-xs font-bold uppercase transition-all cursor-pointer border-0 flex items-center gap-2 animate-pulse"
+                              >
+                                <svg
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  width="16"
+                                  height="16"
+                                  viewBox="0 0 24 24"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  strokeWidth="2"
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                >
+                                  <path d="M3 6h18" />
+                                  <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+                                  <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+                                </svg>
+                                DISCARD WASTE
+                              </button>
+                            )}
+
+                            {/* Educational tooltip */}
+                            {currentStep.title === "Wash & Dry" && wasteInCollectionTube && !hasDiscardedWaste && (
+                              <div className="mt-2 p-2 bg-blue-900/20 border border-blue-500/30 rounded-lg max-w-xs">
+                                <p className="text-[9px] text-blue-300 text-center">
+                                  The flow-through contains salts and contaminants. Your DNA is safely bound to the silica membrane.
+                                </p>
+                              </div>
+                            )}
+                          </div>
                         ) : currentStep.title === "Elution" ? (
                           <TubeWithFilterColumnVisual
                             volume={bufferVolume + volumeAddedThisStep}
@@ -3696,6 +3806,11 @@ export default function App() {
                               setStep3SubActions(prev => ({ ...prev, ethanolAdded: true }));
                               showToastNotification(`✓ Added ${pipetteVolume}µL ${reagentName} to sample`);
                             }
+                          } else if (currentStep.title === "Wash & Dry") {
+                            // For Wash & Dry, reset waste states so user can do multiple wash cycles
+                            setHasDiscardedWaste(false);
+                            setHasSpunThisStep(false);
+                            showToastNotification(`✓ Added ${pipetteVolume}µL ${reagentName} to column`);
                           }
 
                           if (currentStep.multipleReagents) {
