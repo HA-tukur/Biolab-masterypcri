@@ -13,6 +13,7 @@ export const tools_list = [
   { id: "freezer", name: "Freezer (Communal)", cost: 0, desc: "Stores samples and reagents at low temperature.", category: "general" },
   { id: "mortar_pestle", name: "Mortar and Pestle", cost: 0, desc: "Mechanical grinding tool for tough plant tissues.", category: "extraction" },
   { id: "liquid_nitrogen", name: "Liquid Nitrogen", cost: 0, desc: "Ultra-cold reagent for flash-freezing tissues before grinding.", category: "extraction" },
+  { id: "vortex_mixer", name: "Vortex Mixer", cost: 250, desc: "Benchtop device that rapidly vibrates tubes to mix liquids and suspend powder. Essential for plant DNA extraction - ensures lysis buffer fully saturates ground tissue.", category: "extraction" },
   { id: "ethanol", name: "Ethanol (96-100%)", cost: 150, desc: "High-purity ethanol for DNA precipitation, wash buffer preparation, and sterilization. Required to prepare wash buffers in DNA extraction kits. Flammable - store away from heat sources.", category: "solvents", volume: "500 ml" },
   { id: "rnase_a", name: "RNase A (ADVANCED - Optional)", cost: 300, desc: "Ribonuclease A - degrades RNA to produce RNA-free DNA samples. Optional addition to DNA extraction protocols when RNA contamination must be avoided (e.g., sensitive sequencing applications). Storage: -20°C", category: "enzymes", volume: "10 mg (100 µl at 100 mg/ml)", badge: "ADVANCED" },
   { id: "wash_buffer", name: "Wash Buffer (Salt/EtOH)", cost: 300, desc: "Removes residual proteins from the matrix.", category: "extraction" },

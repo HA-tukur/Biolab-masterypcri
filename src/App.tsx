@@ -77,7 +77,7 @@ const trackEvent = (action, category, label, value) => {
 };
 
 
-const TubeVisual = ({ volume, solidMass, hasPellet, showSeparation, onSupernatantClick, onPelletClick, stepTitle }) => {
+const TubeVisual = ({ volume, solidMass, hasPellet, showSeparation, onSupernatantClick, onPelletClick, stepTitle, missionId, tubeVortexed }) => {
   const fillPercent = Math.min((volume / 2000) * 100, 85);
   const solidPercent = Math.min((solidMass / 150) * 40, 40);
 
@@ -90,10 +90,17 @@ const TubeVisual = ({ volume, solidMass, hasPellet, showSeparation, onSupernatan
   let supernatantColor = "#F5DEB3"; // Wheat/tan for Step 2 supernatant
   let pelletColor = "#654321"; // Dark brown for Step 2 pellet
 
+  // Special handling for Mission B Lysis step (not vortexed)
+  const showLayeredState = stepTitle === "Lysis" && missionId === 'B' && volume > 0 && !tubeVortexed;
+
   if (stepTitle === "Lysis & Protein Digestion") {
     // Cloudy brownish-pink (homogeneous)
     liquidColor = "#CD9575";
     liquidOpacity = 0.85;
+  } else if (stepTitle === "Lysis" && missionId === 'B' && tubeVortexed) {
+    // Mission B after vortexing: uniform cloudy green suspension
+    liquidColor = "#6B8E23";
+    liquidOpacity = 0.75;
   } else if (stepTitle === "Clarification") {
     // Before spin: same cloudy brownish-pink
     // After spin (showSeparation): wheat supernatant + dark brown pellet
@@ -114,7 +121,25 @@ const TubeVisual = ({ volume, solidMass, hasPellet, showSeparation, onSupernatan
         <path d="M20 10C20 10 20 150 50 170C80 150 80 10 80 10" stroke="#475569" strokeWidth="4" strokeLinecap="round"/>
         <line x1="15" y1="10" x2="85" y2="10" stroke="#475569" strokeWidth="4" strokeLinecap="round"/>
 
-        {showSeparation && volume > 0 ? (
+        {showLayeredState ? (
+          <>
+            {/* Layered state for Mission B Lysis (not vortexed): Clear buffer on top, green powder at bottom */}
+            {/* Clear/pink lysis buffer (top layer) */}
+            <path
+              d={`M25 ${150 - fillPercent}C25 ${150 - fillPercent} 25 ${150 - fillPercent * 0.4} 50 ${165 - fillPercent * 0.4}C75 ${150 - fillPercent * 0.4} 75 ${150 - fillPercent} 75 ${150 - fillPercent}`}
+              fill="#ec4899"
+              fillOpacity="0.3"
+            />
+            <text x="50" y={`${140 - fillPercent + 10}`} textAnchor="middle" fontSize="7" fill="#ec4899" fontWeight="bold">Buffer</text>
+
+            {/* Green powder (bottom layer) */}
+            <ellipse cx="50" cy="162" rx="12" ry="4"
+              fill="#228B22"
+              fillOpacity="0.9"
+            />
+            <text x="50" y={`${168}`} textAnchor="middle" fontSize="7" fill="#fbbf24" fontWeight="bold">Powder</text>
+          </>
+        ) : showSeparation && volume > 0 ? (
           <>
             {/* Supernatant (top layer) - inside tube */}
             <path
@@ -1782,6 +1807,9 @@ export default function App() {
   const [elutionBufferPreWarmed, setElutionBufferPreWarmed] = useState(false);
   const [showElutionWarmingStep, setShowElutionWarmingStep] = useState(false);
   const [isWarmingBuffer, setIsWarmingBuffer] = useState(false);
+  const [isVortexing, setIsVortexing] = useState(false);
+  const [tubeVortexed, setTubeVortexed] = useState(false);
+  const [showVortexPrompt, setShowVortexPrompt] = useState(false);
 
   const anonymousUser = useAnonymousUser();
 
@@ -2214,17 +2242,17 @@ export default function App() {
 
     const step2_Plant = {
       title: "Lysis",
-      prompt: "Add 500 µL Lysis Buffer to ground tissue. MIX thoroughly by inverting tube 10-15 times, then SPIN at 12,000 g for 3 minutes.",
+      prompt: "Add 500 µL Lysis Buffer to ground tissue, VORTEX to mix thoroughly, then SPIN at 12,000 g for 3 minutes.",
       science: "Lysis buffer contains detergents that break open cell membranes and chaotropic salts that denature proteins. For plant tissue, this step releases DNA from the pulverized cells. Spinning pellets large amounts of cellular debris (chloroplasts, cell wall fragments) that could clog the column. ⚠️ Note: Plant tissue produces much more debris than animal tissue - expect a large green pellet.",
       requiresVolume: true,
-      requiresMixing: true,
+      requiresVortexing: true,
       requiresSpin: true,
       spinDuration: 3,
       reagents: [
         { id: "lysis", name: "Lysis Buffer", targetVolume: 500, tolerance: 50, color: "#ec4899" }
       ],
       successCriteria: "Large green debris pellet formed, supernatant ready for binding",
-      educationalNote: "💡 Plant cells have chloroplasts and thick cell walls that create lots of debris. The large green pellet is normal - it's mostly cellulose and chlorophyll, not DNA."
+      educationalNote: "💡 Vortexing ensures the lysis buffer fully saturates the ground leaf powder. Plant powder is highly absorbent; without vigorous mixing, the DNA remains trapped inside dry clumps of cellulose. The subsequent spin will remove the large amount of green debris (chlorophyll and cell walls) that plants produce."
     };
 
     const step2 = missionId === 'B' ? step2_Plant : step2_Animal;
@@ -2316,7 +2344,7 @@ export default function App() {
     setTechniqueId(tId);
     setMissionId(mId);
     setCoins(MISSIONS_DATA[tId][mId].budget);
-    const baseInventory = mId === 'B' ? ['mortar_pestle', 'liquid_nitrogen'] : [];
+    const baseInventory = mId === 'B' ? ['mortar_pestle', 'liquid_nitrogen', 'vortex_mixer'] : [];
     setInventory(baseInventory);
     setLogs([]);
     setProtocolIndex(0);
@@ -2376,13 +2404,41 @@ export default function App() {
     setElutionBufferPreWarmed(false);
     setShowElutionWarmingStep(false);
     setIsWarmingBuffer(false);
+    setIsVortexing(false);
+    setTubeVortexed(false);
+    setShowVortexPrompt(false);
     setScreen("briefing");
     setShowReadinessModal(true);
+  };
+
+  const handleVortexTube = () => {
+    if (!has("vortex_mixer")) {
+      addLog("Hardware Error: Vortex Mixer required.", "error");
+      return;
+    }
+    if (tubeVortexed) {
+      addLog("Tube already vortexed.", "info");
+      return;
+    }
+    setIsVortexing(true);
+    addLog("Vortexing tube...", "info");
+    setTimeout(() => {
+      setIsVortexing(false);
+      setTubeVortexed(true);
+      setShowVortexPrompt(false);
+      if (difficultyMode !== "challenge") {
+        addLog("✓ Tube vortexed - lysis buffer fully saturated into powder. Uniform cloudy green suspension formed.", "success");
+      }
+    }, 3500);
   };
 
   const handleLoadTube = () => {
     if (!has("centrifuge")) {
       addLog("Hardware Error: Centrifuge required.", "error");
+      return;
+    }
+    if (currentStep?.requiresVortexing && !tubeVortexed) {
+      addLog("Error: Must vortex tube before centrifuging.", "error");
       return;
     }
     setTubeAnimating(true);
@@ -3459,7 +3515,8 @@ export default function App() {
                           const cond1 = (currentStep.requiresVolume && hasDispensedThisStep) || (currentStep.options) || (!currentStep.requiresVolume && !currentStep.options);
                           const cond2 = currentStep.requiresSpin || currentStep.requiresIncubation ? hasSpunThisStep : true;
                           const cond3 = currentStep.requiresMixing ? (currentStep.title === "Lysis & Protein Digestion" ? step2Mixed : currentStep.title === "Binding Preparation" ? step3Mixed : !needsMixing) : true;
-                          canContinue = cond1 && cond2 && cond3;
+                          const cond4 = currentStep.requiresVortexing ? tubeVortexed : true;
+                          canContinue = cond1 && cond2 && cond3 && cond4;
                         }
                       }
 
@@ -3583,6 +3640,8 @@ export default function App() {
                                 setCurrentStepReagents({});
                                 setCurrentReagentId(null);
                                 setShowMixPrompt(false);
+                                setTubeVortexed(false);
+                                setShowVortexPrompt(false);
                                 setSelectedPipetteForTransfer(null);
                                 setHasAspiratedFromTube(false);
                                 setLiquidInColumn(false);
@@ -3762,6 +3821,8 @@ export default function App() {
                                   solidMass={currentSolidMass}
                                   hasPellet={pelletVisible}
                                   stepTitle={currentStep.title}
+                                  missionId={missionId}
+                                  tubeVortexed={tubeVortexed}
                                 />
                               </div>
                               <p className="text-[9px] text-slate-400 font-bold uppercase mt-2">Sample Tube</p>
@@ -3975,6 +4036,8 @@ export default function App() {
                                 onSupernatantClick={showPhaseSeparation ? () => setShowBioPopup("supernatant") : null}
                                 onPelletClick={showPhaseSeparation ? () => setShowBioPopup("pellet") : null}
                                 stepTitle={currentStep.title}
+                                missionId={missionId}
+                                tubeVortexed={tubeVortexed}
                               />
                             </div>
                           </div>
@@ -4028,7 +4091,43 @@ export default function App() {
                       )}
                     </div>
                   )}
-                  {currentStep.requiresVolume && (!currentStep.requiresBufferWarming || elutionBufferPreWarmed) && (
+                  {currentStep.requiresVortexing && volumeAddedThisStep > 0 && !tubeVortexed && (
+                    <div className="bg-slate-800 border-2 border-emerald-500 p-4 rounded-2xl">
+                      <h3 className="text-sm font-bold text-emerald-400 uppercase mb-3 flex items-center gap-2">
+                        <RefreshCw size={16} /> Vortex Mixer
+                      </h3>
+                      <div
+                        className={`relative ${!isVortexing ? 'cursor-pointer hover:scale-105 transition-transform' : ''}`}
+                        onClick={() => {
+                          if (!isVortexing && !tubeVortexed) {
+                            handleVortexTube();
+                          }
+                        }}
+                      >
+                        <div className={`bg-slate-700 border-2 border-slate-600 rounded-lg p-6 ${isVortexing ? 'animate-pulse' : ''}`}>
+                          <div className={`w-16 h-16 mx-auto bg-slate-800 rounded-full border-4 border-emerald-500 flex items-center justify-center ${isVortexing ? 'animate-spin' : ''}`}>
+                            <div className="w-8 h-8 bg-emerald-500 rounded-full"></div>
+                          </div>
+                          <p className="text-xs text-slate-300 text-center mt-3 font-bold">
+                            {isVortexing ? 'VORTEXING...' : 'VORTEX MIXER'}
+                          </p>
+                        </div>
+                      </div>
+                      {!isVortexing && !tubeVortexed && (
+                        <p className="text-xs text-emerald-300 text-center mt-2 animate-pulse">
+                          Click to vortex tube and mix
+                        </p>
+                      )}
+                      {!tubeVortexed && (
+                        <div className="mt-3 bg-emerald-900/20 border border-emerald-500/30 p-2 rounded">
+                          <p className="text-[10px] text-emerald-200">
+                            💡 Vortexing ensures lysis buffer saturates the powder
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  {currentStep.requiresVolume && (!currentStep.requiresBufferWarming || elutionBufferPreWarmed) && (!currentStep.requiresVortexing || tubeVortexed) && (
                     <div className="bg-slate-800 border border-slate-700 p-4 rounded-2xl">
                       <h3 className="text-sm font-bold text-white uppercase mb-3 flex items-center gap-2">
                         <FlaskConical size={16} /> Available Reagents
@@ -4257,6 +4356,8 @@ export default function App() {
                               setVolumeAddedThisStep(0);
                               setGrindingStage('idle');
                               setGrindingProgress(0);
+                              setTubeVortexed(false);
+                              setShowVortexPrompt(false);
                             }, 500);
                           }}
                           className="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-2 px-4 rounded-lg font-bold uppercase text-sm transition-all animate-pulse"
@@ -4331,6 +4432,8 @@ export default function App() {
                               setCurrentStepReagents({});
                               setCurrentReagentId(null);
                               setVolumeAddedThisStep(0);
+                              setTubeVortexed(false);
+                              setShowVortexPrompt(false);
                             } else {
                               setProtocolIndex(protocolIndex + 1);
                               setHasDispensedThisStep(false);
@@ -4340,6 +4443,8 @@ export default function App() {
                               setCurrentStepReagents({});
                               setCurrentReagentId(null);
                               setVolumeAddedThisStep(0);
+                              setTubeVortexed(false);
+                              setShowVortexPrompt(false);
                             }
                           }} className="w-full bg-indigo-600 hover:bg-indigo-500 text-white py-3 px-4 rounded-xl font-bold uppercase transition-all cursor-pointer border-0">
                             {opt.label}
@@ -4588,7 +4693,8 @@ export default function App() {
                 const cond1 = (currentStep.requiresVolume && hasDispensedThisStep) || (currentStep.options);
                 const cond2 = currentStep.requiresSpin || currentStep.requiresIncubation ? hasSpunThisStep : true;
                 const cond3 = currentStep.requiresMixing ? (currentStep.title === "Lysis & Protein Digestion" ? step2Mixed : currentStep.title === "Binding Preparation" ? step3Mixed : !needsMixing) : true;
-                const showButton = cond1 && cond2 && cond3;
+                const cond4 = currentStep.requiresVortexing ? tubeVortexed : true;
+                const showButton = cond1 && cond2 && cond3 && cond4;
 
                 console.log('[Continue Button Check]', {
                   step: currentStep?.title || 'unknown',
@@ -4697,6 +4803,8 @@ export default function App() {
                     setCurrentStepReagents({});
                     setCurrentReagentId(null);
                     setShowMixPrompt(false);
+                    setTubeVortexed(false);
+                    setShowVortexPrompt(false);
                   }
                 }} className="w-full bg-amber-600 hover:bg-amber-500 text-white py-4 px-6 rounded-xl font-black uppercase tracking-wider transition-all cursor-pointer border-0">
                   Continue to Next Step
