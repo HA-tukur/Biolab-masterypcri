@@ -2370,7 +2370,7 @@ export default function App() {
     setLn2Added(false);
     setVaporCleared(false);
     setLeafFrozen(false);
-    setGrindingStage(0);
+    setGrindingStage('idle');
     setIsGrinding(false);
     setShowGrindingSetup(false);
     setElutionBufferPreWarmed(false);
@@ -3717,7 +3717,7 @@ export default function App() {
                                     setLn2Added(false);
                                     setVaporCleared(false);
                                     setLeafFrozen(false);
-                                    setGrindingStage(0);
+                                    setGrindingStage('idle');
                                     if (difficultyMode !== "challenge") {
                                       addLog("✓ Cassava leaf ground to fine powder. Ready for lysis.", "success");
                                     }
