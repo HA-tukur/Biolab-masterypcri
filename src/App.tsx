@@ -279,39 +279,37 @@ const SpinColumnVisual = ({ volume, hasDNA, hasSpun = false }) => {
   return (
     <div className="relative flex flex-col items-center p-4">
       <svg width="110" height="160" viewBox="0 0 110 170" fill="none" xmlns="http://www.w3.org/2000/svg">
-        {/* Collection Tube (outer, larger diameter) */}
+        {/* Collection Tube (outer, tall, clear) */}
         <rect x="20" y="40" width="70" height="120" rx="3" fill="#1e293b" stroke="#475569" strokeWidth="2"/>
         <ellipse cx="55" cy="40" rx="35" ry="8" fill="#0f172a" stroke="#475569" strokeWidth="2"/>
+        <ellipse cx="55" cy="160" rx="35" ry="8" fill="#0f172a" stroke="#475569" strokeWidth="2"/>
 
-        {/* Spin Column Collar/Rim (WIDER than tube, rests on top) */}
+        {/* Spin Column Collar/Rim (WIDER, rests on collection tube edge) */}
         <ellipse cx="55" cy="40" rx="42" ry="6" fill="#475569" stroke="#94a3b8" strokeWidth="2.5"/>
         <ellipse cx="55" cy="37" rx="42" ry="4" fill="#64748b"/>
 
-        {/* Spin Column Body (narrow, short, suspended in upper half only) */}
-        <rect x="40" y="42" width="30" height="48" rx="1" fill="#334155" stroke="#64748b" strokeWidth="1.5"/>
+        {/* Spin Column Body (suspended from top, doesn't touch bottom) */}
+        <rect x="40" y="42" width="30" height="50" rx="1" fill="#334155" stroke="#64748b" strokeWidth="1.5"/>
 
         {/* Column inner opening */}
         <ellipse cx="55" cy="42" rx="15" ry="3" fill="#1e293b" stroke="#64748b" strokeWidth="1"/>
 
-        {/* Liquid INSIDE column (before spinning) - sits on membrane */}
+        {/* Liquid INSIDE column (before spinning) */}
         {volume > 0 && !hasSpun && (
           <rect x="42" y={`${66 - columnLiquidHeight}`} width="26" height={columnLiquidHeight} fill="#60a5fa" opacity="0.6"/>
         )}
 
-        {/* Silica Membrane (upper portion of column) */}
+        {/* Silica Membrane (white horizontal line) */}
         <rect x="42" y="60" width="26" height="6" fill="#e2e8f0" opacity="0.9"/>
         <line x1="42" y1="62" x2="68" y2="62" stroke="#94a3b8" strokeWidth="0.4" strokeDasharray="1.5 1"/>
         <line x1="42" y1="64" x2="68" y2="64" stroke="#94a3b8" strokeWidth="0.4" strokeDasharray="1.5 1"/>
 
-        {/* DNA bound to membrane */}
+        {/* DNA bound to membrane (visual only, no text) */}
         {hasDNA && (
-          <g>
-            <rect x="44" y="61" width="22" height="4" fill="#10b981" opacity="0.7" className="animate-pulse"/>
-            <text x="55" y="64.5" textAnchor="middle" fontSize="5" fill="#10b981" fontWeight="bold">DNA</text>
-          </g>
+          <rect x="44" y="61" width="22" height="4" fill="#10b981" opacity="0.7" className="animate-pulse"/>
         )}
 
-        {/* Column tip (tapered, ends at y=95 in upper half) */}
+        {/* Column tip (tapered, ends above bottom - clear air gap) */}
         <path
           d="M 40 90 L 42 92 L 48 95 L 62 95 L 68 92 L 70 90 L 70 90 L 40 90"
           fill="#334155"
@@ -3294,14 +3292,6 @@ export default function App() {
                                 hasDNA={false}
                                 hasSpun={hasSpunThisStep}
                               />
-                              <p className="text-[9px] text-slate-400 font-bold uppercase mt-2">
-                                {hasSpunThisStep ? "After Spin" : (bufferVolume + volumeAddedThisStep > 0 ? "Loaded Column" : "Empty Column")}
-                              </p>
-                              <div className="mt-1 px-2 py-1 bg-blue-900/20 border border-blue-500/30 rounded">
-                                <p className="text-[8px] text-blue-300">
-                                  {hasSpunThisStep ? "Flow-through collected" : (bufferVolume + volumeAddedThisStep > 0 ? "Ready to spin" : "Ready to load")}
-                                </p>
-                              </div>
                             </div>
                           </div>
                         ) : (currentStep.title === "Binding/Column Load" || currentStep.title === "Wash Stage" || currentStep.title === "Wash & Dry") ? (
