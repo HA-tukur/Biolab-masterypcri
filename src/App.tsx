@@ -2168,33 +2168,82 @@ export default function App() {
 
   const protocolSteps = useMemo(() => {
     if (techniqueId !== "DNA_EXT") return [];
+
+    const step1_Animal = {
+      title: "Lysis & Protein Digestion",
+      prompt: "Add 200 µL Lysis Buffer (Buffer ATL) and 20 µL Proteinase K to minced tissue. MIX gently and INCUBATE at 56°C for 1-3 hours.",
+      science: "Detergents break open cell membranes while Proteinase K digests proteins (histones, nucleases, structural proteins) that interfere with DNA recovery. ⚠️ Note: Both Lysis Buffer and Proteinase K are included in your DNA extraction kit. 20 µL Proteinase K is the standard amount for ~25 mg tissue.",
+      requiresIncubation: true,
+      incubationTemp: 56,
+      incubationDuration: 120,
+      requiresVolume: true,
+      requiresMixing: true,
+      multipleReagents: true,
+      reagents: [
+        { id: "lysis", name: "Lysis Buffer", targetVolume: 200, tolerance: 0, color: "#ec4899" },
+        { id: "proteinase_k", name: "Proteinase K", targetVolume: 20, tolerance: 0, color: "#f59e0b" }
+      ],
+      successCriteria: "Lysate should be clear with no visible tissue chunks",
+      educationalNote: "🔬 Why 20 µL? This is the standard amount for ~25 mg tissue. Insufficient Proteinase K leads to protein contamination and poor yields."
+    };
+
+    const step1_Plant = {
+      title: "Physical Disruption",
+      prompt: "Grind cassava leaf into fine powder using mortar and pestle with liquid nitrogen. Transfer powder to microfuge tube.",
+      science: "Plant cells have tough cellulose walls that require mechanical disruption. Liquid nitrogen flash-freezes tissue to -196°C, making it brittle and preventing phenolic oxidation. Use circular grinding motion along mortar sides to pulverize fibers effectively. ⚠️ SAFETY: Wear insulated gloves and safety goggles when handling liquid nitrogen.",
+      requiresVolume: false,
+      requiresMixing: false,
+      requiresSpin: false,
+      options: [
+        {
+          method: 'manual',
+          label: '🧊 Manual Grinding (Mortar & Pestle + LN₂)',
+          log: 'Selected manual grinding with liquid nitrogen for plant tissue disruption.',
+          ok: true
+        },
+        {
+          method: 'enzymatic',
+          label: '🧬 Enzymatic Digestion (Proteinase K)',
+          log: 'WARNING: Enzymatic digestion is not suitable for tough plant tissue.',
+          ok: false
+        }
+      ],
+      successCriteria: "Leaf ground to fine powder, transferred to tube",
+      educationalNote: "💡 Use a circular grinding motion against the mortar sides. This shearing action pulverizes the tough cellulose fibers more effectively than simple crushing. Wait for LN₂ vapor to clear before grinding to prevent sample from popping out."
+    };
+
+    const step1 = missionId === 'B' ? step1_Plant : step1_Animal;
+
+    const step2_Animal = {
+      title: "Clarification",
+      prompt: "SPIN at 12,000-14,000 g for 3 minutes. Carefully transfer supernatant to fresh tube.",
+      science: "Centrifugation removes debris that could clog the column and reduce DNA purity. The DNA is in the supernatant (liquid), not the pellet.",
+      requiresSpin: true,
+      spinDuration: 3,
+      successCriteria: "Supernatant is clear",
+      educationalNote: "⚠️ Carefully pipette only the clear supernatant in the next step. Avoid disturbing the pellet - it contains debris, not DNA."
+    };
+
+    const step2_Plant = {
+      title: "Lysis",
+      prompt: "Add 500 µL Lysis Buffer to ground tissue. MIX thoroughly by inverting tube 10-15 times, then SPIN at 12,000 g for 3 minutes.",
+      science: "Lysis buffer contains detergents that break open cell membranes and chaotropic salts that denature proteins. For plant tissue, this step releases DNA from the pulverized cells. Spinning pellets large amounts of cellular debris (chloroplasts, cell wall fragments) that could clog the column. ⚠️ Note: Plant tissue produces much more debris than animal tissue - expect a large green pellet.",
+      requiresVolume: true,
+      requiresMixing: true,
+      requiresSpin: true,
+      spinDuration: 3,
+      reagents: [
+        { id: "lysis", name: "Lysis Buffer", targetVolume: 500, tolerance: 50, color: "#ec4899" }
+      ],
+      successCriteria: "Large green debris pellet formed, supernatant ready for binding",
+      educationalNote: "💡 Plant cells have chloroplasts and thick cell walls that create lots of debris. The large green pellet is normal - it's mostly cellulose and chlorophyll, not DNA."
+    };
+
+    const step2 = missionId === 'B' ? step2_Plant : step2_Animal;
+
     const allSteps = [
-      {
-        title: "Lysis & Protein Digestion",
-        prompt: "Add 200 µL Lysis Buffer (Buffer ATL) and 20 µL Proteinase K to minced tissue. MIX gently and INCUBATE at 56°C for 1-3 hours.",
-        science: "Detergents break open cell membranes while Proteinase K digests proteins (histones, nucleases, structural proteins) that interfere with DNA recovery. ⚠️ Note: Both Lysis Buffer and Proteinase K are included in your DNA extraction kit. 20 µL Proteinase K is the standard amount for ~25 mg tissue.",
-        requiresIncubation: true,
-        incubationTemp: 56,
-        incubationDuration: 120,
-        requiresVolume: true,
-        requiresMixing: true,
-        multipleReagents: true,
-        reagents: [
-          { id: "lysis", name: "Lysis Buffer", targetVolume: 200, tolerance: 0, color: "#ec4899" },
-          { id: "proteinase_k", name: "Proteinase K", targetVolume: 20, tolerance: 0, color: "#f59e0b" }
-        ],
-        successCriteria: "Lysate should be clear with no visible tissue chunks",
-        educationalNote: "🔬 Why 20 µL? This is the standard amount for ~25 mg tissue. Insufficient Proteinase K leads to protein contamination and poor yields."
-      },
-      {
-        title: "Clarification",
-        prompt: "SPIN at 12,000-14,000 g for 3 minutes. Carefully transfer supernatant to fresh tube.",
-        science: "Centrifugation removes debris that could clog the column and reduce DNA purity. The DNA is in the supernatant (liquid), not the pellet.",
-        requiresSpin: true,
-        spinDuration: 3,
-        successCriteria: "Supernatant is clear",
-        educationalNote: "⚠️ Carefully pipette only the clear supernatant in the next step. Avoid disturbing the pellet - it contains debris, not DNA."
-      },
+      step1,
+      step2,
       {
         title: "Binding Preparation",
         prompt: "Add 200 µL Binding Buffer (Buffer AL) and 200 µL Ethanol (96-100%) to cleared lysate. MIX gently - do not vortex.",
@@ -2208,7 +2257,9 @@ export default function App() {
         ],
         kitNote: "📋 Kit Reality Check: Your DNA extraction kit includes concentrated wash buffer. In real labs, you would add ethanol from your lab stock before using it. In BioSim Lab, we assume this step is already done - your wash buffer is ready to use.",
         successCriteria: "Binding Buffer added (200 µL), Ethanol added (200 µL), Mixed gently",
-        educationalNote: "💡 Transfer ONLY the clear supernatant to the fresh tube. Leave the brown pellet behind - it contains debris, not DNA."
+        educationalNote: missionId === 'B'
+          ? "💡 Transfer ONLY the clear supernatant to the fresh tube. Leave the green pellet behind - it contains chloroplasts and cell wall debris, not DNA."
+          : "💡 Transfer ONLY the clear supernatant to the fresh tube. Leave the brown pellet behind - it contains debris, not DNA."
       },
       {
         title: "Column Binding",
