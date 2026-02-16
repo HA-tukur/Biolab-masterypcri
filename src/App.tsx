@@ -4057,76 +4057,80 @@ export default function App() {
                   )}
 
                   {currentStep.requiresGrinding && protocolIndex === 0 && missionId === 'B' && (
-                    <div className="bg-slate-800 border border-slate-700 p-4 rounded-xl">
+                    <div className="bg-slate-800 border border-slate-700 p-4 rounded-xl max-w-2xl mx-auto">
                       <h3 className="text-sm font-bold text-white uppercase mb-2 text-center">Physical Disruption Station</h3>
                       <p className="text-xs text-slate-400 text-center mb-4">Click items in order: Leaf → LN₂ → Pestle</p>
 
                       {/* Horizontal Interactive Items */}
-                      <div className="flex justify-center items-center gap-6 mb-4">
+                      <div className="flex justify-center items-center gap-4 mb-4">
                         {/* Leaf - Step 1 */}
-                        <div
+                        <button
                           onClick={() => {
                             if (grindingStage === 'idle') {
                               setGrindingStage('leaf_loaded');
                               addLog("Placed cassava leaf into mortar", "success");
                             }
                           }}
-                          className={`flex flex-col items-center p-3 rounded-lg border-2 transition-all ${
+                          disabled={grindingStage !== 'idle'}
+                          className={`flex flex-col items-center p-4 rounded-lg border-2 transition-all ${
                             grindingStage === 'idle'
-                              ? 'border-emerald-500 bg-emerald-900/30 cursor-pointer hover:scale-110 hover:bg-emerald-900/50'
-                              : 'border-slate-600 bg-slate-900/30 opacity-50'
+                              ? 'border-emerald-400 bg-emerald-500/20 cursor-pointer hover:scale-110 hover:bg-emerald-500/30 hover:shadow-lg hover:shadow-emerald-500/50'
+                              : 'border-slate-700 bg-slate-800/50 opacity-40 cursor-not-allowed'
                           }`}
                         >
                           <div className="relative">
                             <svg width="50" height="50" viewBox="0 0 60 60" fill="none">
                               <path d="M20 25 Q 25 28, 30 27 Q 35 26, 40 29 L 38 35 Q 30 32, 22 35 Z"
-                                fill={grindingStage === 'idle' ? '#22c55e' : '#15803d'}
-                                stroke="#14532d" strokeWidth="2"/>
+                                fill={grindingStage === 'idle' ? '#10b981' : '#15803d'}
+                                stroke={grindingStage === 'idle' ? '#059669' : '#14532d'}
+                                strokeWidth="2"/>
                               <path d="M25 25 L 27 20 L 29 25 M 32 27 L 34 22 L 36 27"
-                                stroke="#14532d" strokeWidth="2" fill="none"/>
+                                stroke={grindingStage === 'idle' ? '#059669' : '#14532d'}
+                                strokeWidth="2"
+                                fill="none"/>
                             </svg>
                             {grindingStage === 'idle' && (
-                              <div className="absolute -top-1 -right-1 w-5 h-5 bg-emerald-500 rounded-full animate-pulse flex items-center justify-center">
-                                <span className="text-[10px] font-bold text-white">1</span>
+                              <div className="absolute -top-2 -right-2 w-6 h-6 bg-emerald-500 rounded-full animate-pulse flex items-center justify-center border-2 border-white">
+                                <span className="text-xs font-bold text-white">1</span>
                               </div>
                             )}
                           </div>
-                          <p className="text-[10px] text-slate-400 mt-1 font-bold">Leaf</p>
-                        </div>
+                          <p className="text-[11px] text-emerald-400 mt-2 font-bold">Leaf</p>
+                        </button>
 
                         {/* Mortar - Center Display */}
-                        <div className="flex flex-col items-center">
+                        <div className="flex flex-col items-center px-2">
                           <svg width="70" height="70" viewBox="0 0 80 80" fill="none">
-                            <ellipse cx="40" cy="68" rx="24" ry="6" fill="#0f172a"/>
+                            <ellipse cx="40" cy="68" rx="24" ry="6" fill="#1e293b"/>
                             <path d="M20 42 Q 40 50 60 42 L 60 68 Q 40 72 20 68 Z"
-                              fill={(grindingStage !== 'idle') ? '#475569' : '#334155'}
-                              stroke="#0f172a" strokeWidth="2"/>
+                              fill={(grindingStage !== 'idle') ? '#64748b' : '#475569'}
+                              stroke="#334155" strokeWidth="2"/>
                             {grindingStage === 'leaf_loaded' && (
-                              <ellipse cx="40" cy="50" rx="10" ry="4" fill="#22c55e" opacity="0.9"/>
+                              <ellipse cx="40" cy="50" rx="10" ry="4" fill="#10b981" opacity="0.9"/>
                             )}
                             {grindingStage === 'frozen' && (
-                              <ellipse cx="40" cy="50" rx="10" ry="4" fill="#0f766e" opacity="0.95"/>
+                              <ellipse cx="40" cy="50" rx="10" ry="4" fill="#06b6d4" opacity="0.9"/>
                             )}
                             {grindingStage === 'grinding' && (
                               <>
                                 <ellipse cx="40" cy="52" rx="8" ry="3" fill="#86efac" opacity="0.85"/>
-                                <circle cx="36" cy="53" r="1.5" fill="#22c55e"/>
-                                <circle cx="40" cy="53" r="1.5" fill="#22c55e"/>
-                                <circle cx="44" cy="53" r="1.5" fill="#22c55e"/>
+                                <circle cx="36" cy="53" r="1.5" fill="#10b981"/>
+                                <circle cx="40" cy="53" r="1.5" fill="#10b981"/>
+                                <circle cx="44" cy="53" r="1.5" fill="#10b981"/>
                               </>
                             )}
                             {grindingStage === 'powder_ready' && (
                               <>
                                 <ellipse cx="40" cy="54" rx="12" ry="5" fill="#86efac" opacity="0.95"/>
-                                <circle cx="34" cy="54" r="1.5" fill="#22c55e"/>
-                                <circle cx="38" cy="54" r="1.5" fill="#22c55e"/>
-                                <circle cx="40" cy="54" r="1.5" fill="#22c55e"/>
-                                <circle cx="42" cy="54" r="1.5" fill="#22c55e"/>
-                                <circle cx="46" cy="54" r="1.5" fill="#22c55e"/>
+                                <circle cx="34" cy="54" r="1.5" fill="#10b981"/>
+                                <circle cx="38" cy="54" r="1.5" fill="#10b981"/>
+                                <circle cx="40" cy="54" r="1.5" fill="#10b981"/>
+                                <circle cx="42" cy="54" r="1.5" fill="#10b981"/>
+                                <circle cx="46" cy="54" r="1.5" fill="#10b981"/>
                               </>
                             )}
                           </svg>
-                          <p className="text-[9px] text-slate-400 mt-1">
+                          <p className="text-[10px] text-slate-400 mt-1 font-semibold">
                             {grindingStage === 'idle' && "Empty"}
                             {grindingStage === 'leaf_loaded' && "Loaded"}
                             {grindingStage === 'frozen' && "Frozen"}
@@ -4136,32 +4140,33 @@ export default function App() {
                         </div>
 
                         {/* LN2 - Step 2 */}
-                        <div
+                        <button
                           onClick={() => {
                             if (grindingStage === 'leaf_loaded') {
                               setGrindingStage('frozen');
                               addLog("Added liquid nitrogen - leaf frozen", "success");
                             }
                           }}
-                          className={`flex flex-col items-center p-3 rounded-lg border-2 transition-all ${
+                          disabled={grindingStage !== 'leaf_loaded'}
+                          className={`flex flex-col items-center p-4 rounded-lg border-2 transition-all ${
                             grindingStage === 'leaf_loaded'
-                              ? 'border-cyan-500 bg-cyan-900/30 cursor-pointer hover:scale-110 hover:bg-cyan-900/50'
-                              : 'border-slate-600 bg-slate-900/30 opacity-50'
+                              ? 'border-cyan-400 bg-cyan-500/20 cursor-pointer hover:scale-110 hover:bg-cyan-500/30 hover:shadow-lg hover:shadow-cyan-500/50'
+                              : 'border-slate-700 bg-slate-800/50 opacity-40 cursor-not-allowed'
                           }`}
                         >
                           <div className="relative">
                             <LiquidNitrogenVisual />
                             {grindingStage === 'leaf_loaded' && (
-                              <div className="absolute -top-1 -right-1 w-5 h-5 bg-cyan-500 rounded-full animate-pulse flex items-center justify-center">
-                                <span className="text-[10px] font-bold text-white">2</span>
+                              <div className="absolute -top-2 -right-2 w-6 h-6 bg-cyan-500 rounded-full animate-pulse flex items-center justify-center border-2 border-white">
+                                <span className="text-xs font-bold text-white">2</span>
                               </div>
                             )}
                           </div>
-                          <p className="text-[10px] text-slate-400 mt-1 font-bold">LN₂</p>
-                        </div>
+                          <p className="text-[11px] text-cyan-400 mt-2 font-bold">LN₂</p>
+                        </button>
 
                         {/* Pestle - Step 3 */}
-                        <div
+                        <button
                           onClick={() => {
                             if (grindingStage === 'frozen') {
                               setGrindingStage('grinding');
@@ -4181,32 +4186,33 @@ export default function App() {
                               }, 200);
                             }
                           }}
-                          className={`flex flex-col items-center p-3 rounded-lg border-2 transition-all ${
+                          disabled={grindingStage !== 'frozen' && grindingStage !== 'grinding'}
+                          className={`flex flex-col items-center p-4 rounded-lg border-2 transition-all ${
                             grindingStage === 'frozen'
-                              ? 'border-blue-500 bg-blue-900/30 cursor-pointer hover:scale-110 hover:bg-blue-900/50'
+                              ? 'border-blue-400 bg-blue-500/20 cursor-pointer hover:scale-110 hover:bg-blue-500/30 hover:shadow-lg hover:shadow-blue-500/50'
                               : grindingStage === 'grinding'
-                              ? 'border-blue-400 bg-blue-900/50 animate-pulse'
-                              : 'border-slate-600 bg-slate-900/30 opacity-50'
+                              ? 'border-blue-400 bg-blue-500/30 animate-pulse cursor-wait'
+                              : 'border-slate-700 bg-slate-800/50 opacity-40 cursor-not-allowed'
                           }`}
                         >
                           <div className="relative">
                             <svg width="50" height="50" viewBox="0 0 60 60" fill="none" className={grindingStage === 'grinding' ? 'animate-spin' : ''}>
                               <rect x="24" y="8" width="12" height="36" rx="3"
-                                fill={grindingStage === 'grinding' ? '#93c5fd' : '#64748b'}
+                                fill={grindingStage === 'grinding' ? '#93c5fd' : grindingStage === 'frozen' ? '#60a5fa' : '#64748b'}
                                 transform="rotate(15 30 26)"
                               />
                               <ellipse cx="30" cy="8" rx="7" ry="5"
-                                fill={grindingStage === 'grinding' ? '#dbeafe' : '#94a3b8'}
+                                fill={grindingStage === 'grinding' ? '#dbeafe' : grindingStage === 'frozen' ? '#93c5fd' : '#94a3b8'}
                               />
                             </svg>
                             {grindingStage === 'frozen' && (
-                              <div className="absolute -top-1 -right-1 w-5 h-5 bg-blue-500 rounded-full animate-pulse flex items-center justify-center">
-                                <span className="text-[10px] font-bold text-white">3</span>
+                              <div className="absolute -top-2 -right-2 w-6 h-6 bg-blue-500 rounded-full animate-pulse flex items-center justify-center border-2 border-white">
+                                <span className="text-xs font-bold text-white">3</span>
                               </div>
                             )}
                           </div>
-                          <p className="text-[10px] text-slate-400 mt-1 font-bold">Pestle</p>
-                        </div>
+                          <p className="text-[11px] text-blue-400 mt-2 font-bold">Pestle</p>
+                        </button>
                       </div>
 
                       {/* Progress Bar */}
