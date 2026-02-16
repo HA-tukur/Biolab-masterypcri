@@ -272,8 +272,10 @@ const TubeWithFilterColumnVisual = ({ volume, hasDNA, stepTitle }) => {
   );
 };
 
-const SpinColumnVisual = ({ volume, hasDNA }) => {
-  const fillPercent = Math.min((volume / 1500) * 90, 85);
+const SpinColumnVisual = ({ volume, hasDNA, hasSpun = false }) => {
+  const flowThroughPercent = Math.min((volume / 1500) * 70, 70);
+  const columnLiquidHeight = volume > 0 && !hasSpun ? Math.min((volume / 620) * 25, 25) : 0;
+
   return (
     <div className="relative flex flex-col items-center p-4">
       <svg width="110" height="160" viewBox="0 0 110 170" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -290,6 +292,11 @@ const SpinColumnVisual = ({ volume, hasDNA }) => {
 
         {/* Column inner opening */}
         <ellipse cx="55" cy="42" rx="15" ry="3" fill="#1e293b" stroke="#64748b" strokeWidth="1"/>
+
+        {/* Liquid INSIDE column (before spinning) - sits on membrane */}
+        {volume > 0 && !hasSpun && (
+          <rect x="42" y={`${66 - columnLiquidHeight}`} width="26" height={columnLiquidHeight} fill="#60a5fa" opacity="0.6"/>
+        )}
 
         {/* Silica Membrane (upper portion of column) */}
         <rect x="42" y="60" width="26" height="6" fill="#e2e8f0" opacity="0.9"/>
@@ -312,19 +319,10 @@ const SpinColumnVisual = ({ volume, hasDNA }) => {
           strokeWidth="1.5"
         />
 
-        {/* Liquid in collection tube (pools at bottom, far from tip) */}
-        {volume > 0 && (
-          <rect x="22" y={`${155 - fillPercent}`} width="66" height={fillPercent} fill="#38bdf8" opacity="0.5"/>
+        {/* Flow-through liquid at bottom (AFTER spinning) */}
+        {volume > 0 && hasSpun && (
+          <rect x="22" y={`${155 - flowThroughPercent}`} width="66" height={flowThroughPercent} fill="#60a5fa" opacity="0.4"/>
         )}
-
-        {/* LARGE AIR GAP visualization (60+ units of empty space) */}
-        <g opacity="0.5">
-          <line x1="25" y1="100" x2="40" y2="100" stroke="#64748b" strokeWidth="0.5" strokeDasharray="3 2"/>
-          <line x1="70" y1="100" x2="85" y2="100" stroke="#64748b" strokeWidth="0.5" strokeDasharray="3 2"/>
-          <text x="55" y="120" textAnchor="middle" fontSize="9" fill="#94a3b8" fontWeight="bold">LARGE</text>
-          <text x="55" y="128" textAnchor="middle" fontSize="9" fill="#94a3b8" fontWeight="bold">AIR GAP</text>
-          <line x1="55" y1="100" x2="55" y2="150" stroke="#94a3b8" strokeWidth="0.5" strokeDasharray="2 3" opacity="0.6"/>
-        </g>
       </svg>
       <p className="text-[9px] text-slate-500 font-bold uppercase mt-1">Spin Column</p>
     </div>
@@ -3292,12 +3290,17 @@ export default function App() {
                             <div className="text-slate-400 text-2xl">→</div>
                             <div className="flex flex-col items-center">
                               <SpinColumnVisual
-                                volume={0}
+                                volume={bufferVolume + volumeAddedThisStep}
                                 hasDNA={false}
+                                hasSpun={hasSpunThisStep}
                               />
-                              <p className="text-[9px] text-slate-400 font-bold uppercase mt-2">Empty Column</p>
+                              <p className="text-[9px] text-slate-400 font-bold uppercase mt-2">
+                                {hasSpunThisStep ? "After Spin" : (bufferVolume + volumeAddedThisStep > 0 ? "Loaded Column" : "Empty Column")}
+                              </p>
                               <div className="mt-1 px-2 py-1 bg-blue-900/20 border border-blue-500/30 rounded">
-                                <p className="text-[8px] text-blue-300">Ready to load</p>
+                                <p className="text-[8px] text-blue-300">
+                                  {hasSpunThisStep ? "Flow-through collected" : (bufferVolume + volumeAddedThisStep > 0 ? "Ready to spin" : "Ready to load")}
+                                </p>
                               </div>
                             </div>
                           </div>
