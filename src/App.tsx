@@ -110,45 +110,44 @@ const TubeVisual = ({ volume, solidMass, hasPellet, showSeparation, onSupernatan
   return (
     <div className="relative flex flex-col items-center p-2">
       <svg width="60" height="120" viewBox="0 0 100 180" fill="none" xmlns="http://www.w3.org/2000/svg">
-        {/* Tube outline - make it more prominent */}
-        <path d="M23 10 L23 155 Q23 162 30 165 Q50 172 70 165 Q77 162 77 155 L77 10"
-              stroke="#334155" strokeWidth="2.5" fill="none" strokeLinecap="round"/>
-        <line x1="18" y1="10" x2="82" y2="10" stroke="#334155" strokeWidth="3" strokeLinecap="round"/>
+        {/* Original Eppendorf tube shape */}
+        <path d="M20 10C20 10 20 150 50 170C80 150 80 10 80 10" stroke="#475569" strokeWidth="4" strokeLinecap="round"/>
+        <line x1="15" y1="10" x2="85" y2="10" stroke="#475569" strokeWidth="4" strokeLinecap="round"/>
 
         {showSeparation && volume > 0 ? (
           <>
-            {/* Supernatant (top layer) - properly inside tube */}
+            {/* Supernatant (top layer) - inside tube */}
             <path
-              d={`M26 ${155 - fillPercent} L26 ${155 - pelletHeight} Q26 ${158 - pelletHeight} 32 ${160 - pelletHeight} Q50 ${165 - pelletHeight} 68 ${160 - pelletHeight} Q74 ${158 - pelletHeight} 74 ${155 - pelletHeight} L74 ${155 - fillPercent} L26 ${155 - fillPercent} Z`}
+              d={`M25 ${150 - fillPercent}C25 ${150 - fillPercent} 25 ${150 - pelletHeight} 50 ${165 - pelletHeight}C75 ${150 - pelletHeight} 75 ${150 - fillPercent} 75 ${150 - fillPercent}`}
               fill={supernatantColor}
-              fillOpacity="0.65"
+              fillOpacity="0.6"
               className={onSupernatantClick ? "cursor-pointer hover:opacity-80 transition-all" : ""}
               onClick={onSupernatantClick}
             />
-            <text x="50" y={`${145 - fillPercent + 15}`} textAnchor="middle" fontSize="8" fill="#78350f" fontWeight="600">Supernatant</text>
+            <text x="50" y={`${140 - fillPercent + 15}`} textAnchor="middle" fontSize="7" fill="#854d0e" fontWeight="bold">Supernatant</text>
 
-            {/* Pellet (bottom layer) - small compact mass */}
-            <ellipse cx="50" cy="163" rx="12" ry="4"
+            {/* Pellet (bottom layer) - small compact pellet */}
+            <ellipse cx="50" cy="166" rx="10" ry="3"
               fill={pelletColor}
               fillOpacity="0.9"
               className={onPelletClick ? "cursor-pointer hover:opacity-95 transition-all" : ""}
               onClick={onPelletClick}
             />
-            <text x="50" y="166" textAnchor="middle" fontSize="7" fill="#fbbf24" fontWeight="600">Pellet</text>
+            <text x="50" y={`${169}`} textAnchor="middle" fontSize="7" fill="#fbbf24" fontWeight="bold">Pellet</text>
           </>
         ) : (
           <>
-            {/* Homogeneous liquid (no separation) - properly inside tube */}
+            {/* Homogeneous liquid (no separation) - inside tube */}
             {volume > 0 && (
               <path
-                d={`M26 ${155 - fillPercent} L26 155 Q26 159 32 162 Q50 168 68 162 Q74 159 74 155 L74 ${155 - fillPercent} L26 ${155 - fillPercent} Z`}
+                d={`M25 ${150 - fillPercent}C25 ${150 - fillPercent} 25 150 50 165C75 150 75 ${150 - fillPercent} 75 ${150 - fillPercent}`}
                 fill={liquidColor}
                 fillOpacity={liquidOpacity}
               />
             )}
             {/* Solid tissue chunks (only for initial state) */}
             {solidMass > 0 && (
-              <ellipse cx="50" cy="163" rx="10" ry="3.5"
+              <ellipse cx="50" cy="166" rx="10" ry="3"
                 fill="#8B4513"
                 fillOpacity="0.85"
               />
@@ -156,7 +155,7 @@ const TubeVisual = ({ volume, solidMass, hasPellet, showSeparation, onSupernatan
           </>
         )}
 
-        {hasPellet && <g><circle cx="50" cy="163" r="3.5" fill="white" className="animate-pulse" /><circle cx="50" cy="163" r="6" stroke="white" strokeWidth="0.5" strokeDasharray="2 2" className="animate-spin" style={{ animationDuration: '3s' }} /></g>}
+        {hasPellet && <g><circle cx="50" cy="166" r="3.5" fill="white" className="animate-pulse" /><circle cx="50" cy="166" r="6" stroke="white" strokeWidth="0.5" strokeDasharray="2 2" className="animate-spin" style={{ animationDuration: '3s' }} /></g>}
       </svg>
     </div>
   );
@@ -172,23 +171,22 @@ const DualTubeVisual = ({ oldTubeHasSupernatant, freshTubeVolume, freshTubeColor
       <div className="flex flex-col items-center">
         <p className="text-[9px] text-slate-400 font-bold uppercase mb-2">Step 2 Tube (Waste)</p>
         <svg width="60" height="120" viewBox="0 0 100 180" fill="none" xmlns="http://www.w3.org/2000/svg">
-          {/* Tube outline */}
-          <path d="M23 10 L23 155 Q23 162 30 165 Q50 172 70 165 Q77 162 77 155 L77 10"
-                stroke="#334155" strokeWidth="2.5" fill="none" strokeLinecap="round"/>
-          <line x1="18" y1="10" x2="82" y2="10" stroke="#334155" strokeWidth="3" strokeLinecap="round"/>
+          {/* Original Eppendorf tube shape */}
+          <path d="M20 10C20 10 20 150 50 170C80 150 80 10 80 10" stroke="#475569" strokeWidth="4" strokeLinecap="round"/>
+          <line x1="15" y1="10" x2="85" y2="10" stroke="#475569" strokeWidth="4" strokeLinecap="round"/>
 
           {/* Remaining supernatant (if any) */}
           {supernatantFill > 0 && (
             <path
-              d={`M26 ${155 - supernatantFill} L26 155 Q26 159 32 161 Q50 166 68 161 Q74 159 74 155 L74 ${155 - supernatantFill} L26 ${155 - supernatantFill} Z`}
+              d={`M25 ${150 - supernatantFill}C25 ${150 - supernatantFill} 25 150 50 165C75 150 75 ${150 - supernatantFill} 75 ${150 - supernatantFill}`}
               fill="#F5DEB3"
               fillOpacity="0.5"
             />
           )}
 
           {/* Brown pellet at bottom */}
-          <ellipse cx="50" cy="163" rx="12" ry="4" fill="#654321" fillOpacity="0.9" />
-          <text x="50" y="166" textAnchor="middle" fontSize="7" fill="#fbbf24" fontWeight="600">Pellet</text>
+          <ellipse cx="50" cy="166" rx="10" ry="3" fill="#654321" fillOpacity="0.9" />
+          <text x="50" y="169" textAnchor="middle" fontSize="7" fill="#fbbf24" fontWeight="600">Pellet</text>
         </svg>
       </div>
 
@@ -204,15 +202,14 @@ const DualTubeVisual = ({ oldTubeHasSupernatant, freshTubeVolume, freshTubeColor
       <div className="flex flex-col items-center">
         <p className="text-[9px] text-emerald-400 font-bold uppercase mb-2">Fresh Tube</p>
         <svg width="60" height="120" viewBox="0 0 100 180" fill="none" xmlns="http://www.w3.org/2000/svg">
-          {/* Tube outline */}
-          <path d="M23 10 L23 155 Q23 162 30 165 Q50 172 70 165 Q77 162 77 155 L77 10"
-                stroke="#334155" strokeWidth="2.5" fill="none" strokeLinecap="round"/>
-          <line x1="18" y1="10" x2="82" y2="10" stroke="#334155" strokeWidth="3" strokeLinecap="round"/>
+          {/* Original Eppendorf tube shape */}
+          <path d="M20 10C20 10 20 150 50 170C80 150 80 10 80 10" stroke="#475569" strokeWidth="4" strokeLinecap="round"/>
+          <line x1="15" y1="10" x2="85" y2="10" stroke="#475569" strokeWidth="4" strokeLinecap="round"/>
 
           {/* Fresh tube contents */}
           {freshFill > 0 && (
             <path
-              d={`M26 ${155 - freshFill} L26 155 Q26 159 32 162 Q50 168 68 162 Q74 159 74 155 L74 ${155 - freshFill} L26 ${155 - freshFill} Z`}
+              d={`M25 ${150 - freshFill}C25 ${150 - freshFill} 25 150 50 165C75 150 75 ${150 - freshFill} 75 ${150 - freshFill}`}
               fill={freshTubeColor}
               fillOpacity="0.7"
             />
