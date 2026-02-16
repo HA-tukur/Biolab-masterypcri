@@ -281,37 +281,49 @@ const SpinColumnVisual = ({ volume, hasDNA }) => {
         <rect x="20" y="40" width="70" height="120" rx="3" fill="#1e293b" stroke="#475569" strokeWidth="2"/>
         <ellipse cx="55" cy="40" rx="35" ry="8" fill="#0f172a" stroke="#475569" strokeWidth="2"/>
 
-        {/* Spin Column (inner, smaller, positioned higher with clear air gap) */}
-        <rect x="35" y="10" width="40" height="105" rx="2" fill="#334155" stroke="#64748b" strokeWidth="1.5"/>
-        <ellipse cx="55" cy="10" rx="20" ry="5" fill="#1e293b" stroke="#64748b" strokeWidth="1.5"/>
+        {/* Spin Column Rim/Wings (resting on collection tube edge) */}
+        <ellipse cx="55" cy="40" rx="32" ry="7" fill="#475569" stroke="#64748b" strokeWidth="2"/>
+        <ellipse cx="55" cy="38" rx="32" ry="5" fill="#64748b" stroke="#94a3b8" strokeWidth="1"/>
 
-        {/* Silica Membrane (inside column, positioned higher) */}
-        <rect x="37" y="50" width="36" height="8" fill="#e2e8f0" opacity="0.7"/>
-        <line x1="37" y1="54" x2="73" y2="54" stroke="#94a3b8" strokeWidth="0.5" strokeDasharray="2 1"/>
+        {/* Spin Column Body (suspended inside collection tube) */}
+        <rect x="38" y="40" width="34" height="85" rx="2" fill="#334155" stroke="#64748b" strokeWidth="1.5"/>
+
+        {/* Column top opening */}
+        <ellipse cx="55" cy="40" rx="17" ry="4" fill="#1e293b" stroke="#64748b" strokeWidth="1.5"/>
+
+        {/* Silica Membrane (in upper half of tube - around 30% down) */}
+        <rect x="40" y="75" width="30" height="7" fill="#e2e8f0" opacity="0.8"/>
+        <line x1="40" y1="77" x2="70" y2="77" stroke="#94a3b8" strokeWidth="0.5" strokeDasharray="2 1"/>
+        <line x1="40" y1="80" x2="70" y2="80" stroke="#94a3b8" strokeWidth="0.5" strokeDasharray="2 1"/>
 
         {/* DNA bound to membrane indicator */}
         {hasDNA && (
           <g>
-            <rect x="40" y="51" width="30" height="5" fill="#10b981" opacity="0.5" className="animate-pulse"/>
-            <text x="55" y="56" textAnchor="middle" fontSize="6" fill="#10b981" fontWeight="bold">DNA</text>
+            <rect x="42" y="76" width="26" height="5" fill="#10b981" opacity="0.6" className="animate-pulse"/>
+            <text x="55" y="80" textAnchor="middle" fontSize="6" fill="#10b981" fontWeight="bold">DNA</text>
           </g>
         )}
 
-        {/* Liquid in collection tube */}
+        {/* Column bottom tip (tapered, suspended in air) */}
+        <path
+          d="M 38 125 L 38 122 L 42 120 L 68 120 L 72 122 L 72 125 Q 72 128 55 130 Q 38 128 38 125"
+          fill="#334155"
+          stroke="#64748b"
+          strokeWidth="1.5"
+        />
+
+        {/* Liquid in collection tube (at bottom with clear separation) */}
         {volume > 0 && (
-          <rect x="22" y={`${155 - fillPercent}`} width="66" height={fillPercent} fill="#38bdf8" opacity="0.3"/>
+          <rect x="22" y={`${155 - fillPercent}`} width="66" height={fillPercent} fill="#38bdf8" opacity="0.4"/>
         )}
 
-        {/* Column tip (showing it extends into collection tube with clear air gap) */}
-        <line x1="55" y1="115" x2="55" y2="120" stroke="#64748b" strokeWidth="2"/>
-
-        {/* Air gap indicator - subtle dashed line */}
-        {volume === 0 && (
-          <g>
-            <line x1="25" y1="120" x2="85" y2="120" stroke="#64748b" strokeWidth="0.5" strokeDasharray="2 2" opacity="0.3"/>
-            <text x="55" y="138" textAnchor="middle" fontSize="7" fill="#64748b" opacity="0.5">AIR GAP</text>
-          </g>
-        )}
+        {/* Air gap visualization */}
+        <g opacity="0.4">
+          <line x1="25" y1="130" x2="38" y2="130" stroke="#64748b" strokeWidth="0.5" strokeDasharray="2 2"/>
+          <line x1="72" y1="130" x2="85" y2="130" stroke="#64748b" strokeWidth="0.5" strokeDasharray="2 2"/>
+          <text x="55" y="140" textAnchor="middle" fontSize="7" fill="#64748b" fontWeight="bold">AIR GAP</text>
+          <line x1="55" y1="130" x2="55" y2="145" stroke="#64748b" strokeWidth="0.5" strokeDasharray="1 1"/>
+        </g>
       </svg>
       <p className="text-[9px] text-slate-500 font-bold uppercase mt-1">Spin Column</p>
     </div>
