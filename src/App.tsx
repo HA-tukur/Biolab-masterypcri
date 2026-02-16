@@ -4057,306 +4057,196 @@ export default function App() {
                   )}
 
                   {currentStep.requiresGrinding && protocolIndex === 0 && missionId === 'B' && (
-                    <div className="bg-gradient-to-br from-slate-800 via-slate-800 to-emerald-900/20 border-2 border-emerald-500/40 p-6 rounded-2xl shadow-xl">
-                      <div className="flex items-center justify-center gap-3 mb-4">
-                        <Leaf size={24} className="text-emerald-400" />
-                        <h3 className="text-xl font-black text-white uppercase tracking-wide">Physical Disruption Station</h3>
-                      </div>
-                      <p className="text-sm text-center text-emerald-300 mb-6 font-semibold">
-                        Complete the interactive grinding sequence
-                      </p>
+                    <div className="bg-slate-800 border border-slate-700 p-4 rounded-xl">
+                      <h3 className="text-sm font-bold text-white uppercase mb-2 text-center">Physical Disruption Station</h3>
+                      <p className="text-xs text-slate-400 text-center mb-4">Click items in order: Leaf → LN₂ → Pestle</p>
 
-                      <div className="space-y-5">
-                        {/* Step 1: Load Leaf */}
-                        <button
+                      {/* Horizontal Interactive Items */}
+                      <div className="flex justify-center items-center gap-6 mb-4">
+                        {/* Leaf - Step 1 */}
+                        <div
                           onClick={() => {
                             if (grindingStage === 'idle') {
                               setGrindingStage('leaf_loaded');
-                              addLog("✓ Step 1: Placed 50mg cassava leaf into mortar", "success");
+                              addLog("Placed cassava leaf into mortar", "success");
                             }
                           }}
-                          disabled={grindingStage !== 'idle'}
-                          className={`w-full p-5 rounded-xl border-3 transition-all duration-300 ${
+                          className={`flex flex-col items-center p-3 rounded-lg border-2 transition-all ${
                             grindingStage === 'idle'
-                              ? 'bg-gradient-to-r from-emerald-600 to-green-600 border-emerald-400 hover:from-emerald-500 hover:to-green-500 cursor-pointer shadow-lg shadow-emerald-500/40 transform hover:scale-[1.02]'
-                              : grindingStage !== 'idle'
-                              ? 'bg-slate-700/50 border-slate-600 cursor-not-allowed opacity-60'
-                              : 'bg-slate-700 border-slate-600'
+                              ? 'border-emerald-500 bg-emerald-900/30 cursor-pointer hover:scale-110 hover:bg-emerald-900/50'
+                              : 'border-slate-600 bg-slate-900/30 opacity-50'
                           }`}
                         >
-                          <div className="flex items-center gap-4">
-                            <div className="flex-shrink-0">
-                              {grindingStage === 'idle' ? (
-                                <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center animate-pulse">
-                                  <span className="text-2xl font-black text-white">1</span>
-                                </div>
-                              ) : (
-                                <div className="w-12 h-12 bg-emerald-500 rounded-full flex items-center justify-center">
-                                  <span className="text-white text-2xl">✓</span>
-                                </div>
-                              )}
-                            </div>
-                            <div className="flex-1 text-left">
-                              <p className="text-lg font-black text-white uppercase">Load Cassava Leaf</p>
-                              <p className="text-sm text-white/80">Click to place 50mg tissue sample into mortar</p>
-                            </div>
-                            <svg width="60" height="60" viewBox="0 0 60 60" fill="none">
+                          <div className="relative">
+                            <svg width="50" height="50" viewBox="0 0 60 60" fill="none">
                               <path d="M20 25 Q 25 28, 30 27 Q 35 26, 40 29 L 38 35 Q 30 32, 22 35 Z"
                                 fill={grindingStage === 'idle' ? '#22c55e' : '#15803d'}
                                 stroke="#14532d" strokeWidth="2"/>
                               <path d="M25 25 L 27 20 L 29 25 M 32 27 L 34 22 L 36 27"
                                 stroke="#14532d" strokeWidth="2" fill="none"/>
                             </svg>
+                            {grindingStage === 'idle' && (
+                              <div className="absolute -top-1 -right-1 w-5 h-5 bg-emerald-500 rounded-full animate-pulse flex items-center justify-center">
+                                <span className="text-[10px] font-bold text-white">1</span>
+                              </div>
+                            )}
                           </div>
-                        </button>
+                          <p className="text-[10px] text-slate-400 mt-1 font-bold">Leaf</p>
+                        </div>
 
-                        {/* Step 2: Add Liquid Nitrogen */}
-                        <button
+                        {/* Mortar - Center Display */}
+                        <div className="flex flex-col items-center">
+                          <svg width="70" height="70" viewBox="0 0 80 80" fill="none">
+                            <ellipse cx="40" cy="68" rx="24" ry="6" fill="#0f172a"/>
+                            <path d="M20 42 Q 40 50 60 42 L 60 68 Q 40 72 20 68 Z"
+                              fill={(grindingStage !== 'idle') ? '#475569' : '#334155'}
+                              stroke="#0f172a" strokeWidth="2"/>
+                            {grindingStage === 'leaf_loaded' && (
+                              <ellipse cx="40" cy="50" rx="10" ry="4" fill="#22c55e" opacity="0.9"/>
+                            )}
+                            {grindingStage === 'frozen' && (
+                              <ellipse cx="40" cy="50" rx="10" ry="4" fill="#0f766e" opacity="0.95"/>
+                            )}
+                            {grindingStage === 'grinding' && (
+                              <>
+                                <ellipse cx="40" cy="52" rx="8" ry="3" fill="#86efac" opacity="0.85"/>
+                                <circle cx="36" cy="53" r="1.5" fill="#22c55e"/>
+                                <circle cx="40" cy="53" r="1.5" fill="#22c55e"/>
+                                <circle cx="44" cy="53" r="1.5" fill="#22c55e"/>
+                              </>
+                            )}
+                            {grindingStage === 'powder_ready' && (
+                              <>
+                                <ellipse cx="40" cy="54" rx="12" ry="5" fill="#86efac" opacity="0.95"/>
+                                <circle cx="34" cy="54" r="1.5" fill="#22c55e"/>
+                                <circle cx="38" cy="54" r="1.5" fill="#22c55e"/>
+                                <circle cx="40" cy="54" r="1.5" fill="#22c55e"/>
+                                <circle cx="42" cy="54" r="1.5" fill="#22c55e"/>
+                                <circle cx="46" cy="54" r="1.5" fill="#22c55e"/>
+                              </>
+                            )}
+                          </svg>
+                          <p className="text-[9px] text-slate-400 mt-1">
+                            {grindingStage === 'idle' && "Empty"}
+                            {grindingStage === 'leaf_loaded' && "Loaded"}
+                            {grindingStage === 'frozen' && "Frozen"}
+                            {grindingStage === 'grinding' && "Grinding"}
+                            {grindingStage === 'powder_ready' && "Powder"}
+                          </p>
+                        </div>
+
+                        {/* LN2 - Step 2 */}
+                        <div
                           onClick={() => {
                             if (grindingStage === 'leaf_loaded') {
                               setGrindingStage('frozen');
-                              addLog("✓ Step 2: Added liquid nitrogen (-196°C)", "success");
-                              addLog("Leaf flash-frozen. Vapor clearing...", "info");
-                              setTimeout(() => {
-                                addLog("Safe to proceed with grinding", "success");
-                              }, 2000);
+                              addLog("Added liquid nitrogen - leaf frozen", "success");
                             }
                           }}
-                          disabled={grindingStage !== 'leaf_loaded'}
-                          className={`w-full p-5 rounded-xl border-3 transition-all duration-300 ${
+                          className={`flex flex-col items-center p-3 rounded-lg border-2 transition-all ${
                             grindingStage === 'leaf_loaded'
-                              ? 'bg-gradient-to-r from-cyan-600 to-blue-600 border-cyan-400 hover:from-cyan-500 hover:to-blue-500 cursor-pointer shadow-lg shadow-cyan-500/40 transform hover:scale-[1.02]'
-                              : grindingStage === 'frozen' || grindingStage === 'grinding' || grindingStage === 'powder_ready'
-                              ? 'bg-slate-700/50 border-slate-600 cursor-not-allowed opacity-60'
-                              : 'bg-slate-700/30 border-slate-700 cursor-not-allowed opacity-40'
+                              ? 'border-cyan-500 bg-cyan-900/30 cursor-pointer hover:scale-110 hover:bg-cyan-900/50'
+                              : 'border-slate-600 bg-slate-900/30 opacity-50'
                           }`}
                         >
-                          <div className="flex items-center gap-4">
-                            <div className="flex-shrink-0">
-                              {grindingStage === 'leaf_loaded' ? (
-                                <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center animate-pulse">
-                                  <span className="text-2xl font-black text-white">2</span>
-                                </div>
-                              ) : (grindingStage === 'frozen' || grindingStage === 'grinding' || grindingStage === 'powder_ready') ? (
-                                <div className="w-12 h-12 bg-cyan-500 rounded-full flex items-center justify-center">
-                                  <span className="text-white text-2xl">✓</span>
-                                </div>
-                              ) : (
-                                <div className="w-12 h-12 bg-slate-600 rounded-full flex items-center justify-center">
-                                  <span className="text-xl font-black text-slate-400">2</span>
-                                </div>
-                              )}
-                            </div>
-                            <div className="flex-1 text-left">
-                              <p className="text-lg font-black text-white uppercase">Add Liquid Nitrogen</p>
-                              <p className="text-sm text-white/80">Click to flash-freeze tissue to -196°C</p>
-                            </div>
-                            <div className="relative">
-                              <LiquidNitrogenVisual />
-                              {grindingStage === 'frozen' && (
-                                <div className="absolute inset-0 pointer-events-none">
-                                  <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-16 h-16 bg-cyan-300 rounded-full opacity-20 animate-ping"></div>
-                                </div>
-                              )}
-                            </div>
+                          <div className="relative">
+                            <LiquidNitrogenVisual />
+                            {grindingStage === 'leaf_loaded' && (
+                              <div className="absolute -top-1 -right-1 w-5 h-5 bg-cyan-500 rounded-full animate-pulse flex items-center justify-center">
+                                <span className="text-[10px] font-bold text-white">2</span>
+                              </div>
+                            )}
                           </div>
-                        </button>
-
-                        {/* Mortar Visual Display */}
-                        <div className="bg-slate-900/50 p-6 rounded-xl border-2 border-slate-700">
-                          <p className="text-xs text-center text-slate-400 font-bold uppercase mb-3">Mortar Status</p>
-                          <div className="flex justify-center">
-                            <div className="relative">
-                              <svg width="140" height="140" viewBox="0 0 80 80" fill="none">
-                                <ellipse cx="40" cy="68" rx="30" ry="8" fill="#0f172a"/>
-                                <path d="M18 38 Q 40 48 62 38 L 62 68 Q 40 74 18 68 Z"
-                                  fill={(grindingStage !== 'idle') ? '#475569' : '#334155'}
-                                  stroke="#0f172a" strokeWidth="3"/>
-
-                                {grindingStage === 'leaf_loaded' && (
-                                  <ellipse cx="40" cy="50" rx="14" ry="6" fill="#22c55e" opacity="0.9"/>
-                                )}
-
-                                {grindingStage === 'frozen' && (
-                                  <>
-                                    <ellipse cx="40" cy="50" rx="14" ry="6" fill="#0f766e" opacity="0.95"/>
-                                    <circle cx="36" cy="50" r="2" fill="#38bdf8" opacity="0.7" className="animate-pulse"/>
-                                    <circle cx="44" cy="50" r="2" fill="#38bdf8" opacity="0.7" className="animate-pulse"/>
-                                  </>
-                                )}
-
-                                {grindingStage === 'grinding' && (
-                                  <>
-                                    <ellipse cx="40" cy="52" rx="12" ry="5" fill="#86efac" opacity="0.85"/>
-                                    <circle cx="34" cy="53" r="2" fill="#22c55e"/>
-                                    <circle cx="40" cy="53" r="2" fill="#22c55e"/>
-                                    <circle cx="46" cy="53" r="2" fill="#22c55e"/>
-                                    <circle cx="37" cy="54" r="1.5" fill="#16a34a"/>
-                                    <circle cx="43" cy="54" r="1.5" fill="#16a34a"/>
-                                  </>
-                                )}
-
-                                {grindingStage === 'powder_ready' && (
-                                  <>
-                                    <ellipse cx="40" cy="56" rx="18" ry="7" fill="#86efac" opacity="0.95"/>
-                                    <circle cx="32" cy="56" r="2" fill="#22c55e"/>
-                                    <circle cx="37" cy="56" r="2" fill="#22c55e"/>
-                                    <circle cx="40" cy="56" r="2" fill="#22c55e"/>
-                                    <circle cx="43" cy="56" r="2" fill="#22c55e"/>
-                                    <circle cx="48" cy="56" r="2" fill="#22c55e"/>
-                                    <circle cx="35" cy="57" r="1.5" fill="#16a34a"/>
-                                    <circle cx="40" cy="57" r="1.5" fill="#16a34a"/>
-                                    <circle cx="45" cy="57" r="1.5" fill="#16a34a"/>
-                                  </>
-                                )}
-                              </svg>
-                              <p className="text-sm text-center text-white font-bold mt-3">
-                                {grindingStage === 'idle' && "Empty"}
-                                {grindingStage === 'leaf_loaded' && "Leaf Loaded"}
-                                {grindingStage === 'frozen' && "Frozen Tissue"}
-                                {grindingStage === 'grinding' && "Grinding..."}
-                                {grindingStage === 'powder_ready' && "Fine Powder Ready!"}
-                              </p>
-                            </div>
-                          </div>
+                          <p className="text-[10px] text-slate-400 mt-1 font-bold">LN₂</p>
                         </div>
 
-                        {/* Step 3: Grind with Pestle */}
-                        <button
+                        {/* Pestle - Step 3 */}
+                        <div
                           onClick={() => {
                             if (grindingStage === 'frozen') {
                               setGrindingStage('grinding');
                               setGrindingProgress(0);
-                              addLog("✓ Step 3: Grinding with pestle - circular shearing motion", "info");
+                              addLog("Grinding with pestle...", "info");
 
                               const grindInterval = setInterval(() => {
                                 setGrindingProgress(prev => {
                                   if (prev >= 100) {
                                     clearInterval(grindInterval);
                                     setGrindingStage('powder_ready');
-                                    addLog("✓ Tissue pulverized into fine powder!", "success");
+                                    addLog("Pulverized into fine powder!", "success");
                                     return 100;
                                   }
-                                  return prev + 4;
+                                  return prev + 5;
                                 });
-                              }, 150);
+                              }, 200);
                             }
                           }}
-                          disabled={grindingStage !== 'frozen' && grindingStage !== 'grinding'}
-                          className={`w-full p-5 rounded-xl border-3 transition-all duration-300 ${
+                          className={`flex flex-col items-center p-3 rounded-lg border-2 transition-all ${
                             grindingStage === 'frozen'
-                              ? 'bg-gradient-to-r from-indigo-600 to-violet-600 border-indigo-400 hover:from-indigo-500 hover:to-violet-500 cursor-pointer shadow-lg shadow-indigo-500/40 transform hover:scale-[1.02]'
+                              ? 'border-blue-500 bg-blue-900/30 cursor-pointer hover:scale-110 hover:bg-blue-900/50'
                               : grindingStage === 'grinding'
-                              ? 'bg-gradient-to-r from-indigo-700 to-violet-700 border-indigo-500 cursor-wait shadow-lg shadow-indigo-500/50'
-                              : (grindingStage === 'powder_ready')
-                              ? 'bg-slate-700/50 border-slate-600 cursor-not-allowed opacity-60'
-                              : 'bg-slate-700/30 border-slate-700 cursor-not-allowed opacity-40'
+                              ? 'border-blue-400 bg-blue-900/50 animate-pulse'
+                              : 'border-slate-600 bg-slate-900/30 opacity-50'
                           }`}
                         >
-                          <div className="flex items-center gap-4">
-                            <div className="flex-shrink-0">
-                              {grindingStage === 'frozen' ? (
-                                <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center animate-pulse">
-                                  <span className="text-2xl font-black text-white">3</span>
-                                </div>
-                              ) : grindingStage === 'grinding' ? (
-                                <div className="w-12 h-12 bg-white/30 rounded-full flex items-center justify-center animate-spin">
-                                  <RefreshCw className="text-white" size={24} />
-                                </div>
-                              ) : (grindingStage === 'powder_ready') ? (
-                                <div className="w-12 h-12 bg-indigo-500 rounded-full flex items-center justify-center">
-                                  <span className="text-white text-2xl">✓</span>
-                                </div>
-                              ) : (
-                                <div className="w-12 h-12 bg-slate-600 rounded-full flex items-center justify-center">
-                                  <span className="text-xl font-black text-slate-400">3</span>
-                                </div>
-                              )}
-                            </div>
-                            <div className="flex-1 text-left">
-                              <p className="text-lg font-black text-white uppercase">Grind with Pestle</p>
-                              <p className="text-sm text-white/80">
-                                {grindingStage === 'grinding' ? 'Grinding in progress...' : 'Click to pulverize frozen tissue'}
-                              </p>
-                            </div>
-                            <svg width="60" height="60" viewBox="0 0 60 60" fill="none" className={grindingStage === 'grinding' ? 'animate-spin' : ''}>
-                              <rect x="24" y="8" width="12" height="42" rx="4"
-                                fill={grindingStage === 'grinding' ? '#a5b4fc' : '#64748b'}
-                                transform="rotate(15 30 29)"
+                          <div className="relative">
+                            <svg width="50" height="50" viewBox="0 0 60 60" fill="none" className={grindingStage === 'grinding' ? 'animate-spin' : ''}>
+                              <rect x="24" y="8" width="12" height="36" rx="3"
+                                fill={grindingStage === 'grinding' ? '#93c5fd' : '#64748b'}
+                                transform="rotate(15 30 26)"
                               />
-                              <ellipse cx="30" cy="8" rx="8" ry="6"
-                                fill={grindingStage === 'grinding' ? '#e0e7ff' : '#94a3b8'}
+                              <ellipse cx="30" cy="8" rx="7" ry="5"
+                                fill={grindingStage === 'grinding' ? '#dbeafe' : '#94a3b8'}
                               />
                             </svg>
+                            {grindingStage === 'frozen' && (
+                              <div className="absolute -top-1 -right-1 w-5 h-5 bg-blue-500 rounded-full animate-pulse flex items-center justify-center">
+                                <span className="text-[10px] font-bold text-white">3</span>
+                              </div>
+                            )}
                           </div>
-                        </button>
-
-                        {/* Grinding Progress Bar */}
-                        {grindingStage === 'grinding' && (
-                          <div className="bg-indigo-900/40 border-2 border-indigo-500/50 p-4 rounded-xl animate-pulse">
-                            <div className="flex items-center justify-between mb-3">
-                              <span className="text-sm text-white font-bold uppercase">Grinding Progress</span>
-                              <span className="text-lg text-emerald-400 font-black">{grindingProgress}%</span>
-                            </div>
-                            <div className="w-full bg-slate-700 rounded-full h-4 overflow-hidden shadow-inner">
-                              <div
-                                className="bg-gradient-to-r from-emerald-500 via-green-400 to-emerald-500 h-4 rounded-full transition-all duration-150 shadow-lg"
-                                style={{ width: `${grindingProgress}%` }}
-                              ></div>
-                            </div>
-                            <p className="text-xs text-slate-300 mt-3 text-center font-semibold">
-                              Circular shearing motion pulverizing cellulose fibers...
-                            </p>
-                          </div>
-                        )}
-
-                        {/* Step 4: Transfer to Tube */}
-                        {grindingStage === 'powder_ready' && (
-                          <button
-                            onClick={() => {
-                              addLog("✓ Step 4: Transferred fine green powder to 1.5mL microcentrifuge tube", "success");
-                              setStep1Method('manual');
-                              setGrindingStage('transferred');
-                              addLog("Advancing to Step 2: Lysis & Protein Digestion", "info");
-
-                              setTimeout(() => {
-                                setProtocolIndex(protocolIndex + 1);
-                                setHasDispensedThisStep(false);
-                                setHasSpunThisStep(false);
-                                setNeedsMixing(false);
-                                setIsMixing(false);
-                                setCurrentStepReagents({});
-                                setCurrentReagentId(null);
-                                setVolumeAddedThisStep(0);
-                                setGrindingStage('idle');
-                                setGrindingProgress(0);
-                              }, 1000);
-                            }}
-                            className="w-full bg-gradient-to-r from-emerald-600 via-green-600 to-emerald-600 hover:from-emerald-500 hover:via-green-500 hover:to-emerald-500 text-white py-5 px-6 rounded-xl font-black uppercase transition-all cursor-pointer border-0 flex items-center justify-center gap-4 shadow-2xl shadow-emerald-500/50 text-xl animate-pulse transform hover:scale-[1.03]"
-                          >
-                            <FlaskConical size={28} />
-                            Transfer Powder to Tube
-                            <ChevronRight size={28} />
-                          </button>
-                        )}
-
-                        {/* Current Instruction Panel */}
-                        <div className={`p-4 rounded-xl border-2 ${
-                          grindingStage === 'idle' ? 'bg-emerald-900/30 border-emerald-500/60' :
-                          grindingStage === 'leaf_loaded' ? 'bg-cyan-900/30 border-cyan-500/60' :
-                          grindingStage === 'frozen' ? 'bg-indigo-900/30 border-indigo-500/60' :
-                          grindingStage === 'grinding' ? 'bg-indigo-900/40 border-indigo-500/70' :
-                          'bg-emerald-900/40 border-emerald-500/70'
-                        }`}>
-                          <p className="text-base text-white font-bold text-center leading-relaxed">
-                            {grindingStage === 'idle' && "🍃 STEP 1: Click the green button above to load the cassava leaf"}
-                            {grindingStage === 'leaf_loaded' && "❄️ STEP 2: Click the blue button above to add liquid nitrogen"}
-                            {grindingStage === 'frozen' && "🥄 STEP 3: Click the purple button above to grind with the pestle"}
-                            {grindingStage === 'grinding' && "⚙️ Grinding... Circular motion shearing cellulose fibers"}
-                            {grindingStage === 'powder_ready' && "✅ COMPLETE! Click the green button above to transfer powder"}
-                          </p>
+                          <p className="text-[10px] text-slate-400 mt-1 font-bold">Pestle</p>
                         </div>
                       </div>
+
+                      {/* Progress Bar */}
+                      {grindingStage === 'grinding' && (
+                        <div className="mb-4">
+                          <div className="w-full bg-slate-700 rounded-full h-2">
+                            <div
+                              className="bg-emerald-500 h-2 rounded-full transition-all duration-200"
+                              style={{ width: `${grindingProgress}%` }}
+                            ></div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Transfer Button */}
+                      {grindingStage === 'powder_ready' && (
+                        <button
+                          onClick={() => {
+                            addLog("Transferred powder to tube", "success");
+                            setStep1Method('manual');
+                            setGrindingStage('transferred');
+
+                            setTimeout(() => {
+                              setProtocolIndex(protocolIndex + 1);
+                              setHasDispensedThisStep(false);
+                              setHasSpunThisStep(false);
+                              setNeedsMixing(false);
+                              setIsMixing(false);
+                              setCurrentStepReagents({});
+                              setCurrentReagentId(null);
+                              setVolumeAddedThisStep(0);
+                              setGrindingStage('idle');
+                              setGrindingProgress(0);
+                            }, 500);
+                          }}
+                          className="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-2 px-4 rounded-lg font-bold uppercase text-sm transition-all animate-pulse"
+                        >
+                          Transfer to Tube
+                        </button>
+                      )}
                     </div>
                   )}
 
