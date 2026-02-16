@@ -273,53 +273,43 @@ const TubeWithFilterColumnVisual = ({ volume, hasDNA, stepTitle }) => {
 };
 
 const SpinColumnVisual = ({ volume, hasDNA, hasSpun = false }) => {
-  const flowThroughPercent = Math.min((volume / 1500) * 70, 70);
-  const columnLiquidHeight = volume > 0 && !hasSpun ? Math.min((volume / 620) * 25, 25) : 0;
-
   return (
     <div className="relative flex flex-col items-center p-4">
-      <svg width="110" height="160" viewBox="0 0 110 170" fill="none" xmlns="http://www.w3.org/2000/svg">
-        {/* Collection Tube (outer, tall, clear) */}
-        <rect x="20" y="40" width="70" height="120" rx="3" fill="#1e293b" stroke="#475569" strokeWidth="2"/>
-        <ellipse cx="55" cy="40" rx="35" ry="8" fill="#0f172a" stroke="#475569" strokeWidth="2"/>
-        <ellipse cx="55" cy="160" rx="35" ry="8" fill="#0f172a" stroke="#475569" strokeWidth="2"/>
+      <svg width="90" height="160" viewBox="0 0 120 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+        {/* Collection tube (outer, wider tube) */}
+        <path d="M 35 95 L 35 175 Q 35 185 60 190 Q 85 185 85 175 L 85 95" fill="#1e293b" stroke="#475569" strokeWidth="2.5"></path>
+        <ellipse cx="60" cy="95" rx="25" ry="7" fill="#0f172a" stroke="#475569" strokeWidth="2.5"></ellipse>
 
-        {/* Spin Column Collar/Rim (WIDER, rests on collection tube edge) */}
-        <ellipse cx="55" cy="40" rx="42" ry="6" fill="#475569" stroke="#94a3b8" strokeWidth="2.5"/>
-        <ellipse cx="55" cy="37" rx="42" ry="4" fill="#64748b"/>
+        {/* Filter column (inner, narrow tube) */}
+        <rect x="46" y="15" width="28" height="115" rx="1" fill="#334155" stroke="#64748b" strokeWidth="2"></rect>
+        <ellipse cx="60" cy="15" rx="14" ry="4" fill="#1e293b" stroke="#64748b" strokeWidth="2"></ellipse>
 
-        {/* Spin Column Body (suspended from top, doesn't touch bottom) */}
-        <rect x="40" y="42" width="30" height="50" rx="1" fill="#334155" stroke="#64748b" strokeWidth="1.5"/>
-
-        {/* Column inner opening */}
-        <ellipse cx="55" cy="42" rx="15" ry="3" fill="#1e293b" stroke="#64748b" strokeWidth="1"/>
-
-        {/* Liquid INSIDE column (before spinning) */}
+        {/* Liquid INSIDE filter column (before spinning) */}
         {volume > 0 && !hasSpun && (
-          <rect x="42" y={`${66 - columnLiquidHeight}`} width="26" height={columnLiquidHeight} fill="#60a5fa" opacity="0.6"/>
+          <path d="M 48 80 L 48 125 L 72 125 L 72 80 Z" fill="#38bdf8" opacity="0.6"></path>
         )}
 
-        {/* Silica Membrane (white horizontal line) */}
-        <rect x="42" y="60" width="26" height="6" fill="#e2e8f0" opacity="0.9"/>
-        <line x1="42" y1="62" x2="68" y2="62" stroke="#94a3b8" strokeWidth="0.4" strokeDasharray="1.5 1"/>
-        <line x1="42" y1="64" x2="68" y2="64" stroke="#94a3b8" strokeWidth="0.4" strokeDasharray="1.5 1"/>
+        {/* Silica membrane (white horizontal line inside filter column) */}
+        <g>
+          <rect x="48" y="125" width="24" height="7" fill="#e2e8f0" opacity="0.85"></rect>
+          <line x1="48" y1="127" x2="72" y2="127" stroke="#94a3b8" strokeWidth="0.6" strokeDasharray="2 1"></line>
+          <line x1="48" y1="129" x2="72" y2="129" stroke="#94a3b8" strokeWidth="0.6" strokeDasharray="1.5 1.5"></line>
+          <line x1="48" y1="131" x2="72" y2="131" stroke="#94a3b8" strokeWidth="0.6" strokeDasharray="2 1"></line>
+          {hasDNA && (
+            <rect x="48" y="125" width="24" height="7" fill="#10b981" opacity="0.3"></rect>
+          )}
+        </g>
 
-        {/* DNA bound to membrane (visual only, no text) */}
-        {hasDNA && (
-          <rect x="44" y="61" width="22" height="4" fill="#10b981" opacity="0.7" className="animate-pulse"/>
-        )}
+        {/* Air gap indicator lines (subtle guides showing the space) */}
+        <line x1="35" y1="95" x2="46" y2="95" stroke="#475569" strokeWidth="1" strokeDasharray="3 2" opacity="0.5"></line>
+        <line x1="74" y1="95" x2="85" y2="95" stroke="#475569" strokeWidth="1" strokeDasharray="3 2" opacity="0.5"></line>
 
-        {/* Column tip (tapered, ends above bottom - clear air gap) */}
-        <path
-          d="M 40 90 L 42 92 L 48 95 L 62 95 L 68 92 L 70 90 L 70 90 L 40 90"
-          fill="#334155"
-          stroke="#64748b"
-          strokeWidth="1.5"
-        />
-
-        {/* Flow-through liquid at bottom (AFTER spinning) */}
+        {/* Flow-through liquid at bottom of collection tube (after spinning) */}
         {volume > 0 && hasSpun && (
-          <rect x="22" y={`${155 - flowThroughPercent}`} width="66" height={flowThroughPercent} fill="#60a5fa" opacity="0.4"/>
+          <>
+            <path d="M 37 154.25 L 37 175 Q 37 183 60 187 Q 83 183 83 175 L 83 154.25" fill="#38bdf8" opacity="0.4"></path>
+            <ellipse cx="60" cy="154.25" rx="23" ry="6" fill="#38bdf8" opacity="0.3"></ellipse>
+          </>
         )}
       </svg>
       <p className="text-[9px] text-slate-500 font-bold uppercase mt-1">Spin Column</p>
