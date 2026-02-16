@@ -77,12 +77,35 @@ const trackEvent = (action, category, label, value) => {
 };
 
 
-const TubeVisual = ({ volume, solidMass, hasPellet, showSeparation, onSupernatantClick, onPelletClick }) => {
+const TubeVisual = ({ volume, solidMass, hasPellet, showSeparation, onSupernatantClick, onPelletClick, stepTitle }) => {
   const fillPercent = Math.min((volume / 2000) * 100, 85);
   const solidPercent = Math.min((solidMass / 150) * 40, 40);
 
   const supernatantHeight = showSeparation ? fillPercent * 0.7 : 0;
   const pelletHeight = showSeparation ? fillPercent * 0.3 : 0;
+
+  // Determine liquid color based on step
+  let liquidColor = "#38bdf8"; // Default blue
+  let liquidOpacity = 0.4;
+  let supernatantColor = "#F5DEB3"; // Wheat/tan for Step 2 supernatant
+  let pelletColor = "#654321"; // Dark brown for Step 2 pellet
+
+  if (stepTitle === "Lysis & Protein Digestion") {
+    // Cloudy brownish-pink (homogeneous)
+    liquidColor = "#CD9575";
+    liquidOpacity = 0.85;
+  } else if (stepTitle === "Clarification") {
+    // Before spin: same cloudy brownish-pink
+    // After spin (showSeparation): wheat supernatant + dark brown pellet
+    liquidColor = "#CD9575";
+    liquidOpacity = 0.85;
+    supernatantColor = "#F5DEB3";
+    pelletColor = "#654321";
+  } else if (stepTitle === "Binding Preparation" || stepTitle === "Column Binding") {
+    // Light blue-white, slightly cloudy
+    liquidColor = "#E6F3FF";
+    liquidOpacity = 0.7;
+  }
 
   return (
     <div className="relative flex flex-col items-center p-2">
@@ -92,28 +115,44 @@ const TubeVisual = ({ volume, solidMass, hasPellet, showSeparation, onSupernatan
 
         {showSeparation && volume > 0 ? (
           <>
+            {/* Supernatant (top layer) */}
             <path
               d={`M25 ${150 - fillPercent}C25 ${150 - fillPercent} 25 ${150 - pelletHeight} 50 ${165 - pelletHeight}C75 ${150 - pelletHeight} 75 ${150 - fillPercent} 75 ${150 - fillPercent}`}
-              fill="#fef08a"
-              fillOpacity="0.7"
-              className={onSupernatantClick ? "cursor-pointer hover:fill-yellow-300 transition-all" : ""}
+              fill={supernatantColor}
+              fillOpacity="0.6"
+              className={onSupernatantClick ? "cursor-pointer hover:opacity-80 transition-all" : ""}
               onClick={onSupernatantClick}
             />
             <text x="50" y={`${140 - fillPercent + 15}`} textAnchor="middle" fontSize="7" fill="#854d0e" fontWeight="bold">Supernatant</text>
 
+            {/* Pellet (bottom layer) */}
             <path
               d={`M25 ${150 - pelletHeight}C25 ${150 - pelletHeight} 25 150 50 165C75 150 75 ${150 - pelletHeight} 75 ${150 - pelletHeight}`}
-              fill="#78350f"
-              fillOpacity="0.8"
-              className={onPelletClick ? "cursor-pointer hover:fill-amber-800 transition-all" : ""}
+              fill={pelletColor}
+              fillOpacity="0.85"
+              className={onPelletClick ? "cursor-pointer hover:opacity-90 transition-all" : ""}
               onClick={onPelletClick}
             />
             <text x="50" y={`${158}`} textAnchor="middle" fontSize="7" fill="#fbbf24" fontWeight="bold">Pellet</text>
           </>
         ) : (
           <>
-            {volume > 0 && <path d={`M25 ${150 - fillPercent}C25 ${150 - fillPercent} 25 150 50 165C75 150 75 ${150 - fillPercent} 75 ${150 - fillPercent}`} fill="#38bdf8" fillOpacity="0.4" />}
-            {solidMass > 0 && <path d={`M35 ${165 - solidPercent}C35 ${165 - solidPercent} 40 165 50 170C60 165 65 ${165 - solidPercent} 65 ${165 - solidPercent}L35 ${165 - solidPercent}Z`} fill="#78350f" className="opacity-80" />}
+            {/* Homogeneous liquid (no separation) */}
+            {volume > 0 && (
+              <path
+                d={`M25 ${150 - fillPercent}C25 ${150 - fillPercent} 25 150 50 165C75 150 75 ${150 - fillPercent} 75 ${150 - fillPercent}`}
+                fill={liquidColor}
+                fillOpacity={liquidOpacity}
+              />
+            )}
+            {/* Solid tissue chunks (only for initial state) */}
+            {solidMass > 0 && (
+              <path
+                d={`M35 ${165 - solidPercent}C35 ${165 - solidPercent} 40 165 50 170C60 165 65 ${165 - solidPercent} 65 ${165 - solidPercent}L35 ${165 - solidPercent}Z`}
+                fill="#8B4513"
+                className="opacity-80"
+              />
+            )}
           </>
         )}
 
@@ -1669,6 +1708,12 @@ export default function App() {
         setHasSpunThisStep(true);
         setPelletVisible(currentStep?.requiresSpin || false);
 
+        // For Clarification step, show phase separation after spinning
+        if (currentStep?.title === "Clarification") {
+          setShowPhaseSeparation(true);
+          addLog("Spin complete. Supernatant and pellet separated.", "success");
+        }
+
         // For Column Binding and Wash steps, liquid goes to collection tube as waste
         if (currentStep?.title === "Column Binding" || currentStep?.title === "Wash & Dry") {
           setWasteInCollectionTube(true);
@@ -1867,7 +1912,7 @@ export default function App() {
         requiresSpin: true,
         spinDuration: 3,
         successCriteria: "Supernatant is clear",
-        educationalNote: "This step is especially important for tough animal tissues. Avoid disturbing the pellet when transferring supernatant."
+        educationalNote: "⚠️ Carefully pipette only the clear supernatant in the next step. Avoid disturbing the pellet - it contains debris, not DNA."
       },
       {
         title: "Binding Preparation",
@@ -1881,7 +1926,8 @@ export default function App() {
           { id: "ethanol", name: "Ethanol (96-100%)", targetVolume: 200, tolerance: 20, color: "#60a5fa" }
         ],
         kitNote: "📋 Kit Reality Check: Your DNA extraction kit includes concentrated wash buffer. In real labs, you would add ethanol from your lab stock before using it. In BioSim Lab, we assume this step is already done - your wash buffer is ready to use.",
-        successCriteria: "Binding Buffer added (200 µL), Ethanol added (200 µL), Mixed gently"
+        successCriteria: "Binding Buffer added (200 µL), Ethanol added (200 µL), Mixed gently",
+        educationalNote: "💡 Using a fresh tube ensures no debris contaminates your DNA. The supernatant contains your purified DNA."
       },
       {
         title: "Column Binding",
@@ -2037,10 +2083,12 @@ export default function App() {
 
       if (protocolIndex === 1) setCurrentSolidMass(0);
 
+      // Step 3 (Binding Preparation) - reset phase separation and pellet since we're using fresh tube
       if (protocolIndex === 2) {
-        setShowPhaseSeparation(true);
+        setShowPhaseSeparation(false);
+        setPelletVisible(false);
         setShowBioPopup("lysis");
-        setTimeout(() => setShowPhaseSeparation(false), 8000);
+        addLog("Transferred clear supernatant to a fresh, clean tube. No debris.", "success");
       }
 
       if (protocolIndex === 4 && !stoichiometryError) setPelletVisible(true);
@@ -3154,8 +3202,13 @@ export default function App() {
                               } else {
                                 const nextStep = protocolSteps[protocolIndex + 1];
 
+                                // For Binding Preparation step (Step 3), reset volume to ~200µL (supernatant only)
+                                if (nextStep?.title === "Binding Preparation") {
+                                  setBufferVolume(200);
+                                  addLog("Transferred ~200µL clear supernatant to fresh tube. Pellet discarded.", "info");
+                                }
                                 // For Elution step, reset buffer volume to show fresh, empty tube
-                                if (nextStep?.isElution) {
+                                else if (nextStep?.isElution) {
                                   setBufferVolume(0);
                                   addLog("Column transferred to fresh, empty collection tube.", "info");
                                 } else {
@@ -3343,7 +3396,7 @@ export default function App() {
                                   volume={hasAspiratedFromTube ? 0 : (bufferVolume + volumeAddedThisStep)}
                                   solidMass={currentSolidMass}
                                   hasPellet={pelletVisible}
-                                  showColorChange={currentStep.title === "Lysis & Protein Digestion"}
+                                  stepTitle={currentStep.title}
                                 />
                               </div>
                               <p className="text-[9px] text-slate-400 font-bold uppercase mt-2">Sample Tube</p>
@@ -3528,6 +3581,7 @@ export default function App() {
                                 showSeparation={showPhaseSeparation}
                                 onSupernatantClick={showPhaseSeparation ? () => setShowBioPopup("supernatant") : null}
                                 onPelletClick={showPhaseSeparation ? () => setShowBioPopup("pellet") : null}
+                                stepTitle={currentStep.title}
                               />
                             </div>
                           </div>
