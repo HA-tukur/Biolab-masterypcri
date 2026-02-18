@@ -1285,23 +1285,27 @@ const ProtocolGuideOverlay = ({ onClose, missionId }) => {
   const protocolContent = {
     A: {
       title: "Clinical Tissue Biopsy Protocol",
-      subtitle: "Human/Animal DNA Extraction -Select appropriate kit (e.g. Qiagen) tailored for soft tissues (e.g., 3-25mg biopsies). Volumes: 2/500/500/20 µl.",
+      subtitle: "Human/Animal DNA Extraction - Select silica-column kit (e.g., Qiagen) for soft tissues (3-25mg). Standard Volumes: 20/200/200/50 µl.",
       steps: [
         {
-          title: "Tissue Disruption (Enzymatic Digestion)",
-          content: "Add Proteinase K (2µl concentrated stock). Mix and incubate at 56°C (shortened for simulation; real: 1-3 hours). Targets proteins in animal matrices; no grinding needed unlike plants."
+          title: "1. Lysis & Digestion (Combined Step)",
+          content: "Add 200µl Lysis Buffer and 20µl Proteinase K to the sample. Mix and incubate at 56°C until the tissue is fully dissolved. Detergents break membranes while the enzyme digests proteins."
         },
         {
-          title: "Lysis",
-          content: "Add lysis buffer (500µl). Mix and spin (~12,000g) to pellet debris. Skips RNase for simplicity, assuming minor RNA is tolerable."
+          title: "2. Clarification",
+          content: "Spin at 12,000g for 3 minutes. Carefully transfer the clear Supernatant to a fresh tube, leaving the debris pellet behind. This ensures the spin column does not clog."
         },
         {
-          title: "Binding/Wash/Elute",
-          content: "Add binding buffer (500µl) and spin to bind DNA to column. Wash (500µl, repeat) and spin. Elute in 20µl, then NanoDrop. Column skips phenol-chloroform (common for phase separation) for safety, speed, and non-toxicity."
+          title: "3. Binding Preparation",
+          content: "Add 200µl Binding Buffer and 200µl Ethanol (96-100%). Mix by gentle inversion. Ethanol is mandatory to allow DNA to precipitate and bind to the silica membrane."
         },
         {
-          title: "Equipment",
-          content: "Microcentrifuge, pipettes/tips, incubator, NanoDrop, safety kit."
+          title: "4. Wash & Dry",
+          content: "Load mixture onto column and spin. Wash with 500µl Wash Buffer (repeat). Perform a 2-minute Dry Spin at max speed to remove all residual ethanol before elution."
+        },
+        {
+          title: "5. Elution",
+          content: "Transfer column to a brand-new 1.5ml tube. Add 50µl Elution Buffer (TE/AE) to the membrane center. Wait 1 min, then spin. 50µl ensures optimal recovery of purified DNA."
         }
       ]
     },
