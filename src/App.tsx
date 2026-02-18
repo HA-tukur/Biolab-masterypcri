@@ -1165,30 +1165,6 @@ const ReadinessOverlay = ({ onClose }) => (
           The principles you learn here transfer everywhere.
         </p>
       </div>
-
-      {/* How to View Protocols Section */}
-      <div className="bg-slate-900/50 border border-slate-700 p-5 rounded-xl text-left space-y-3">
-        <h4 className="text-white font-bold text-sm flex items-center gap-2">
-          <BookOpen size={16} /> How to View Protocols
-        </h4>
-
-        <p className="text-xs text-slate-300 leading-relaxed">
-          Scientific success begins with preparation. Study the protocol before selecting your equipment to ensure a "one-trip" procurement phase.
-        </p>
-
-        <ul className="space-y-2 text-xs text-slate-300">
-          <li>
-            <span className="font-bold text-emerald-400">Pre-Lab Review:</span> As soon as you select a mission, the 📋 Protocol button appears in the top-right corner. Open it while in Procurement to see exactly which reagents (e.g., Ethanol, BashingBead Buffer) are required.
-          </li>
-          <li>
-            <span className="font-bold text-cyan-400">Persistent Access:</span> Once you Enter Lab, the Protocol button remains visible. Click it anytime to review critical details like spin speeds, incubation temperatures, or specific volumes.
-          </li>
-          <li>
-            <span className="font-bold text-amber-400">Preparation is Mandatory:</span> Use the manual to verify you have all required items (like Liquid Nitrogen for plants or Proteinase K for animal tissue) before clicking "Enter Lab."
-          </li>
-        </ul>
-      </div>
-
       {/* CTA */}
       <button
         onClick={onClose}
