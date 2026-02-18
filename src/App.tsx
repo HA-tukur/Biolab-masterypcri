@@ -1382,31 +1382,21 @@ const LabManualOverlay = ({ onClose }) => (
           </section>
           <section className="space-y-3 font-sans text-white">
             <h4 className="text-indigo-300 font-bold uppercase text-xs font-mono flex items-center gap-2"><ScrollText size={14} />2. How to View Protocols</h4>
-            <p className="text-slate-300">Before starting any experiment, review the full protocol:</p>
-            <div className="bg-slate-900/30 border border-slate-700/50 p-4 rounded-xl space-y-2">
-              <p className="text-indigo-400 font-semibold text-xs flex items-center gap-2">📋 Step-by-Step:</p>
-              <ul className="space-y-1.5 text-slate-300 text-xs leading-relaxed ml-4">
-                <li>→ Click "Proceed to Bench" → "Proceed to Procurement"</li>
-                <li>→ Scroll to bottom → Click "Enter Lab"</li>
-                <li>→ Look for "📋 Protocol" button (top-right corner)</li>
-                <li>→ Click to read step-by-step instructions</li>
-                <li>→ Note which equipment and reagents you need</li>
-                <li>→ Click "Add Equipment" to return to Procurement</li>
-                <li>→ Select correct tools and reagents</li>
-                <li>→ Click "Enter Lab" again to start</li>
-              </ul>
+            <p className="text-slate-300 mb-4">Scientific success begins with preparation. Study the protocol before selecting your equipment to ensure a "one-trip" procurement phase.</p>
+            <div className="space-y-3">
+              <div className="bg-slate-900/30 border border-slate-700/50 p-4 rounded-xl">
+                <p className="text-indigo-400 font-semibold text-xs flex items-center gap-2 mb-2">📋 Pre-Lab Review:</p>
+                <p className="text-slate-300 text-xs leading-relaxed">As soon as you select a mission, the 📋 Protocol button appears in the top-right corner. Open it while in Procurement to see exactly which reagents (e.g., Ethanol, BashingBead Buffer) are required.</p>
+              </div>
+              <div className="bg-slate-900/30 border border-slate-700/50 p-4 rounded-xl">
+                <p className="text-cyan-400 font-semibold text-xs flex items-center gap-2 mb-2">👁️ Persistent Access:</p>
+                <p className="text-slate-300 text-xs leading-relaxed">Once you Enter Lab, the Protocol button remains visible. Click it anytime to review critical details like spin speeds, incubation temperatures, or specific volumes.</p>
+              </div>
+              <div className="bg-amber-900/20 border border-amber-500/30 p-4 rounded-xl">
+                <p className="text-amber-300 text-xs flex items-center gap-2"><AlertTriangle size={12} /><span className="font-semibold">Preparation is Mandatory:</span></p>
+                <p className="text-slate-300 text-xs leading-relaxed mt-2">Use the manual to verify you have all required items (like Liquid Nitrogen for plants or Proteinase K for animal tissue) before clicking "Enter Lab."</p>
+              </div>
             </div>
-            <div className="bg-amber-900/20 border border-amber-500/30 p-3 rounded-xl">
-              <p className="text-amber-300 text-xs flex items-center gap-2"><Lightbulb size={12} /><span className="font-semibold">Tip:</span> Protocol button is always visible during experiments. Click it anytime to review steps.</p>
-            </div>
-          </section>
-          <section className="space-y-2 font-sans text-white">
-            <h4 className="text-indigo-300 font-bold uppercase text-xs font-mono flex items-center gap-2"><ShoppingCart size={14} />3. Procurement</h4>
-            <p className="text-slate-300">Selecting the correct Kit and Equipment is mandatory. Without appropriate buffers, failure is certain. Always review the protocol (see #2 above) before purchasing.</p>
-          </section>
-          <section className="space-y-2 font-sans text-white">
-            <h4 className="text-indigo-300 font-bold uppercase text-xs font-mono flex items-center gap-2"><Database size={14} />4. Lab IDs</h4>
-            <p className="text-slate-300">Your progress is saved to your Lab ID and tracked automatically for your learning journey.</p>
           </section>
         </div>
         <div className="p-6 bg-slate-900/50 border-t border-slate-700 font-mono"><button onClick={onClose} className="w-full bg-indigo-600 py-4 rounded-2xl font-black uppercase text-white shadow-lg border-0 cursor-pointer text-xs font-mono font-bold tracking-widest uppercase">Return to Bench</button></div>
