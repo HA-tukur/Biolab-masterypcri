@@ -1120,9 +1120,17 @@ const BiologicalPopup = ({ type, onClose }) => {
   );
 };
 
-const ReadinessOverlay = ({ onClose }) => (
+const ReadinessOverlay = ({ onClose, onCancel }) => (
   <div className="fixed inset-0 z-[140] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md">
-    <div className="bg-slate-800 border border-amber-500/50 w-full max-w-[650px] max-h-[550px] overflow-y-auto rounded-[2.5rem] p-8 space-y-6 text-white shadow-2xl">
+    <div className="bg-slate-800 border border-amber-500/50 w-full max-w-[650px] max-h-[550px] overflow-y-auto rounded-[2.5rem] p-8 space-y-6 text-white shadow-2xl relative">
+
+      {/* Close Button */}
+      <button
+        onClick={onCancel}
+        className="absolute top-6 right-6 text-slate-400 hover:text-white transition-colors bg-transparent border-0 cursor-pointer"
+      >
+        <X size={24} />
+      </button>
 
       {/* Icon */}
       <ShieldCheck size={48} className="mx-auto text-amber-500" />
@@ -1801,6 +1809,7 @@ export default function App() {
   const [isVortexing, setIsVortexing] = useState(false);
   const [tubeVortexed, setTubeVortexed] = useState(false);
   const [showVortexPrompt, setShowVortexPrompt] = useState(false);
+  const [screenBeforeReadiness, setScreenBeforeReadiness] = useState(null);
 
   const anonymousUser = useAnonymousUser();
   const [protocolTracker] = useState(() => new ProtocolTracker());
@@ -2400,6 +2409,7 @@ export default function App() {
     setIsVortexing(false);
     setTubeVortexed(false);
     setShowVortexPrompt(false);
+    setScreenBeforeReadiness(screen);
     setScreen("briefing");
     setShowReadinessModal(true);
   };
@@ -2882,10 +2892,16 @@ export default function App() {
           }}
         />
       )}
-      {showReadinessModal && <ReadinessOverlay onClose={() => {
-        setShowReadinessModal(false);
-        setScreen("briefing");
-      }} />}
+      {showReadinessModal && <ReadinessOverlay
+        onClose={() => {
+          setShowReadinessModal(false);
+          setScreen("briefing");
+        }}
+        onCancel={() => {
+          setShowReadinessModal(false);
+          setScreen(screenBeforeReadiness || "missions");
+        }}
+      />}
       {showProtocolOverview && (
         <div className="fixed inset-0 z-[150] flex items-start justify-center bg-slate-950/80 backdrop-blur-md overflow-y-auto">
           <div className="w-full">
