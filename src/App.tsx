@@ -1230,7 +1230,7 @@ const ProtocolBookOverlay = ({ onClose }) => (
                   Preparation is Mandatory
                 </h5>
                 <p className="text-slate-300 text-sm leading-relaxed">
-                  Use the manual to verify you have all required items (like Liquid Nitrogen for plants or Proteinase K for animal tissue) before clicking "Enter Lab."
+                  Check the protocol to verify you have all required items (like Liquid Nitrogen for plants, Ethanol, etc) before clicking "Enter Lab."
                 </p>
               </div>
             </div>
