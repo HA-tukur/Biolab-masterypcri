@@ -38,7 +38,9 @@ import {
   Trophy,
   Microscope,
   Lock,
-  X
+  X,
+  Eye,
+  AlertTriangle
 } from "lucide-react";
 import { SupabaseHistoryStore, HistoryStore } from "./services/historyStore";
 import { PCRModule } from "./components/PCRModule";
@@ -1212,78 +1214,49 @@ const ProtocolBookOverlay = ({ onClose }) => (
         </div>
 
         {/* Content Area */}
-        <div className="p-8 overflow-y-auto space-y-8 text-xs leading-relaxed text-slate-300 font-mono text-left">
+        <div className="p-8 overflow-y-auto space-y-6 text-sm leading-relaxed text-slate-300 font-sans text-left">
 
-          {/* MISSION A: CLINICAL BIOPSY */}
-          <section className="space-y-4 border-b border-slate-700 pb-4">
+          {/* How to View Protocols Section */}
+          <section className="space-y-4">
             <div className="flex items-center gap-2 text-white">
-              <ShieldAlert size={16} className="text-rose-400"/>
-              <h4 className="text-white font-black uppercase text-lg font-sans">Mission A: Clinical Biopsy</h4>
+              <BookOpen size={20} className="text-cyan-400"/>
+              <h4 className="text-white font-black uppercase text-xl font-sans">How to View Protocols</h4>
             </div>
-            <ul className="space-y-2 list-decimal ml-4 text-slate-400">
-              <li><b>Lysis & Digestion:</b> Add 200uL Lysis Buffer + <span className="text-emerald-400">20uL Proteinase K</span>. INCUBATE at 56°C.</li>
-              <li><b>Clarification:</b> SPIN at 12,000g. Transfer <span className="text-amber-400">Supernatant</span> to a fresh tube.</li>
-              <li><b>Binding Preparation:</b> Add 200uL Binding Buffer + <span className="text-emerald-400">200uL Ethanol (96-100%)</span>. Mix by inversion.</li>
-              <li><b>Column Binding:</b> Load onto spin column. SPIN. Discard flow-through.</li>
-              <li><b>Wash & Dry:</b> Wash (500uL, repeat). Perform a <span className="text-amber-400">Dry Spin (2 min)</span>.</li>
-              <li><b>Elution:</b> Transfer to fresh tube. Add <span className="text-emerald-400">50uL Elution Buffer</span>. SPIN.</li>
-              <li><b>Success:</b> 200-1200 ng/uL, Purity (A260/A280) ≥ 1.8.</li>
-            </ul>
-          </section>
 
-          {/* MISSION B: CASSAVA LEAF */}
-          <section className="space-y-4 border-b border-slate-700 pb-4">
-            <div className="flex items-center gap-2 text-white">
-              <Leaf size={16} className="text-emerald-400"/>
-              <h4 className="text-white font-black uppercase text-lg font-sans">Mission B: Cassava Leaf</h4>
-            </div>
-            <ul className="space-y-2 list-decimal ml-4 text-slate-400">
-              <li><b>Physical Disruption:</b> Grind tissue with <span className="text-emerald-400">Liquid Nitrogen</span> until it is a <span className="text-emerald-400">fine powder</span>.</li>
-              <li><b>Lysis:</b> Add 500uL BashingBead Buffer. <span className="text-emerald-400">VORTEX</span> vigorously.</li>
-              <li><b>Clarification:</b> SPIN at 12,000g for 3 min. Transfer clear supernatant to fresh tube.</li>
-              <li><b>Binding Preparation:</b> Add 500uL Binding Buffer + <span className="text-emerald-400">500uL Ethanol</span>. Mix by inversion.</li>
-              <li><b>Column Binding:</b> Load onto column. Maintain <span className="text-amber-400">Air Gap</span> below column tip.</li>
-              <li><b>Wash & Dry:</b> Wash (500uL, repeat). SPIN. Perform final dry spin.</li>
-              <li><b>Elution:</b> Pre-warm buffer to <span className="text-amber-400">56°C</span>. Add <span className="text-emerald-400">20uL warm buffer</span>. SPIN.</li>
-              <li><b>Success:</b> 200-350 ng/uL, Purity (A260/A230) ≥ 1.7.</li>
-            </ul>
-          </section>
+            <p className="text-slate-300 leading-relaxed">
+              Scientific success begins with preparation. Study the protocol before selecting your equipment to ensure a "one-trip" procurement phase.
+            </p>
 
-          {/* Comparison Table */}
-          <section className="space-y-4 pb-4">
-            <div className="flex items-center gap-2 text-white"><ShieldCheck size={16} className="text-cyan-400"/><h4 className="text-white font-black uppercase text-lg font-sans">Key Differences</h4></div>
-            <div className="overflow-x-auto">
-              <table className="w-full text-xs border-collapse">
-                <thead>
-                  <tr className="border-b border-slate-600">
-                    <th className="text-left py-2 px-3 text-slate-300 font-bold">Step</th>
-                    <th className="text-left py-2 px-3 text-emerald-400 font-bold">Cassava (Plant)</th>
-                    <th className="text-left py-2 px-3 text-rose-400 font-bold">Clinical (Animal)</th>
-                  </tr>
-                </thead>
-                <tbody className="text-slate-400">
-                  <tr className="border-b border-slate-700">
-                    <td className="py-2 px-3 font-bold">Disruption</td>
-                    <td className="py-2 px-3">LN2 + Mortar (Powder)</td>
-                    <td className="py-2 px-3">Proteinase K (Digestion)</td>
-                  </tr>
-                  <tr className="border-b border-slate-700">
-                    <td className="py-2 px-3 font-bold">Lysis</td>
-                    <td className="py-2 px-3">BashingBead + Vortex</td>
-                    <td className="py-2 px-3">Buffer ATL</td>
-                  </tr>
-                  <tr className="border-b border-slate-700">
-                    <td className="py-2 px-3 font-bold">Debris</td>
-                    <td className="py-2 px-3">Large green pellet</td>
-                    <td className="py-2 px-3">Small brown pellet</td>
-                  </tr>
-                  <tr>
-                    <td className="py-2 px-3 font-bold">Elution</td>
-                    <td className="py-2 px-3">Warm Buffer (56°C)</td>
-                    <td className="py-2 px-3">Room Temp Buffer</td>
-                  </tr>
-                </tbody>
-              </table>
+            <div className="space-y-4 mt-4">
+              <div className="bg-slate-900/50 p-4 rounded-xl border border-emerald-500/30">
+                <h5 className="font-bold text-emerald-400 mb-2 flex items-center gap-2">
+                  <ScrollText size={16} />
+                  Pre-Lab Review
+                </h5>
+                <p className="text-slate-300 text-sm leading-relaxed">
+                  As soon as you select a mission, the 📋 Protocol button appears in the top-right corner. Open it while in Procurement to see exactly which reagents (e.g., Ethanol, BashingBead Buffer) are required.
+                </p>
+              </div>
+
+              <div className="bg-slate-900/50 p-4 rounded-xl border border-cyan-500/30">
+                <h5 className="font-bold text-cyan-400 mb-2 flex items-center gap-2">
+                  <Eye size={16} />
+                  Persistent Access
+                </h5>
+                <p className="text-slate-300 text-sm leading-relaxed">
+                  Once you Enter Lab, the Protocol button remains visible. Click it anytime to review critical details like spin speeds, incubation temperatures, or specific volumes.
+                </p>
+              </div>
+
+              <div className="bg-slate-900/50 p-4 rounded-xl border border-amber-500/30">
+                <h5 className="font-bold text-amber-400 mb-2 flex items-center gap-2">
+                  <AlertTriangle size={16} />
+                  Preparation is Mandatory
+                </h5>
+                <p className="text-slate-300 text-sm leading-relaxed">
+                  Use the manual to verify you have all required items (like Liquid Nitrogen for plants or Proteinase K for animal tissue) before clicking "Enter Lab."
+                </p>
+              </div>
             </div>
           </section>
         </div>
