@@ -1165,6 +1165,17 @@ const ReadinessOverlay = ({ onClose }) => (
           The principles you learn here transfer everywhere.
         </p>
       </div>
+
+      {/* Building Mastery Section */}
+      <div className="bg-slate-900/50 border border-slate-700 p-5 rounded-xl text-left space-y-3">
+        <h4 className="text-white font-bold text-sm flex items-center gap-2">
+          <Target size={16} className="text-emerald-400" /> Building Mastery
+        </h4>
+        <p className="text-xs text-slate-300 leading-relaxed">
+          In BioSimLab, actions have consequences. The simulation will not stop you from skipping steps or making mistakes, just like a real lab. However, your final NanoDrop and Gel results will reflect those choices. True mastery is achieving high-yield, high-purity DNA while maintaining perfect safety standards.
+        </p>
+      </div>
+
       {/* CTA */}
       <button
         onClick={onClose}
