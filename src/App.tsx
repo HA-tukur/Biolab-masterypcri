@@ -1184,62 +1184,76 @@ const ReadinessOverlay = ({ onClose }) => (
 const ProtocolBookOverlay = ({ onClose }) => (
     <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md font-sans text-white">
       <div className="bg-slate-800 border border-emerald-500/50 w-full max-w-2xl rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col max-h-[85vh]">
+
+        {/* Header */}
         <div className="p-6 border-b border-slate-700 flex justify-between items-center bg-slate-900/50 text-white font-mono font-bold uppercase tracking-widest">
-          <div className="flex items-center gap-3"><ScrollText size={24} /><h3>Success Criteria</h3></div>
+          <div className="flex items-center gap-3">
+            <ScrollText size={24} />
+            <h3>Researcher's Protocol Manual</h3>
+          </div>
           <button onClick={onClose} className="text-slate-500 hover:text-white border-0 bg-transparent cursor-pointer"><X size={24}/></button>
         </div>
+
+        {/* Content Area */}
         <div className="p-8 overflow-y-auto space-y-8 text-xs leading-relaxed text-slate-300 font-mono text-left">
+
+          {/* MISSION A: CLINICAL BIOPSY */}
           <section className="space-y-4 border-b border-slate-700 pb-4">
-            <div className="flex items-center gap-2 text-white"><ShieldAlert size={16} className="text-rose-400"/><h4 className="text-white font-black uppercase text-lg font-sans">Mission A: Clinical Biopsy</h4></div>
+            <div className="flex items-center gap-2 text-white">
+              <ShieldAlert size={16} className="text-rose-400"/>
+              <h4 className="text-white font-black uppercase text-lg font-sans">Mission A: Clinical Biopsy</h4>
+            </div>
             <ul className="space-y-2 list-decimal ml-4 text-slate-400">
-              <li><b>Tissue Disruption:</b> Select <span className="text-emerald-400">Enzymatic Digestion</span> (recommended for biopsy)</li>
-              <li><b>Proteinase K:</b> Add 2µL. <span className="text-emerald-400">MIX</span>. INCUBATE at 56°C.</li>
-              <li><b>Lysis:</b> Add ~500µL. <span className="text-emerald-400">MIX</span>. SPIN.</li>
-              <li><b>Binding/Column Load:</b> Add 500µL binding buffer and ethanol. Load onto spin column. SPIN.</li>
-              <li><b>Wash:</b> Add 500µL wash buffer to column. SPIN.</li>
-              <li><b>Elute:</b> Add 20µL elution buffer. SPIN.</li>
-              <li><b>Success Range:</b> 200-1200 ng/µL, purity ≥1.7</li>
-              <li><b>Verify:</b> Use <span className="text-amber-400">BOTH</span> Nanodrop <span className="text-amber-400">AND</span> Gel (both required)</li>
+              <li><b>Lysis & Digestion:</b> Add 200uL Lysis Buffer + <span className="text-emerald-400">20uL Proteinase K</span>. INCUBATE at 56°C.</li>
+              <li><b>Clarification:</b> SPIN at 12,000g. Transfer <span className="text-amber-400">Supernatant</span> to a fresh tube.</li>
+              <li><b>Binding Preparation:</b> Add 200uL Binding Buffer + <span className="text-emerald-400">200uL Ethanol (96-100%)</span>. Mix by inversion.</li>
+              <li><b>Column Binding:</b> Load onto spin column. SPIN. Discard flow-through.</li>
+              <li><b>Wash & Dry:</b> Wash (500uL, repeat). Perform a <span className="text-amber-400">Dry Spin (2 min)</span>.</li>
+              <li><b>Elution:</b> Transfer to fresh tube. Add <span className="text-emerald-400">50uL Elution Buffer</span>. SPIN.</li>
+              <li><b>Success:</b> 200-1200 ng/uL, Purity (A260/A280) ≥ 1.8.</li>
             </ul>
           </section>
+
+          {/* MISSION B: CASSAVA LEAF */}
           <section className="space-y-4 border-b border-slate-700 pb-4">
-            <div className="flex items-center gap-2 text-white"><Leaf size={16} className="text-emerald-400"/><h4 className="text-white font-black uppercase text-lg font-sans">Mission B: Cassava Leaf</h4></div>
+            <div className="flex items-center gap-2 text-white">
+              <Leaf size={16} className="text-emerald-400"/>
+              <h4 className="text-white font-black uppercase text-lg font-sans">Mission B: Cassava Leaf</h4>
+            </div>
             <ul className="space-y-2 list-decimal ml-4 text-slate-400">
-              <li><b>Disruption:</b> Select <span className="text-emerald-400">Manual Grinding</span> with liquid nitrogen + mortar/pestle (required for plant tissue)</li>
-              <li><b>Lysis:</b> Add ~500µL lysis buffer (CTAB or kit buffer). <span className="text-emerald-400">MIX</span>. SPIN.</li>
-              <li><b>Binding/Column Load:</b> Add 500µL binding buffer. Load onto spin column. SPIN.</li>
-              <li><b>Wash:</b> Add 500µL wash buffer to column. SPIN.</li>
-              <li><b>Elute:</b> Pre-warm elution buffer to <span className="text-amber-400">56°C</span>, then add 50µL warm buffer. SPIN.</li>
-              <li><b>Success Range:</b> 200-350 ng/µL, purity ≥1.7</li>
-              <li><b>Verify:</b> Use <span className="text-amber-400">BOTH</span> Nanodrop <span className="text-amber-400">AND</span> Gel (both required)</li>
+              <li><b>Physical Disruption:</b> Grind tissue with <span className="text-emerald-400">Liquid Nitrogen</span> until it is a <span className="text-emerald-400">fine powder</span>.</li>
+              <li><b>Lysis:</b> Add 500uL BashingBead Buffer. <span className="text-emerald-400">VORTEX</span> vigorously.</li>
+              <li><b>Clarification:</b> SPIN at 12,000g for 3 min. Transfer clear supernatant to fresh tube.</li>
+              <li><b>Binding Preparation:</b> Add 500uL Binding Buffer + <span className="text-emerald-400">500uL Ethanol</span>. Mix by inversion.</li>
+              <li><b>Column Binding:</b> Load onto column. Maintain <span className="text-amber-400">Air Gap</span> below column tip.</li>
+              <li><b>Wash & Dry:</b> Wash (500uL, repeat). SPIN. Perform final dry spin.</li>
+              <li><b>Elution:</b> Pre-warm buffer to <span className="text-amber-400">56°C</span>. Add <span className="text-emerald-400">20uL warm buffer</span>. SPIN.</li>
+              <li><b>Success:</b> 200-350 ng/uL, Purity (A260/A230) ≥ 1.7.</li>
             </ul>
           </section>
+
+          {/* Comparison Table */}
           <section className="space-y-4 pb-4">
-            <div className="flex items-center gap-2 text-white"><ShieldCheck size={16} className="text-cyan-400"/><h4 className="text-white font-black uppercase text-lg font-sans">Cassava vs Animal - Key Differences</h4></div>
+            <div className="flex items-center gap-2 text-white"><ShieldCheck size={16} className="text-cyan-400"/><h4 className="text-white font-black uppercase text-lg font-sans">Key Differences</h4></div>
             <div className="overflow-x-auto">
               <table className="w-full text-xs border-collapse">
                 <thead>
                   <tr className="border-b border-slate-600">
                     <th className="text-left py-2 px-3 text-slate-300 font-bold">Step</th>
                     <th className="text-left py-2 px-3 text-emerald-400 font-bold">Cassava (Plant)</th>
-                    <th className="text-left py-2 px-3 text-rose-400 font-bold">Animal Tissue</th>
+                    <th className="text-left py-2 px-3 text-rose-400 font-bold">Clinical (Animal)</th>
                   </tr>
                 </thead>
                 <tbody className="text-slate-400">
                   <tr className="border-b border-slate-700">
-                    <td className="py-2 px-3 font-bold">1. Disruption</td>
-                    <td className="py-2 px-3">Mortar + LN₂ grinding</td>
-                    <td className="py-2 px-3">Minced tissue + Proteinase K</td>
+                    <td className="py-2 px-3 font-bold">Disruption</td>
+                    <td className="py-2 px-3">LN2 + Mortar (Powder)</td>
+                    <td className="py-2 px-3">Proteinase K (Digestion)</td>
                   </tr>
                   <tr className="border-b border-slate-700">
                     <td className="py-2 px-3 font-bold">Lysis</td>
-                    <td className="py-2 px-3">Zymo BashingBead Buffer</td>
+                    <td className="py-2 px-3">BashingBead + Vortex</td>
                     <td className="py-2 px-3">Buffer ATL</td>
-                  </tr>
-                  <tr className="border-b border-slate-700">
-                    <td className="py-2 px-3 font-bold">Key enzyme</td>
-                    <td className="py-2 px-3">None (mechanical only)</td>
-                    <td className="py-2 px-3">Proteinase K</td>
                   </tr>
                   <tr className="border-b border-slate-700">
                     <td className="py-2 px-3 font-bold">Debris</td>
@@ -1247,19 +1261,22 @@ const ProtocolBookOverlay = ({ onClose }) => (
                     <td className="py-2 px-3">Small brown pellet</td>
                   </tr>
                   <tr>
-                    <td className="py-2 px-3 font-bold">6. Elution</td>
-                    <td className="py-2 px-3"><span className="text-amber-400">Pre-warm buffer to 56°C</span></td>
-                    <td className="py-2 px-3">Room temp buffer OK</td>
+                    <td className="py-2 px-3 font-bold">Elution</td>
+                    <td className="py-2 px-3">Warm Buffer (56°C)</td>
+                    <td className="py-2 px-3">Room Temp Buffer</td>
                   </tr>
                 </tbody>
               </table>
             </div>
-            <p className="text-xs text-slate-500 italic mt-3">
-              💡 Why the differences? Plant cells have tough cellulose walls requiring mechanical disruption. Plant DNA is longer and more "sticky" than animal DNA, requiring heat for efficient elution. Animal proteins need enzymatic breakdown, which isn't necessary for plants.
-            </p>
           </section>
         </div>
-        <div className="p-6 bg-slate-900/50 border-t border-slate-700 font-mono"><button onClick={onClose} className="w-full bg-emerald-600 py-4 rounded-2xl font-black text-white border-0 cursor-pointer font-bold uppercase tracking-widest">Acknowledge</button></div>
+
+        {/* Footer */}
+        <div className="p-6 bg-slate-900/50 border-t border-slate-700 font-mono">
+          <button onClick={onClose} className="w-full bg-emerald-600 py-4 rounded-2xl font-black text-white border-0 cursor-pointer uppercase tracking-widest hover:bg-emerald-500 transition-colors">
+            Acknowledge Protocol
+          </button>
+        </div>
       </div>
     </div>
 );
