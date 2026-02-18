@@ -48,6 +48,9 @@ import { TechniqueLibrary } from "./components/TechniqueLibrary";
 import { TechniqueCategories } from "./components/TechniqueCategories";
 import { CategoryTechniques } from "./components/CategoryTechniques";
 import { PCRMissions } from "./components/PCRMissions";
+import { ProtocolTracker } from "./services/protocolTracker";
+import { analyzeProtocolExecution, LabResult } from "./utils/masteryAnalysis";
+import { MasteryResultsPanel } from "./components/MasteryResultsPanel";
 import { ProtocolOverview } from "./components/ProtocolOverview";
 import { AntibodyIcon } from "./components/AntibodyIcon";
 import ClassCodePrompt from "./components/ClassCodePrompt";
@@ -1800,6 +1803,8 @@ export default function App() {
   const [showVortexPrompt, setShowVortexPrompt] = useState(false);
 
   const anonymousUser = useAnonymousUser();
+  const [protocolTracker] = useState(() => new ProtocolTracker());
+  const [masteryReport, setMasteryReport] = useState(null);
 
   const has = (itemId) => inventory.includes(itemId);
 
@@ -2453,6 +2458,15 @@ export default function App() {
     }
     setIsSpinning(true);
     addLog("Centrifugation started (13,000 rpm)...", "info");
+
+    protocolTracker.logAction({
+      stepIndex: protocolIndex,
+      stepName: currentStep?.title || 'Unknown',
+      action: 'spin',
+      duration: 3,
+      timestamp: Date.now()
+    });
+
     setTimeout(() => {
       setIsSpinning(false);
       setHasSpunThisStep(true);
@@ -2502,6 +2516,16 @@ export default function App() {
 
     setIsIncubating(true);
     addLog(`Incubation started at ${incubationTemp}°C...`, "info");
+
+    protocolTracker.logAction({
+      stepIndex: protocolIndex,
+      stepName: currentStep?.title || 'Unknown',
+      action: 'incubate',
+      temperature: incubationTemp,
+      duration: 120,
+      timestamp: Date.now()
+    });
+
     setTimeout(() => {
       setIsIncubating(false);
       setHasSpunThisStep(true);
@@ -2766,8 +2790,25 @@ export default function App() {
       setYieldUg(localYield);
       setFinalConc(localConc);
       setA260_280(localPurity);
+
+      const labResult: LabResult = {
+        concentration: localConc,
+        ratio260_280: parseFloat(localPurity),
+        ratio260_230: 2.1,
+        gelQuality: isSheared ? 'degraded' : isFaint ? 'good' : 'excellent',
+        yieldMicrograms: localYield
+      };
+
+      const report = analyzeProtocolExecution(
+        protocolTracker.getProtocolLog(),
+        protocolTracker.getSafetyLog(),
+        labResult,
+        missionId || 'A'
+      );
+
+      setMasteryReport(report);
     }
-  }, [status, finalConc, missionId, step1Method, step2Mixed, protKIncubationOK, step3Mixed, stepVolumes, elutionVolume, missedSpins, protocolAdherenceCompromised, sampleMass]);
+  }, [status, finalConc, missionId, step1Method, step2Mixed, protKIncubationOK, step3Mixed, stepVolumes, elutionVolume, missedSpins, protocolAdherenceCompromised, sampleMass, protocolTracker]);
 
   const isFail = status === "fail" || !finalConc || finalConc <= 0;
   const isSheared = missedSpins > 0;
@@ -4523,6 +4564,15 @@ export default function App() {
                           const reagentId = currentReagentId;
                           setVolumeAddedThisStep(prev => prev + pipetteVolume);
 
+                          protocolTracker.logAction({
+                            stepIndex: protocolIndex,
+                            stepName: currentStep.title,
+                            action: 'add_reagent',
+                            reagentId: reagentId,
+                            volume: pipetteVolume,
+                            timestamp: Date.now()
+                          });
+
                           if (currentStep.multipleReagents && reagentId) {
                             setCurrentStepReagents(prev => ({
                               ...prev,
@@ -5076,6 +5126,8 @@ export default function App() {
                   </div>
                 )}
               </div>
+
+              {masteryReport && <MasteryResultsPanel report={masteryReport} />}
 
               <FeedbackModule userRating={userRating} setUserRating={setUserRating} feedbackSent={feedbackSent} setFeedbackSent={setFeedbackSent} />
 
