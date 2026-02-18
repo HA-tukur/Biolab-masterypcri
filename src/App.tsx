@@ -3274,14 +3274,25 @@ export default function App() {
             <div className="min-h-screen bg-[#0f172a]">
               <SharedNavigation onShowManual={() => setShowManual(true)} />
               <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-8">
-              <div className="bg-slate-800 border border-slate-700 p-6 rounded-2xl flex justify-between items-center">
-                <div>
-                  <h2 className="text-2xl font-black text-slate-50 uppercase tracking-tight">Laboratory Procurement</h2>
-                  <p className="text-sm text-slate-400 mt-1">Laboratory procurement is a core biotech skill that teaches you how to choose the right reagents and equipment, manage budgets, and prioritise resources for real-world experiments.</p>
-                </div>
-                <div className="text-right">
-                  <p className="text-[9px] text-slate-500 uppercase font-bold tracking-wider mb-1">Available Budget</p>
-                  <p className="text-3xl text-amber-400 font-black font-mono">{coins} BC</p>
+              <div className="bg-slate-800 border border-slate-700 p-6 rounded-2xl">
+                <div className="flex justify-between items-start gap-4 mb-4">
+                  <div className="flex-1">
+                    <h2 className="text-2xl font-black text-slate-50 uppercase tracking-tight">Laboratory Procurement</h2>
+                    <p className="text-sm text-slate-400 mt-1">Laboratory procurement is a core biotech skill that teaches you how to choose the right reagents and equipment, manage budgets, and prioritise resources for real-world experiments.</p>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={() => setShowProtocolGuide(true)}
+                      className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-bold uppercase transition-all cursor-pointer border-0 flex items-center gap-2 whitespace-nowrap"
+                    >
+                      <BookOpen size={14} />
+                      Protocol
+                    </button>
+                    <div className="text-right">
+                      <p className="text-[9px] text-slate-500 uppercase font-bold tracking-wider mb-1">Available Budget</p>
+                      <p className="text-3xl text-amber-400 font-black font-mono">{coins} BC</p>
+                    </div>
+                  </div>
                 </div>
               </div>
 
