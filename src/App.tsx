@@ -1731,6 +1731,7 @@ export default function App() {
   const [verificationDone, setVerificationDone] = useState({ nanodrop: false, gel: false });
   const [coins, setCoins] = useState(0);
   const [inventory, setInventory] = useState([]);
+  const [purchasedItems, setPurchasedItems] = useState([]);
   const [logs, setLogs] = useState([]);
   const [status, setStatus] = useState("idle");
   const [protocolIndex, setProtocolIndex] = useState(0);
@@ -2194,6 +2195,28 @@ export default function App() {
     let purityPenalty = 0;
     let concentrationPenalty = 0;
 
+    const requiredItems = MISSIONS_DATA[techniqueId]?.[missionId]?.requiredItems || [];
+    const unnecessaryPurchases = purchasedItems.filter(item => !requiredItems.includes(item));
+
+    if (unnecessaryPurchases.length > 0) {
+      const itemNames = unnecessaryPurchases.map(id => {
+        const kit = kits_list.find(k => k.id === id);
+        if (kit) return kit.name;
+        const tool = tools_list.find(t => t.id === id);
+        if (tool) return tool.name;
+        const consumable = consumables_ppe_list.find(c => c.id === id);
+        if (consumable) return consumable.name;
+        return id;
+      }).join(', ');
+
+      consequences.push({
+        severity: 'minor',
+        title: 'Budget Mismanagement',
+        description: `You wasted funds by purchasing: ${itemNames}. These items are not required for this experiment.`,
+        impact: 'In real research labs, budget management is critical. Learn to purchase only the reagents and consumables that the protocol requires. Unnecessary purchases reduce your available funding for future experiments.'
+      });
+    }
+
     mistakes.forEach(mistake => {
       let consequence = {
         severity: 'minor',
@@ -2488,6 +2511,7 @@ export default function App() {
     setCoins(MISSIONS_DATA[tId][mId].budget);
     const baseInventory = mId === 'B' ? ['mortar_pestle', 'liquid_nitrogen', 'vortex_mixer'] : [];
     setInventory(baseInventory);
+    setPurchasedItems([]);
     setLogs([]);
     setProtocolIndex(0);
     setSampleMass(50);
@@ -3636,11 +3660,11 @@ export default function App() {
                         <div className="flex items-center gap-4">
                           <p className="text-xl font-black text-amber-400 font-mono">{kit.cost} BC</p>
                           {owned ? (
-                            <button onClick={() => { setCoins(coins + kit.cost); setInventory(inventory.filter(i => i !== kit.id)); addLog(`Deselected: ${kit.name}. Refunded ${kit.cost} BC`, 'info'); }} className="px-6 py-2 rounded-lg font-bold uppercase text-sm transition-all cursor-pointer border-0 bg-rose-600 hover:bg-rose-500 text-white">
+                            <button onClick={() => { setCoins(coins + kit.cost); setInventory(inventory.filter(i => i !== kit.id)); setPurchasedItems(purchasedItems.filter(i => i !== kit.id)); addLog(`Deselected: ${kit.name}. Refunded ${kit.cost} BC`, 'info'); }} className="px-6 py-2 rounded-lg font-bold uppercase text-sm transition-all cursor-pointer border-0 bg-rose-600 hover:bg-rose-500 text-white">
                               Deselect
                             </button>
                           ) : (
-                            <button onClick={() => { if (canAfford) { setCoins(coins - kit.cost); setInventory([...inventory, kit.id]); addLog(`Purchased: ${kit.name}`, 'success'); }}} disabled={!canAfford} className={`px-6 py-2 rounded-lg font-bold uppercase text-sm transition-all cursor-pointer border-0 ${canAfford ? "bg-indigo-600 hover:bg-indigo-500 text-white" : "bg-slate-700 text-slate-500 cursor-not-allowed"}`}>
+                            <button onClick={() => { if (canAfford) { setCoins(coins - kit.cost); setInventory([...inventory, kit.id]); setPurchasedItems([...purchasedItems, kit.id]); addLog(`Purchased: ${kit.name}`, 'success'); }}} disabled={!canAfford} className={`px-6 py-2 rounded-lg font-bold uppercase text-sm transition-all cursor-pointer border-0 ${canAfford ? "bg-indigo-600 hover:bg-indigo-500 text-white" : "bg-slate-700 text-slate-500 cursor-not-allowed"}`}>
                               Purchase
                             </button>
                           )}
@@ -3672,11 +3696,11 @@ export default function App() {
                         <div className="flex items-center gap-4">
                           <p className="text-xl font-black text-amber-400 font-mono">{isFree ? "FREE" : `${tool.cost} BC`}</p>
                           {owned ? (
-                            <button onClick={() => { if (!isFree) setCoins(coins + tool.cost); setInventory(inventory.filter(i => i !== tool.id)); addLog(`Deselected: ${tool.name}${!isFree ? `. Refunded ${tool.cost} BC` : ''}`, 'info'); }} className="px-6 py-2 rounded-lg font-bold uppercase text-sm transition-all cursor-pointer border-0 bg-rose-600 hover:bg-rose-500 text-white">
+                            <button onClick={() => { if (!isFree) setCoins(coins + tool.cost); setInventory(inventory.filter(i => i !== tool.id)); setPurchasedItems(purchasedItems.filter(i => i !== tool.id)); addLog(`Deselected: ${tool.name}${!isFree ? `. Refunded ${tool.cost} BC` : ''}`, 'info'); }} className="px-6 py-2 rounded-lg font-bold uppercase text-sm transition-all cursor-pointer border-0 bg-rose-600 hover:bg-rose-500 text-white">
                               Deselect
                             </button>
                           ) : (
-                            <button onClick={() => { if (isFree || canAfford) { if (!isFree) setCoins(coins - tool.cost); setInventory([...inventory, tool.id]); addLog(`Acquired: ${tool.name}`, 'success'); }}} disabled={!isFree && !canAfford} className={`px-6 py-2 rounded-lg font-bold uppercase text-sm transition-all cursor-pointer border-0 ${isFree || canAfford ? "bg-indigo-600 hover:bg-indigo-500 text-white" : "bg-slate-700 text-slate-500 cursor-not-allowed"}`}>
+                            <button onClick={() => { if (isFree || canAfford) { if (!isFree) setCoins(coins - tool.cost); setInventory([...inventory, tool.id]); if (!isFree) setPurchasedItems([...purchasedItems, tool.id]); addLog(`Acquired: ${tool.name}`, 'success'); }}} disabled={!isFree && !canAfford} className={`px-6 py-2 rounded-lg font-bold uppercase text-sm transition-all cursor-pointer border-0 ${isFree || canAfford ? "bg-indigo-600 hover:bg-indigo-500 text-white" : "bg-slate-700 text-slate-500 cursor-not-allowed"}`}>
                               {isFree ? "Add to Bench" : "Purchase"}
                             </button>
                           )}
@@ -3707,7 +3731,7 @@ export default function App() {
                         <div className="flex items-center gap-4">
                           <p className="text-xl font-black text-amber-400 font-mono">{isFree ? "FREE" : `${item.cost} BC`}</p>
                           {owned ? (
-                            <button onClick={() => { if (!isFree) setCoins(coins + item.cost); setInventory(inventory.filter(i => i !== item.id)); addLog(`Deselected: ${item.name}${!isFree ? `. Refunded ${item.cost} BC` : ''}`, 'info'); }} className="px-6 py-2 rounded-lg font-bold uppercase text-sm transition-all cursor-pointer border-0 bg-rose-600 hover:bg-rose-500 text-white">
+                            <button onClick={() => { if (!isFree) setCoins(coins + item.cost); setInventory(inventory.filter(i => i !== item.id)); setPurchasedItems(purchasedItems.filter(i => i !== item.id)); addLog(`Deselected: ${item.name}${!isFree ? `. Refunded ${item.cost} BC` : ''}`, 'info'); }} className="px-6 py-2 rounded-lg font-bold uppercase text-sm transition-all cursor-pointer border-0 bg-rose-600 hover:bg-rose-500 text-white">
                               Deselect
                             </button>
                           ) : (
@@ -3715,6 +3739,7 @@ export default function App() {
                               if (isFree || canAfford) {
                                 if (!isFree) setCoins(coins - item.cost);
                                 setInventory([...inventory, item.id]);
+                                if (!isFree) setPurchasedItems([...purchasedItems, item.id]);
                                 addLog(`Acquired: ${item.name}`, 'success');
                                 if (item.id === 'gloves' || item.id === 'lab_coat' || item.id === 'safety_goggles') {
                                   const newSafety = has('gloves') || item.id === 'gloves';
@@ -4218,6 +4243,7 @@ export default function App() {
                                       setWasteInCollectionTube(false);
                                       setIsDiscardingWaste(false);
                                       setHasDiscardedWaste(true);
+                                      setVolumeAddedThisStep(0);
                                       addLog("✓ Waste discarded. DNA remains safely bound to silica membrane.", "success");
                                     }, 800);
                                   }}
@@ -4263,6 +4289,7 @@ export default function App() {
                                     setWasteInCollectionTube(false);
                                     setIsDiscardingWaste(false);
                                     setHasDiscardedWaste(true);
+                                    setVolumeAddedThisStep(0);
                                     addLog("✓ Waste discarded. DNA remains safely bound to silica membrane.", "success");
                                   }, 800);
                                 }}

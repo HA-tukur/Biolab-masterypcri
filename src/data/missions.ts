@@ -8,6 +8,7 @@ export const MISSIONS_DATA = {
       brief: "Clinical Alert: A suspected multi-drug resistant pathogen has been detected. Your mission is to isolate high-purity genomic DNA for PCR verification.",
       summary: "Biopsy DNA Extraction. Target: 200 – 1000 ng/µL.",
       budget: 2000,
+      requiredItems: ["kit_qiagen", "ethanol", "centrifuge", "incubator", "nanodrop"],
       verification: { mode: "REQUIRED_ALL", options: [VERIFICATION.NANODROP, VERIFICATION.GEL], label: "Use BOTH Nanodrop AND Gel (both required)." }
     },
     B: {
@@ -16,6 +17,7 @@ export const MISSIONS_DATA = {
       brief: "Agricultural Crisis: A new blight is threatening crop yields. Your mission is to isolate high-molecular-weight DNA for Next-Gen Sequencing.",
       summary: "Plant gDNA Extraction. Target: 200 – 350 ng/µL.",
       budget: 3000,
+      requiredItems: ["kit_zymo", "ethanol", "mortar_pestle", "liquid_nitrogen", "vortex_mixer", "centrifuge", "incubator", "nanodrop"],
       verification: { mode: "REQUIRED_ALL", options: [VERIFICATION.NANODROP, VERIFICATION.GEL], label: "NGS prep requires BOTH Nanodrop + Gel verification." }
     }
   },
