@@ -34,7 +34,13 @@ export function NewProfile() {
   }, [user]);
 
   const loadProfile = async () => {
-    if (!user) return;
+    if (!user) {
+      console.log('NewProfile: No user found');
+      setLoading(false);
+      return;
+    }
+
+    console.log('NewProfile: Loading profile for user:', user.id);
 
     try {
       const { data, error } = await supabase
@@ -43,14 +49,19 @@ export function NewProfile() {
         .eq('id', user.id)
         .maybeSingle();
 
+      console.log('NewProfile: Query result:', { data, error });
+
       if (error) throw error;
 
       if (data) {
+        console.log('NewProfile: Profile loaded successfully');
         setProfile(data);
         setEditedData(data);
+      } else {
+        console.log('NewProfile: No profile data found');
       }
     } catch (error) {
-      console.error('Error loading profile:', error);
+      console.error('NewProfile: Error loading profile:', error);
     } finally {
       setLoading(false);
     }
@@ -183,10 +194,13 @@ export function NewProfile() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600 mx-auto mb-4"></div>
-          <p className="text-slate-600">Loading profile...</p>
+      <div className="min-h-screen bg-slate-50">
+        <SharedNavigation />
+        <div className="flex items-center justify-center" style={{ minHeight: 'calc(100vh - 64px)' }}>
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600 mx-auto mb-4"></div>
+            <p className="text-slate-600">Loading profile...</p>
+          </div>
         </div>
       </div>
     );
@@ -194,8 +208,19 @@ export function NewProfile() {
 
   if (!profile) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <p className="text-slate-600">Profile not found</p>
+      <div className="min-h-screen bg-slate-50">
+        <SharedNavigation />
+        <div className="flex items-center justify-center" style={{ minHeight: 'calc(100vh - 64px)' }}>
+          <div className="text-center">
+            <p className="text-slate-600 text-lg">Profile not found</p>
+            <button
+              onClick={() => navigate('/dashboard')}
+              className="mt-4 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700"
+            >
+              Go to Dashboard
+            </button>
+          </div>
+        </div>
       </div>
     );
   }
