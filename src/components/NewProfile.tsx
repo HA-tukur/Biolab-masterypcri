@@ -63,7 +63,7 @@ export function NewProfile() {
       const { data } = await supabase
         .from('leaderboard_profiles')
         .select('student_id')
-        .eq('student_id', user.id)
+        .eq('id', user.id)
         .maybeSingle();
 
       if (data) {
