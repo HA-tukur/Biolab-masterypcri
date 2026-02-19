@@ -1153,18 +1153,18 @@ const BiologicalPopup = ({ type, onClose }) => {
 
 const ReadinessOverlay = ({ onClose, onCancel }) => (
   <div className="fixed inset-0 z-[140] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md">
-    <div className="bg-slate-800 border border-amber-500/50 w-full max-w-[650px] max-h-[550px] overflow-y-auto rounded-[2.5rem] p-8 space-y-6 text-white shadow-2xl relative">
+    <div className="bg-slate-800 border border-amber-500/50 w-full max-w-[650px] max-h-[550px] overflow-y-auto rounded-[2.5rem] p-6 space-y-4 text-white shadow-2xl relative">
 
       {/* Close Button */}
       <button
         onClick={onCancel}
-        className="absolute top-6 right-6 text-slate-400 hover:text-white transition-colors bg-transparent border-0 cursor-pointer"
+        className="absolute top-4 right-4 text-slate-400 hover:text-white transition-colors bg-transparent border-0 cursor-pointer"
       >
         <X size={24} />
       </button>
 
       {/* Icon */}
-      <ShieldCheck size={48} className="mx-auto text-amber-500" />
+      <ShieldCheck size={40} className="mx-auto text-amber-500 mt-2" />
 
       {/* Title */}
       <h3 className="text-xl font-black uppercase tracking-tight text-center">
