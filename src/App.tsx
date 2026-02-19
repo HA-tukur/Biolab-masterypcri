@@ -1163,11 +1163,9 @@ const ReadinessOverlay = ({ onClose, onCancel }) => (
         <X size={24} />
       </button>
 
-      {/* Icon */}
-      <ShieldCheck size={40} className="mx-auto text-amber-500 mt-2" />
-
-      {/* Title */}
-      <h3 className="text-xl font-black uppercase tracking-tight text-center">
+      {/* Title with Icon */}
+      <h3 className="text-xl font-black uppercase tracking-tight text-center flex items-center justify-center gap-3">
+        <ShieldCheck size={32} className="text-amber-500" />
         Bench Readiness Check
       </h3>
 
