@@ -258,6 +258,9 @@ const DualTubeVisual = ({ oldTubeHasSupernatant, freshTubeVolume, freshTubeColor
 const FilterColumnVisual = ({ volume, hasDNA, showSeparation, wasteInTube = false, isDiscarding = false }) => {
   const collectionFillPercent = Math.min((volume / 2000) * 100, 70);
 
+  // Calculate liquid in column (before spinning) - visible when volume added but not yet spun
+  const columnLiquidHeight = !wasteInTube && volume > 0 ? Math.min((volume / 500) * 50, 50) : 0;
+
   return (
     <div className="relative flex flex-col items-center p-2">
       <svg
@@ -299,6 +302,29 @@ const FilterColumnVisual = ({ volume, hasDNA, showSeparation, wasteInTube = fals
         {/* Filter Column (tall, narrow cylinder) - upper half outside, lower half inside */}
         <rect x="46" y="15" width="28" height="115" rx="1" fill="#334155" stroke="#64748b" strokeWidth="2"/>
         <ellipse cx="60" cy="15" rx="14" ry="4" fill="#1e293b" stroke="#64748b" strokeWidth="2"/>
+
+        {/* Liquid inside the filter column (wash buffer before spinning) */}
+        {columnLiquidHeight > 0 && (
+          <>
+            <rect
+              x="48"
+              y={125 - columnLiquidHeight}
+              width="24"
+              height={columnLiquidHeight}
+              fill="#38bdf8"
+              opacity="0.5"
+              className="animate-pulse"
+            />
+            <ellipse
+              cx="60"
+              cy={125 - columnLiquidHeight}
+              rx="12"
+              ry="3"
+              fill="#38bdf8"
+              opacity="0.4"
+            />
+          </>
+        )}
 
         {/* Bottom of filter column with mild protrusion */}
         <path
