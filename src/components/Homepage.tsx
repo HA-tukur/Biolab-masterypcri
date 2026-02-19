@@ -226,15 +226,15 @@ function SimulationPreview() {
 
             <line x1={x230} y1={y230 - 5} x2={x230} y2={height - padding} stroke="#f59e0b" strokeWidth="1" strokeDasharray="3,3" opacity="0.5"/>
             <circle cx={x230} cy={y230} r="3.5" fill="#ea580c"/>
-            <text x={x230} y={y230 - 12} fontSize="11" fill="#ea580c" textAnchor="middle" fontWeight="bold">Salt/Solvent</text>
+            <text x={x230} y={y230 - 12} fontSize="11" fill="#111827" textAnchor="middle" fontWeight="bold" stroke="#ffffff" strokeWidth="3" paintOrder="stroke">Salt/Solvent</text>
 
             <line x1={x260} y1={y260 - 5} x2={x260} y2={height - padding} stroke="#dc2626" strokeWidth="1.5" strokeDasharray="3,3" opacity="0.7"/>
             <circle cx={x260} cy={y260} r="4" fill="#dc2626"/>
-            <text x={x260} y={y260 - 12} fontSize="11" fill="#dc2626" textAnchor="middle" fontWeight="bold">DNA & RNA</text>
+            <text x={x260} y={y260 - 12} fontSize="11" fill="#111827" textAnchor="middle" fontWeight="bold" stroke="#ffffff" strokeWidth="3" paintOrder="stroke">DNA & RNA</text>
 
             <line x1={x280} y1={y280 - 5} x2={x280} y2={height - padding} stroke="#2563eb" strokeWidth="1" strokeDasharray="3,3" opacity="0.6"/>
             <circle cx={x280} cy={y280} r="3.5" fill="#2563eb"/>
-            <text x={x280} y={y280 - 12} fontSize="11" fill="#2563eb" textAnchor="middle" fontWeight="bold">Protein</text>
+            <text x={x280} y={y280 - 12} fontSize="11" fill="#111827" textAnchor="middle" fontWeight="bold" stroke="#ffffff" strokeWidth="3" paintOrder="stroke">Protein</text>
           </svg>
         </div>
 
