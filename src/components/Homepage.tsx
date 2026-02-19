@@ -55,15 +55,18 @@ function NonAuthenticatedView({ onStartFree, onRequestInstructorAccess }: { onSt
 function HeroSection({ onStartFree }: { onStartFree: () => void }) {
   return (
     <section className="max-w-7xl mx-auto px-4 md:px-6 pt-12 md:pt-16 pb-16 md:pb-24 relative">
-      <div className="absolute inset-0 opacity-[0.04] pointer-events-none">
-        <svg className="w-full h-full" viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
+      <div className="absolute inset-0 opacity-[0.08] pointer-events-none overflow-hidden">
+        <svg className="w-full h-full" viewBox="0 0 800 600" xmlns="http://www.w3.org/2000/svg">
           <defs>
-            <pattern id="dnaHelix" x="0" y="0" width="100" height="100" patternUnits="userSpaceOnUse">
-              <path d="M20,10 Q35,30 50,50 T80,90" stroke="#1F2937" strokeWidth="2" fill="none"/>
-              <path d="M80,10 Q65,30 50,50 T20,90" stroke="#1F2937" strokeWidth="2" fill="none"/>
-              <circle cx="50" cy="25" r="3" fill="#1F2937"/>
-              <circle cx="50" cy="50" r="3" fill="#1F2937"/>
-              <circle cx="50" cy="75" r="3" fill="#1F2937"/>
+            <pattern id="dnaHelix" x="0" y="0" width="120" height="200" patternUnits="userSpaceOnUse">
+              <path d="M40,0 Q50,25 60,50 Q70,75 60,100 Q50,125 40,150 Q30,175 40,200"
+                    stroke="#e5e7eb" strokeWidth="1.5" fill="none"/>
+              <path d="M80,0 Q70,25 60,50 Q50,75 60,100 Q70,125 80,150 Q90,175 80,200"
+                    stroke="#e5e7eb" strokeWidth="1.5" fill="none"/>
+              <line x1="40" y1="25" x2="80" y2="25" stroke="#e5e7eb" strokeWidth="1"/>
+              <line x1="40" y1="75" x2="80" y2="75" stroke="#e5e7eb" strokeWidth="1"/>
+              <line x1="40" y1="125" x2="80" y2="125" stroke="#e5e7eb" strokeWidth="1"/>
+              <line x1="40" y1="175" x2="80" y2="175" stroke="#e5e7eb" strokeWidth="1"/>
             </pattern>
           </defs>
           <rect width="100%" height="100%" fill="url(#dnaHelix)"/>
@@ -138,59 +141,57 @@ function HeroSection({ onStartFree }: { onStartFree: () => void }) {
 
 function SimulationPreview() {
   return (
-    <div className="bg-white border-2 border-slate-200 rounded-lg shadow-xl p-6 space-y-6">
-      <div className="space-y-2">
-        <h3 className="text-lg font-bold text-slate-800">NanoDrop Spectrophotometer</h3>
-        <p className="text-sm text-slate-600">A260/A280 Purity Analysis</p>
+    <div className="bg-white border-2 border-slate-200 rounded-lg shadow-xl p-4 space-y-4 max-w-md">
+      <div className="space-y-1">
+        <h3 className="text-base font-bold text-slate-800">NanoDrop Spectrophotometer</h3>
+        <p className="text-xs text-slate-600">A260/A280 Purity Analysis</p>
       </div>
 
-      <div className="bg-slate-50 border border-slate-200 rounded-lg p-4">
-        <div className="relative h-48">
-          <svg className="w-full h-full" viewBox="0 0 300 200" xmlns="http://www.w3.org/2000/svg">
-            <line x1="30" y1="170" x2="270" y2="170" stroke="#64748b" strokeWidth="2"/>
-            <line x1="30" y1="170" x2="30" y2="30" stroke="#64748b" strokeWidth="2"/>
+      <div className="bg-white border border-slate-200 rounded-lg p-3">
+        <div className="relative h-36">
+          <svg className="w-full h-full" viewBox="0 0 300 160" xmlns="http://www.w3.org/2000/svg">
+            <line x1="30" y1="140" x2="270" y2="140" stroke="#94a3b8" strokeWidth="1.5"/>
+            <line x1="30" y1="140" x2="30" y2="20" stroke="#94a3b8" strokeWidth="1.5"/>
 
-            <text x="150" y="195" fontSize="12" fill="#475569" textAnchor="middle">Wavelength (nm)</text>
-            <text x="10" y="100" fontSize="12" fill="#475569" textAnchor="middle" transform="rotate(-90 10 100)">Absorbance</text>
+            <text x="150" y="155" fontSize="10" fill="#64748b" textAnchor="middle">Wavelength (nm)</text>
+            <text x="15" y="80" fontSize="10" fill="#64748b" textAnchor="middle" transform="rotate(-90 15 80)">Abs</text>
 
-            <text x="50" y="185" fontSize="10" fill="#64748b" textAnchor="middle">230</text>
-            <text x="110" y="185" fontSize="10" fill="#64748b" textAnchor="middle">260</text>
-            <text x="170" y="185" fontSize="10" fill="#64748b" textAnchor="middle">280</text>
-            <text x="230" y="185" fontSize="10" fill="#64748b" textAnchor="middle">320</text>
+            <text x="50" y="152" fontSize="9" fill="#94a3b8" textAnchor="middle">230</text>
+            <text x="110" y="152" fontSize="9" fill="#94a3b8" textAnchor="middle">260</text>
+            <text x="170" y="152" fontSize="9" fill="#94a3b8" textAnchor="middle">280</text>
+            <text x="230" y="152" fontSize="9" fill="#94a3b8" textAnchor="middle">320</text>
 
-            <path d="M 50,150 Q 80,60 110,50 T 170,80 Q 200,120 230,160"
-                  stroke="#0f766e" strokeWidth="3" fill="none" strokeLinecap="round"/>
+            <path d="M 40,120 Q 50,100 60,80 Q 70,50 80,35 Q 90,25 100,23 Q 110,22 120,30 Q 130,40 140,55 Q 150,75 160,95 Q 170,110 180,118 Q 200,128 230,132"
+                  stroke="#dc2626" strokeWidth="2" fill="none" strokeLinecap="round"/>
 
-            <circle cx="110" cy="50" r="4" fill="#ef4444"/>
-            <circle cx="170" cy="80" r="4" fill="#3b82f6"/>
+            <circle cx="110" cy="22" r="3" fill="#dc2626"/>
+            <text x="110" y="15" fontSize="8" fill="#dc2626" textAnchor="middle" fontWeight="bold">260nm</text>
           </svg>
         </div>
 
-        <div className="mt-4 grid grid-cols-2 gap-4 text-sm">
-          <div className="bg-white border border-emerald-200 rounded p-3">
-            <div className="text-xs text-slate-500 mb-1">A260/A280 Ratio</div>
-            <div className="text-lg font-bold text-emerald-700">1.82</div>
+        <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
+          <div className="bg-slate-50 border border-slate-200 rounded p-2">
+            <div className="text-[10px] text-slate-500 mb-0.5">A260/A280</div>
+            <div className="text-base font-bold text-slate-700">1.82</div>
           </div>
-          <div className="bg-white border border-blue-200 rounded p-3">
-            <div className="text-xs text-slate-500 mb-1">Concentration</div>
-            <div className="text-lg font-bold text-blue-700">45 ng/µL</div>
+          <div className="bg-slate-50 border border-slate-200 rounded p-2">
+            <div className="text-[10px] text-slate-500 mb-0.5">Concentration</div>
+            <div className="text-base font-bold text-slate-700">450 ng/µL</div>
           </div>
         </div>
       </div>
 
-      <div className="space-y-3 pt-4 border-t border-slate-200">
-        <h4 className="text-sm font-bold text-slate-700">Volume Control Interface</h4>
-        <div className="flex items-center gap-4 bg-slate-50 border border-slate-200 rounded-lg p-4">
-          <div className="flex-1">
-            <div className="text-xs text-slate-600 mb-2">P1000 Micropipette</div>
-            <div className="relative h-2 bg-slate-300 rounded-full overflow-hidden">
-              <div className="absolute inset-0 bg-gradient-to-r from-teal-600 to-teal-500 rounded-full" style={{ width: '65%' }}></div>
-            </div>
-            <div className="flex justify-between mt-1 text-xs text-slate-500">
-              <span>100 µL</span>
-              <span className="font-bold text-teal-700">650 µL</span>
-              <span>1000 µL</span>
-            </div>
+      <div className="space-y-2 pt-2 border-t border-slate-200">
+        <h4 className="text-xs font-bold text-slate-700">Volume Control Interface</h4>
+        <div className="bg-slate-50 border border-slate-200 rounded-lg p-3">
+          <div className="text-[10px] text-slate-600 mb-2">P1000 Micropipette</div>
+          <div className="relative h-1.5 bg-slate-300 rounded-full overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-r from-teal-600 to-teal-500 rounded-full" style={{ width: '65%' }}></div>
+          </div>
+          <div className="flex justify-between mt-1 text-[10px] text-slate-500">
+            <span>100 µL</span>
+            <span className="font-bold text-teal-700">650 µL</span>
+            <span>1000 µL</span>
           </div>
         </div>
       </div>
