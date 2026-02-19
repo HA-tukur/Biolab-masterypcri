@@ -80,16 +80,16 @@ function HeroSection({ onStartFree }: { onStartFree: () => void }) {
         </svg>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center relative z-10">
+      <div className="grid grid-cols-1 lg:grid-cols-[1.6fr_1fr] gap-8 lg:gap-12 items-center relative z-10">
         <div className="text-center lg:text-left">
-          <h1 className="text-3xl md:text-5xl font-bold text-gray-900 mb-4 md:mb-6 leading-tight">
+          <h1 className="text-3xl md:text-5xl font-bold text-gray-900 mb-6 md:mb-8 leading-tight">
             Master Molecular Biology Techniques Through High-Fidelity Simulations
           </h1>
-          <p className="text-base md:text-xl text-gray-600 mb-6 md:mb-8 leading-relaxed">
+          <p className="text-base md:text-xl text-gray-600 mb-8 md:mb-10 leading-relaxed">
           Practice DNA Extraction, PCR, and Western Blot in realistic simulations. Master the protocols and make mistakes safely before your real lab sessions, saving you from wasting expensive reagents or your one shot at a successful experiment.
           </p>
 
-          <div className="flex flex-col gap-4 mb-6">
+          <div className="flex flex-col gap-4 mb-8">
             <button
               onClick={onStartFree}
               className="px-8 py-3 bg-teal-700 hover:bg-teal-800 text-white text-base font-medium rounded-md transition-colors"
@@ -144,9 +144,9 @@ function HeroSection({ onStartFree }: { onStartFree: () => void }) {
 }
 
 function SimulationPreview() {
-  const width = 320;
-  const height = 190;
-  const padding = 40;
+  const width = 280;
+  const height = 170;
+  const padding = 35;
 
   const minWavelength = 220;
   const maxWavelength = 350;
@@ -193,15 +193,15 @@ function SimulationPreview() {
   const y280 = yScale(absorbanceData[wavelengths.indexOf(280)]);
 
   return (
-    <div className="bg-white border-2 border-slate-200 rounded-lg shadow-xl p-4 space-y-4 max-w-md ml-6">
+    <div className="bg-white border-2 border-slate-200 rounded-lg shadow-xl p-4 space-y-4 max-w-sm ml-auto">
       <div className="space-y-1">
-        <h3 className="text-base font-bold text-slate-800">NanoDrop Spectrophotometer</h3>
+        <h3 className="text-sm font-bold text-slate-800">NanoDrop Spectrophotometer</h3>
         <p className="text-xs text-slate-600">A260/A280 Purity Analysis</p>
       </div>
 
       <div className="bg-white border border-slate-200 rounded-lg p-3">
-        <div className="relative h-44">
-          <svg className="w-full h-full" viewBox="0 0 320 190" xmlns="http://www.w3.org/2000/svg">
+        <div className="relative h-40">
+          <svg className="w-full h-full" viewBox="0 0 280 170" xmlns="http://www.w3.org/2000/svg">
             <defs>
               <linearGradient id="curveGradient" x1="0%" y1="0%" x2="0%" y2="100%">
                 <stop offset="0%" stopColor="#0d9488" stopOpacity="0.15"/>
@@ -212,29 +212,29 @@ function SimulationPreview() {
             <line x1={padding} y1={height - padding} x2={width - padding} y2={height - padding} stroke="#94a3b8" strokeWidth="1.5"/>
             <line x1={padding} y1={padding} x2={padding} y2={height - padding} stroke="#94a3b8" strokeWidth="1.5"/>
 
-            <text x={width / 2} y={height - 12} fontSize="12" fill="#1e293b" textAnchor="middle" fontWeight="500">Wavelength (nm)</text>
-            <text x="18" y={height / 2} fontSize="12" fill="#1e293b" textAnchor="middle" transform={`rotate(-90 18 ${height / 2})`} fontWeight="500">Absorbance</text>
+            <text x={width / 2} y={height - 10} fontSize="10" fill="#1e293b" textAnchor="middle" fontWeight="500">Wavelength (nm)</text>
+            <text x="16" y={height / 2} fontSize="10" fill="#1e293b" textAnchor="middle" transform={`rotate(-90 16 ${height / 2})`} fontWeight="500">Absorbance</text>
 
-            <text x={xScale(220)} y={height - padding + 15} fontSize="11" fill="#475569" textAnchor="middle">220</text>
-            <text x={x230} y={height - padding + 15} fontSize="11" fill="#475569" textAnchor="middle">230</text>
-            <text x={x260} y={height - padding + 15} fontSize="11" fill="#475569" textAnchor="middle">260</text>
-            <text x={x280} y={height - padding + 15} fontSize="11" fill="#475569" textAnchor="middle">280</text>
-            <text x={xScale(300)} y={height - padding + 15} fontSize="11" fill="#475569" textAnchor="middle">300</text>
+            <text x={xScale(220)} y={height - padding + 13} fontSize="9" fill="#475569" textAnchor="middle">220</text>
+            <text x={x230} y={height - padding + 13} fontSize="9" fill="#475569" textAnchor="middle">230</text>
+            <text x={x260} y={height - padding + 13} fontSize="9" fill="#475569" textAnchor="middle">260</text>
+            <text x={x280} y={height - padding + 13} fontSize="9" fill="#475569" textAnchor="middle">280</text>
+            <text x={xScale(300)} y={height - padding + 13} fontSize="9" fill="#475569" textAnchor="middle">300</text>
 
             <path d={fillPath} fill="url(#curveGradient)"/>
-            <path d={pathData} stroke="#0d9488" strokeWidth="2.5" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
+            <path d={pathData} stroke="#0d9488" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
 
             <line x1={x230} y1={y230 - 5} x2={x230} y2={height - padding} stroke="#f59e0b" strokeWidth="1" strokeDasharray="3,3" opacity="0.5"/>
-            <circle cx={x230} cy={y230} r="3.5" fill="#ea580c"/>
-            <text x={x230} y={y230 - 12} fontSize="11" fill="#111827" textAnchor="middle" fontWeight="bold" stroke="#ffffff" strokeWidth="3" paintOrder="stroke">Salt/Solvent</text>
+            <circle cx={x230} cy={y230} r="3" fill="#ea580c"/>
+            <text x={x230} y={y230 - 10} fontSize="9" fill="#111827" textAnchor="middle" fontWeight="bold" stroke="#ffffff" strokeWidth="2.5" paintOrder="stroke">Salt/Solvent</text>
 
             <line x1={x260} y1={y260 - 5} x2={x260} y2={height - padding} stroke="#dc2626" strokeWidth="1.5" strokeDasharray="3,3" opacity="0.7"/>
-            <circle cx={x260} cy={y260} r="4" fill="#dc2626"/>
-            <text x={x260} y={y260 - 12} fontSize="11" fill="#111827" textAnchor="middle" fontWeight="bold" stroke="#ffffff" strokeWidth="3" paintOrder="stroke">DNA & RNA</text>
+            <circle cx={x260} cy={y260} r="3.5" fill="#dc2626"/>
+            <text x={x260} y={y260 - 10} fontSize="9" fill="#111827" textAnchor="middle" fontWeight="bold" stroke="#ffffff" strokeWidth="2.5" paintOrder="stroke">DNA & RNA</text>
 
             <line x1={x280} y1={y280 - 5} x2={x280} y2={height - padding} stroke="#2563eb" strokeWidth="1" strokeDasharray="3,3" opacity="0.6"/>
-            <circle cx={x280} cy={y280} r="3.5" fill="#2563eb"/>
-            <text x={x280} y={y280 - 12} fontSize="11" fill="#111827" textAnchor="middle" fontWeight="bold" stroke="#ffffff" strokeWidth="3" paintOrder="stroke">Protein</text>
+            <circle cx={x280} cy={y280} r="3" fill="#2563eb"/>
+            <text x={x280} y={y280 - 10} fontSize="9" fill="#111827" textAnchor="middle" fontWeight="bold" stroke="#ffffff" strokeWidth="2.5" paintOrder="stroke">Protein</text>
           </svg>
         </div>
 
