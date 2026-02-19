@@ -58,6 +58,7 @@ import { calculateEnhancedResults, EnhancedResult } from "./utils/performanceTra
 import { TimelineAnalysis } from "./components/TimelineAnalysis";
 import { DiagnosticInsights } from "./components/DiagnosticInsights";
 import { MasteryBadge } from "./components/MasteryBadge";
+import { PostMissionSurvey, SurveyResponses } from "./components/PostMissionSurvey";
 import { AILabAssistant } from "./components/AILabAssistant";
 import { Footer } from "./components/Footer";
 import { ContactSection } from "./components/ContactSection";
@@ -1832,6 +1833,8 @@ export default function App() {
   const [protocolTracker] = useState(() => new ProtocolTracker());
   const [masteryReport, setMasteryReport] = useState(null);
   const [enhancedResult, setEnhancedResult] = useState<EnhancedResult | null>(null);
+  const [masteryProgress, setMasteryProgress] = useState({ successCount: 0, totalAttempts: 0, bestPurity: 0, bestConcentration: 0 });
+  const [showPostMissionSurvey, setShowPostMissionSurvey] = useState(false);
 
   const has = (itemId) => inventory.includes(itemId);
 
@@ -2447,6 +2450,63 @@ export default function App() {
     setEnhancedResult(null);
     setScreen("briefing");
     setShowReadinessModal(true);
+
+    const studentId = getOrCreateStudentId();
+    const missionTitle = MISSIONS_DATA[tId][mId]?.title || 'DNA Extraction';
+
+    supabase
+      .from('mastery_progress')
+      .select('*')
+      .eq('student_id', studentId)
+      .eq('mission_name', missionTitle)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data) {
+          setMasteryProgress({
+            successCount: data.success_count || 0,
+            totalAttempts: data.total_attempts || 0,
+            bestPurity: data.best_purity || 0,
+            bestConcentration: data.best_concentration || 0
+          });
+        } else {
+          setMasteryProgress({ successCount: 0, totalAttempts: 0, bestPurity: 0, bestConcentration: 0 });
+        }
+      })
+      .catch(err => {
+        console.error('Error loading mastery progress:', err);
+        setMasteryProgress({ successCount: 0, totalAttempts: 0, bestPurity: 0, bestConcentration: 0 });
+      });
+  };
+
+  const handleSurveyComplete = async (responses: SurveyResponses) => {
+    const studentId = getOrCreateStudentId();
+    const missionTitle = MISSIONS_DATA[techniqueId][missionId]?.title || 'DNA Extraction';
+
+    try {
+      await supabase
+        .from('post_mission_surveys')
+        .insert([{
+          student_id: studentId,
+          mission_name: missionTitle,
+          result_id: savedRecordId,
+          muscle_memory_step: responses.muscleMemoryStep,
+          confidence_level: responses.confidenceLevel,
+          peer_challenge_shared: responses.peerChallengeShared
+        }]);
+
+      setShowPostMissionSurvey(false);
+
+      if (!user && techniqueId === 'DNA_EXT') {
+        localStorage.removeItem('guestTrial');
+        setShowGuestSignupModal(true);
+      } else {
+        setShowSuccessModal(true);
+      }
+    } catch (error) {
+      console.error('Error saving survey:', error);
+      setShowPostMissionSurvey(false);
+      setShowSuccessModal(true);
+    }
   };
 
   const handleVortexTube = () => {
@@ -2799,12 +2859,46 @@ export default function App() {
 
       if (data) {
         setSavedRecordId(data.id);
-        if (!user && techniqueId === 'DNA_EXT') {
-          localStorage.removeItem('guestTrial');
-          setShowGuestSignupModal(true);
+
+        const isSuccess = enhanced.concentration >= 200 && enhanced.a260_280 >= 1.7;
+        const newTotalAttempts = masteryProgress.totalAttempts + 1;
+        const newSuccessCount = isSuccess ? masteryProgress.successCount + 1 : masteryProgress.successCount;
+        const newBestPurity = Math.max(masteryProgress.bestPurity, enhanced.a260_280);
+        const newBestConcentration = Math.max(masteryProgress.bestConcentration, enhanced.concentration);
+
+        await supabase
+          .from('mastery_progress')
+          .upsert({
+            student_id: studentId,
+            mission_name: missionTitle,
+            success_count: newSuccessCount,
+            total_attempts: newTotalAttempts,
+            best_purity: newBestPurity,
+            best_concentration: newBestConcentration,
+            last_completed_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          }, {
+            onConflict: 'student_id,mission_name'
+          });
+
+        setMasteryProgress({
+          successCount: newSuccessCount,
+          totalAttempts: newTotalAttempts,
+          bestPurity: newBestPurity,
+          bestConcentration: newBestConcentration
+        });
+
+        if (isSuccess) {
+          setShowPostMissionSurvey(true);
         } else {
-          setShowSuccessModal(true);
+          if (!user && techniqueId === 'DNA_EXT') {
+            localStorage.removeItem('guestTrial');
+            setShowGuestSignupModal(true);
+          } else {
+            setShowSuccessModal(true);
+          }
         }
+
         anonymousUser.recordSimulation(missionTitle);
       }
 
@@ -5111,12 +5205,23 @@ export default function App() {
               <SharedNavigation onShowManual={() => setShowManual(true)} />
               <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-6">
 
-              {enhancedResult && (
+              {showPostMissionSurvey && savedRecordId && (
+                <PostMissionSurvey
+                  missionName={MISSIONS_DATA[techniqueId][missionId]?.title || 'DNA Extraction'}
+                  resultId={savedRecordId}
+                  studentId={getOrCreateStudentId()}
+                  successCount={masteryProgress.successCount}
+                  onComplete={handleSurveyComplete}
+                />
+              )}
+
+              {!showPostMissionSurvey && enhancedResult && (
                 <>
                   <MasteryBadge
                     badge={enhancedResult.masteryBadge}
                     concentration={enhancedResult.concentration}
                     a260_280={enhancedResult.a260_280}
+                    successCount={masteryProgress.successCount}
                   />
 
                   <TimelineAnalysis
