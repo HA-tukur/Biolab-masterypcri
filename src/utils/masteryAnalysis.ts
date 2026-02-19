@@ -50,6 +50,7 @@ export function analyzeProtocolExecution(
   let bindingBufferAdded = false;
   let washCount = 0;
   let drySpinPerformed = false;
+  let drySpinDuration = 0;
   let mixingPerformed = false;
   let incubationPerformed = false;
   let glovesWorn = true;
@@ -67,7 +68,10 @@ export function analyzeProtocolExecution(
     }
     if (entry.action === 'mix') mixingPerformed = true;
     if (entry.action === 'incubate') incubationPerformed = true;
-    if (entry.action === 'dry_spin') drySpinPerformed = true;
+    if (entry.action === 'dry_spin') {
+      drySpinPerformed = true;
+      drySpinDuration = entry.duration || 0;
+    }
     if (entry.action === 'prewarm_buffer') bufferPreWarmed = true;
   }
 
@@ -125,14 +129,21 @@ export function analyzeProtocolExecution(
     });
   }
 
-  if (!drySpinPerformed) {
+  const drySpinDurationMinutes = drySpinDuration / 60;
+  const isDrySpinInsufficient = !drySpinPerformed || drySpinDurationMinutes < 2;
+
+  if (isDrySpinInsufficient) {
     deviations.push({
       type: 'skipped_step',
       step: 'Wash & Dry',
       severity: 'critical',
-      description: 'Dry spin not performed',
-      scientificImpact: 'Residual ethanol inhibits PCR by denaturing polymerase enzyme.',
-      masteryAdvice: 'The dry spin removes ALL ethanol from the column. Even trace amounts (<1%) can completely inhibit PCR. Never skip this step!'
+      description: drySpinPerformed
+        ? `Dry spin performed for only ${drySpinDurationMinutes.toFixed(1)} minutes (minimum 2 minutes required)`
+        : 'Dry spin not performed',
+      scientificImpact: 'Residual ethanol inhibits PCR by denaturing polymerase enzyme. A260/A230 ratio falls to 0.5.',
+      masteryAdvice: drySpinPerformed
+        ? 'The dry spin removes ALL ethanol from the column. A minimum of 2 minutes is required for complete ethanol evaporation. Even trace amounts (<1%) can completely inhibit PCR.'
+        : 'The dry spin removes ALL ethanol from the column. Even trace amounts (<1%) can completely inhibit PCR. Never skip this step!'
     });
   }
 
@@ -183,8 +194,14 @@ export function analyzeProtocolExecution(
 
     if (finalResult.ratio260_230 < 1.8) {
       diagnosticFeedback.push('⚠️ SALT/SOLVENT CONTAMINATION: A₂₆₀/A₂₃₀ ratio is low, indicating residual salts or ethanol.');
-      if (!drySpinPerformed) {
-        recommendations.push('ROOT CAUSE: Dry spin was skipped. Ethanol residue remains in your sample. The dry spin is CRITICAL - it removes ALL ethanol.');
+      if (isDrySpinInsufficient) {
+        if (!drySpinPerformed) {
+          diagnosticFeedback.push('Low Purity Detected: Skipping the Dry Spin leaves residual ethanol on the membrane, which inhibits elution and "poisons" downstream applications like PCR.');
+          recommendations.push('ROOT CAUSE: Dry spin was skipped. Ethanol residue remains in your sample. The dry spin is CRITICAL - it removes ALL ethanol.');
+        } else {
+          diagnosticFeedback.push(`Low Purity Detected: Skipping the Dry Spin leaves residual ethanol on the membrane, which inhibits elution and "poisons" downstream applications like PCR. Your ${drySpinDurationMinutes.toFixed(1)}-minute spin was insufficient.`);
+          recommendations.push(`ROOT CAUSE: Dry spin duration was insufficient (${drySpinDurationMinutes.toFixed(1)} minutes). A minimum of 2 minutes is required to remove all ethanol residue.`);
+        }
       } else if (washCount < 2) {
         recommendations.push('Insufficient washing. Two washes are required to remove chaotropic salts. You only performed ' + washCount + '.');
       } else {

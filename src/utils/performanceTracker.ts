@@ -9,6 +9,7 @@ export interface UserPerformance {
   hasCorrectElutionVolume: boolean;
   hasWarmedElution: boolean;
   hasClarifiedLysate: boolean;
+  drySpinDuration?: number;
 }
 
 export interface ProtocolComparison {
@@ -150,21 +151,28 @@ export function calculateEnhancedResults(
     });
   }
 
-  if (!performance.hasPerformedDrySpin) {
+  const drySpinDurationMinutes = (performance.drySpinDuration || 0) / 60;
+  const isDrySpinInsufficient = !performance.hasPerformedDrySpin || drySpinDurationMinutes < 2;
+
+  if (isDrySpinInsufficient) {
     yieldPenalty *= 0.6;
     a260_230 = 0.5;
 
+    const drySpinPerformed = performance.hasPerformedDrySpin;
+
     insights.push({
       type: 'ethanol',
-      title: 'Ethanol Contamination Detected',
-      message: 'A260/A230 is very low. This is a classic sign of residual ethanol. The 2-minute dry spin is not optional - it removes ethanol that would otherwise contaminate your sample and inhibit downstream reactions.',
+      title: drySpinPerformed ? 'Low Purity Detected' : 'Ethanol Contamination Detected',
+      message: drySpinPerformed
+        ? `Skipping the Dry Spin leaves residual ethanol on the membrane, which inhibits elution and "poisons" downstream applications like PCR. Your ${Math.floor(drySpinDurationMinutes)}-minute spin was insufficient - a minimum of 2 minutes is required.`
+        : 'A260/A230 is very low. This is a classic sign of residual ethanol. The 2-minute dry spin is not optional - it removes ethanol that would otherwise contaminate your sample and inhibit downstream reactions.',
       severity: 'error'
     });
 
     comparisons.push({
       phase: 'Wash & Dry',
-      idealProtocol: '2-minute dry spin (empty column)',
-      yourAction: 'Dry spin skipped',
+      idealProtocol: '2-minute minimum dry spin (empty column)',
+      yourAction: drySpinPerformed ? `Dry spin ${Math.floor(drySpinDurationMinutes)} min (insufficient)` : 'Dry spin skipped',
       impact: 'Ethanol contamination (40% yield loss, A260/A230 = 0.5)',
       severity: 'error'
     });

@@ -1838,12 +1838,20 @@ export default function App() {
     hasUsedLN2: false,
     hasAddedEthanol: false,
     hasPerformedDrySpin: false,
+    drySpinDuration: 0,
     isSafetyCompliant: false,
     hasCorrectLysisVolume: false,
     hasCorrectBindingVolume: false,
     hasCorrectElutionVolume: false,
     hasWarmedElution: false,
     hasClarifiedLysate: false,
+  });
+
+  const [washTracking, setWashTracking] = useState({
+    wash1: false,
+    wash2: false,
+    drySpin: false,
+    drySpinDuration: 0
   });
 
   const anonymousUser = useAnonymousUser();
@@ -2084,12 +2092,36 @@ export default function App() {
 
         // For Column Binding and Wash steps, liquid goes to collection tube as waste
         if (currentStep?.title === "Column Binding" || currentStep?.title === "Wash & Dry") {
-          if (currentStep?.title === "Wash & Dry" && liquidInColumn === 0) {
-            setUserPerformance(prev => ({ ...prev, hasPerformedDrySpin: true }));
+          if (currentStep?.title === "Wash & Dry") {
+            if (liquidInColumn === 0) {
+              const spinDuration = (settings.duration || spinDuration || 5) * 60;
+              setUserPerformance(prev => ({ ...prev, hasPerformedDrySpin: true, drySpinDuration: spinDuration }));
+              setWashTracking(prev => ({ ...prev, drySpin: true, drySpinDuration: spinDuration }));
+
+              protocolTracker.logAction({
+                stepIndex: protocolIndex,
+                stepName: currentStep?.title || 'Wash & Dry',
+                action: 'dry_spin',
+                duration: spinDuration,
+                timestamp: Date.now()
+              });
+
+              addLog(`Dry spin complete (${Math.floor(spinDuration / 60)} min). Column is dry.`, "success");
+            } else {
+              if (!washTracking.wash1) {
+                setWashTracking(prev => ({ ...prev, wash1: true }));
+                addLog("First wash complete. Salts removed.", "success");
+              } else if (!washTracking.wash2) {
+                setWashTracking(prev => ({ ...prev, wash2: true }));
+                addLog("Second wash complete. Ethanol residue removed.", "success");
+              }
+            }
           }
           setWasteInCollectionTube(true);
           setHasDiscardedWaste(false);
-          addLog("Spin complete. Flow-through collected at bottom of tube.", "success");
+          if (currentStep?.title !== "Wash & Dry" || liquidInColumn > 0) {
+            addLog("Spin complete. Flow-through collected at bottom of tube.", "success");
+          }
         }
       }, 2500);
     } else if (action === 'start' && equipment === 'thermocycler') {
@@ -2598,12 +2630,19 @@ export default function App() {
       hasUsedLN2: false,
       hasAddedEthanol: false,
       hasPerformedDrySpin: false,
+      drySpinDuration: 0,
       isSafetyCompliant: false,
       hasCorrectLysisVolume: false,
       hasCorrectBindingVolume: false,
       hasCorrectElutionVolume: false,
       hasWarmedElution: false,
       hasClarifiedLysate: false,
+    });
+    setWashTracking({
+      wash1: false,
+      wash2: false,
+      drySpin: false,
+      drySpinDuration: 0
     });
     setEnhancedResult(null);
     setScreen("briefing");
