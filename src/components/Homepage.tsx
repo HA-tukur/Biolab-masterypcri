@@ -147,20 +147,45 @@ function HeroSection({ onStartFree }: { onStartFree: () => void }) {
 }
 
 function SimulationPreview() {
-  const peak260 = 30;
-  const valley230 = peak260 * 0.35;
-  const shoulder280 = peak260 * 0.55;
+  const baselineY = 145;
+  const peak260Height = 90;
+  const valley230Height = peak260Height * 0.30;
+  const shoulder280Height = peak260Height * 0.55;
+
+  const x220 = 50;
+  const x230 = 90;
+  const x260 = 150;
+  const x280 = 210;
+  const x300 = 255;
+  const x350 = 285;
+
+  const y220 = baselineY - 5;
+  const y230 = baselineY - valley230Height;
+  const y260 = baselineY - peak260Height;
+  const y280 = baselineY - shoulder280Height;
+  const y300 = baselineY - 8;
+  const y350 = baselineY - 1;
+
+  const curvePath = `M ${x220},${y220}
+    C ${x220 + 15},${y220 - 8} ${x230 - 15},${y230 - 5} ${x230},${y230}
+    C ${x230 + 20},${y230 + 2} ${x260 - 35},${y260 + 15} ${x260 - 20},${y260 + 5}
+    C ${x260 - 10},${y260 + 2} ${x260 - 5},${y260} ${x260},${y260}
+    C ${x260 + 8},${y260 + 1} ${x280 - 25},${y280 - 8} ${x280},${y280}
+    C ${x280 + 15},${y280 + 5} ${x300 - 20},${y300 - 3} ${x300},${y300}
+    C ${x300 + 10},${y300 + 2} ${x350 - 15},${y350 - 1} ${x350},${y350}`;
+
+  const fillPath = `${curvePath} L ${x350},${baselineY} L ${x220},${baselineY} Z`;
 
   return (
-    <div className="bg-white border-2 border-slate-200 rounded-lg shadow-xl p-4 space-y-4 max-w-md">
+    <div className="bg-white border-2 border-slate-200 rounded-lg shadow-xl p-4 space-y-4 max-w-md ml-6">
       <div className="space-y-1">
         <h3 className="text-base font-bold text-slate-800">NanoDrop Spectrophotometer</h3>
         <p className="text-xs text-slate-600">A260/A280 Purity Analysis</p>
       </div>
 
       <div className="bg-white border border-slate-200 rounded-lg p-3">
-        <div className="relative h-40">
-          <svg className="w-full h-full" viewBox="0 0 320 180" xmlns="http://www.w3.org/2000/svg">
+        <div className="relative h-44">
+          <svg className="w-full h-full" viewBox="0 0 320 190" xmlns="http://www.w3.org/2000/svg">
             <defs>
               <linearGradient id="curveGradient" x1="0%" y1="0%" x2="0%" y2="100%">
                 <stop offset="0%" stopColor="#0d9488" stopOpacity="0.15"/>
@@ -168,55 +193,36 @@ function SimulationPreview() {
               </linearGradient>
             </defs>
 
-            <line x1="40" y1="150" x2="290" y2="150" stroke="#94a3b8" strokeWidth="1.5"/>
-            <line x1="40" y1="150" x2="40" y2="20" stroke="#94a3b8" strokeWidth="1.5"/>
+            <line x1="40" y1={baselineY} x2="295" y2={baselineY} stroke="#94a3b8" strokeWidth="1.5"/>
+            <line x1="40" y1={baselineY} x2="40" y2="30" stroke="#94a3b8" strokeWidth="1.5"/>
 
-            <text x="165" y="170" fontSize="10" fill="#64748b" textAnchor="middle" fontWeight="500">Wavelength (nm)</text>
-            <text x="20" y="85" fontSize="10" fill="#64748b" textAnchor="middle" transform="rotate(-90 20 85)" fontWeight="500">Absorbance</text>
+            <text x="167" y="178" fontSize="10" fill="#64748b" textAnchor="middle" fontWeight="500">Wavelength (nm)</text>
+            <text x="18" y="88" fontSize="10" fill="#64748b" textAnchor="middle" transform="rotate(-90 18 88)" fontWeight="500">Absorbance</text>
 
-            <text x="60" y="163" fontSize="9" fill="#94a3b8" textAnchor="middle">220</text>
-            <text x="85" y="163" fontSize="9" fill="#94a3b8" textAnchor="middle">230</text>
-            <text x="135" y="163" fontSize="9" fill="#94a3b8" textAnchor="middle">260</text>
-            <text x="185" y="163" fontSize="9" fill="#94a3b8" textAnchor="middle">280</text>
-            <text x="235" y="163" fontSize="9" fill="#94a3b8" textAnchor="middle">300</text>
-            <text x="270" y="163" fontSize="9" fill="#94a3b8" textAnchor="middle">320</text>
+            <text x={x220} y="160" fontSize="9" fill="#94a3b8" textAnchor="middle">220</text>
+            <text x={x230} y="160" fontSize="9" fill="#94a3b8" textAnchor="middle">230</text>
+            <text x={x260} y="160" fontSize="9" fill="#94a3b8" textAnchor="middle">260</text>
+            <text x={x280} y="160" fontSize="9" fill="#94a3b8" textAnchor="middle">280</text>
+            <text x={x300} y="160" fontSize="9" fill="#94a3b8" textAnchor="middle">300</text>
 
-            <path d={`M 50,${150 - 15}
-                     C 60,${150 - 20} 70,${150 - valley230} 85,${150 - valley230}
-                     C 100,${150 - valley230} 110,${150 - peak260 + 5} 120,${150 - peak260}
-                     C 125,${150 - peak260} 130,${150 - peak260} 135,${150 - peak260}
-                     C 140,${150 - peak260} 145,${150 - peak260} 150,${150 - peak260 + 3}
-                     C 160,${150 - shoulder280 - 8} 170,${150 - shoulder280} 185,${150 - shoulder280}
-                     C 200,${150 - shoulder280 + 5} 215,${150 - 30} 230,${150 - 20}
-                     C 245,${150 - 15} 260,${150 - 10} 275,${150 - 5}`}
-                  stroke="#0d9488" strokeWidth="2.5" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
+            <path d={fillPath} fill="url(#curveGradient)"/>
+            <path d={curvePath} stroke="#0d9488" strokeWidth="2.5" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
 
-            <path d={`M 50,${150 - 15}
-                     C 60,${150 - 20} 70,${150 - valley230} 85,${150 - valley230}
-                     C 100,${150 - valley230} 110,${150 - peak260 + 5} 120,${150 - peak260}
-                     C 125,${150 - peak260} 130,${150 - peak260} 135,${150 - peak260}
-                     C 140,${150 - peak260} 145,${150 - peak260} 150,${150 - peak260 + 3}
-                     C 160,${150 - shoulder280 - 8} 170,${150 - shoulder280} 185,${150 - shoulder280}
-                     C 200,${150 - shoulder280 + 5} 215,${150 - 30} 230,${150 - 20}
-                     C 245,${150 - 15} 260,${150 - 10} 275,${150 - 5}
-                     L 275,150 L 50,150 Z`}
-                  fill="url(#curveGradient)"/>
+            <line x1={x230} y1={y230 - 5} x2={x230} y2={baselineY} stroke="#f59e0b" strokeWidth="1" strokeDasharray="3,3" opacity="0.5"/>
+            <circle cx={x230} cy={y230} r="3.5" fill="#f59e0b"/>
+            <text x={x230} y={y230 - 12} fontSize="7.5" fill="#f59e0b" textAnchor="middle" fontWeight="bold">Salt/Solvent</text>
 
-            <line x1="85" y1={150 - valley230 - 5} x2="85" y2="150" stroke="#f59e0b" strokeWidth="1" strokeDasharray="3,3" opacity="0.6"/>
-            <circle cx="85" cy={150 - valley230} r="3" fill="#f59e0b"/>
-            <text x="85" y={150 - valley230 - 10} fontSize="7" fill="#f59e0b" textAnchor="middle" fontWeight="bold">Salt/Solvent</text>
+            <line x1={x260} y1={y260 - 5} x2={x260} y2={baselineY} stroke="#dc2626" strokeWidth="1.5" strokeDasharray="3,3" opacity="0.7"/>
+            <circle cx={x260} cy={y260} r="4" fill="#dc2626"/>
+            <text x={x260} y={y260 - 12} fontSize="8.5" fill="#dc2626" textAnchor="middle" fontWeight="bold">DNA & RNA</text>
 
-            <line x1="135" y1={150 - peak260 - 5} x2="135" y2="150" stroke="#dc2626" strokeWidth="1.5" strokeDasharray="3,3" opacity="0.7"/>
-            <circle cx="135" cy={150 - peak260} r="4" fill="#dc2626"/>
-            <text x="135" y={150 - peak260 - 10} fontSize="8" fill="#dc2626" textAnchor="middle" fontWeight="bold">DNA & RNA</text>
-
-            <line x1="185" y1={150 - shoulder280 - 5} x2="185" y2="150" stroke="#2563eb" strokeWidth="1" strokeDasharray="3,3" opacity="0.6"/>
-            <circle cx="185" cy={150 - shoulder280} r="3" fill="#2563eb"/>
-            <text x="185" y={150 - shoulder280 - 10} fontSize="7" fill="#2563eb" textAnchor="middle" fontWeight="bold">Protein</text>
+            <line x1={x280} y1={y280 - 5} x2={x280} y2={baselineY} stroke="#2563eb" strokeWidth="1" strokeDasharray="3,3" opacity="0.6"/>
+            <circle cx={x280} cy={y280} r="3.5" fill="#2563eb"/>
+            <text x={x280} y={y280 - 12} fontSize="7.5" fill="#2563eb" textAnchor="middle" fontWeight="bold">Protein</text>
           </svg>
         </div>
 
-        <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
+        <div className="mt-5 grid grid-cols-2 gap-2 text-xs">
           <div className="bg-slate-50 border border-slate-200 rounded p-2">
             <div className="text-[10px] text-slate-500 mb-0.5">A260/A280</div>
             <div className="text-base font-bold text-slate-700">1.82</div>
