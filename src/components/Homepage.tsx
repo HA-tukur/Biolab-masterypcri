@@ -212,29 +212,29 @@ function SimulationPreview() {
             <line x1={padding} y1={height - padding} x2={width - padding} y2={height - padding} stroke="#94a3b8" strokeWidth="1.5"/>
             <line x1={padding} y1={padding} x2={padding} y2={height - padding} stroke="#94a3b8" strokeWidth="1.5"/>
 
-            <text x={width / 2} y={height - 12} fontSize="10" fill="#64748b" textAnchor="middle" fontWeight="500">Wavelength (nm)</text>
-            <text x="18" y={height / 2} fontSize="10" fill="#64748b" textAnchor="middle" transform={`rotate(-90 18 ${height / 2})`} fontWeight="500">Absorbance</text>
+            <text x={width / 2} y={height - 12} fontSize="12" fill="#1e293b" textAnchor="middle" fontWeight="500">Wavelength (nm)</text>
+            <text x="18" y={height / 2} fontSize="12" fill="#1e293b" textAnchor="middle" transform={`rotate(-90 18 ${height / 2})`} fontWeight="500">Absorbance</text>
 
-            <text x={xScale(220)} y={height - padding + 15} fontSize="9" fill="#94a3b8" textAnchor="middle">220</text>
-            <text x={x230} y={height - padding + 15} fontSize="9" fill="#94a3b8" textAnchor="middle">230</text>
-            <text x={x260} y={height - padding + 15} fontSize="9" fill="#94a3b8" textAnchor="middle">260</text>
-            <text x={x280} y={height - padding + 15} fontSize="9" fill="#94a3b8" textAnchor="middle">280</text>
-            <text x={xScale(300)} y={height - padding + 15} fontSize="9" fill="#94a3b8" textAnchor="middle">300</text>
+            <text x={xScale(220)} y={height - padding + 15} fontSize="11" fill="#475569" textAnchor="middle">220</text>
+            <text x={x230} y={height - padding + 15} fontSize="11" fill="#475569" textAnchor="middle">230</text>
+            <text x={x260} y={height - padding + 15} fontSize="11" fill="#475569" textAnchor="middle">260</text>
+            <text x={x280} y={height - padding + 15} fontSize="11" fill="#475569" textAnchor="middle">280</text>
+            <text x={xScale(300)} y={height - padding + 15} fontSize="11" fill="#475569" textAnchor="middle">300</text>
 
             <path d={fillPath} fill="url(#curveGradient)"/>
             <path d={pathData} stroke="#0d9488" strokeWidth="2.5" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
 
             <line x1={x230} y1={y230 - 5} x2={x230} y2={height - padding} stroke="#f59e0b" strokeWidth="1" strokeDasharray="3,3" opacity="0.5"/>
-            <circle cx={x230} cy={y230} r="3.5" fill="#f59e0b"/>
-            <text x={x230} y={y230 - 12} fontSize="7.5" fill="#f59e0b" textAnchor="middle" fontWeight="bold">Salt/Solvent</text>
+            <circle cx={x230} cy={y230} r="3.5" fill="#ea580c"/>
+            <text x={x230} y={y230 - 12} fontSize="11" fill="#ea580c" textAnchor="middle" fontWeight="bold">Salt/Solvent</text>
 
             <line x1={x260} y1={y260 - 5} x2={x260} y2={height - padding} stroke="#dc2626" strokeWidth="1.5" strokeDasharray="3,3" opacity="0.7"/>
             <circle cx={x260} cy={y260} r="4" fill="#dc2626"/>
-            <text x={x260} y={y260 - 12} fontSize="8.5" fill="#dc2626" textAnchor="middle" fontWeight="bold">DNA & RNA</text>
+            <text x={x260} y={y260 - 12} fontSize="11" fill="#dc2626" textAnchor="middle" fontWeight="bold">DNA & RNA</text>
 
             <line x1={x280} y1={y280 - 5} x2={x280} y2={height - padding} stroke="#2563eb" strokeWidth="1" strokeDasharray="3,3" opacity="0.6"/>
             <circle cx={x280} cy={y280} r="3.5" fill="#2563eb"/>
-            <text x={x280} y={y280 - 12} fontSize="7.5" fill="#2563eb" textAnchor="middle" fontWeight="bold">Protein</text>
+            <text x={x280} y={y280 - 12} fontSize="11" fill="#2563eb" textAnchor="middle" fontWeight="bold">Protein</text>
           </svg>
         </div>
 
