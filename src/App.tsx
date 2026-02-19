@@ -54,6 +54,10 @@ import { MasteryResultsPanel } from "./components/MasteryResultsPanel";
 import { ProtocolOverview } from "./components/ProtocolOverview";
 import { AntibodyIcon } from "./components/AntibodyIcon";
 import ClassCodePrompt from "./components/ClassCodePrompt";
+import { calculateEnhancedResults, EnhancedResult } from "./utils/performanceTracker";
+import { TimelineAnalysis } from "./components/TimelineAnalysis";
+import { DiagnosticInsights } from "./components/DiagnosticInsights";
+import { MasteryBadge } from "./components/MasteryBadge";
 import { AILabAssistant } from "./components/AILabAssistant";
 import { Footer } from "./components/Footer";
 import { ContactSection } from "./components/ContactSection";
@@ -1811,9 +1815,23 @@ export default function App() {
   const [showVortexPrompt, setShowVortexPrompt] = useState(false);
   const [screenBeforeReadiness, setScreenBeforeReadiness] = useState(null);
 
+  const [userPerformance, setUserPerformance] = useState({
+    hasCorrectProtK: false,
+    hasUsedLN2: false,
+    hasAddedEthanol: false,
+    hasPerformedDrySpin: false,
+    isSafetyCompliant: false,
+    hasCorrectLysisVolume: false,
+    hasCorrectBindingVolume: false,
+    hasCorrectElutionVolume: false,
+    hasWarmedElution: false,
+    hasClarifiedLysate: false,
+  });
+
   const anonymousUser = useAnonymousUser();
   const [protocolTracker] = useState(() => new ProtocolTracker());
   const [masteryReport, setMasteryReport] = useState(null);
+  const [enhancedResult, setEnhancedResult] = useState<EnhancedResult | null>(null);
 
   const has = (itemId) => inventory.includes(itemId);
 
@@ -2024,10 +2042,14 @@ export default function App() {
         if (currentStep?.title === "Clarification") {
           setShowPhaseSeparation(true);
           addLog("Spin complete. Supernatant and pellet separated.", "success");
+          setUserPerformance(prev => ({ ...prev, hasClarifiedLysate: true }));
         }
 
         // For Column Binding and Wash steps, liquid goes to collection tube as waste
         if (currentStep?.title === "Column Binding" || currentStep?.title === "Wash & Dry") {
+          if (currentStep?.title === "Wash & Dry" && liquidInColumn === 0) {
+            setUserPerformance(prev => ({ ...prev, hasPerformedDrySpin: true }));
+          }
           setWasteInCollectionTube(true);
           setHasDiscardedWaste(false);
           addLog("Spin complete. Flow-through collected at bottom of tube.", "success");
@@ -2410,6 +2432,19 @@ export default function App() {
     setTubeVortexed(false);
     setShowVortexPrompt(false);
     setScreenBeforeReadiness(screen);
+    setUserPerformance({
+      hasCorrectProtK: false,
+      hasUsedLN2: false,
+      hasAddedEthanol: false,
+      hasPerformedDrySpin: false,
+      isSafetyCompliant: false,
+      hasCorrectLysisVolume: false,
+      hasCorrectBindingVolume: false,
+      hasCorrectElutionVolume: false,
+      hasWarmedElution: false,
+      hasClarifiedLysate: false,
+    });
+    setEnhancedResult(null);
     setScreen("briefing");
     setShowReadinessModal(true);
   };
@@ -2695,11 +2730,27 @@ export default function App() {
       }
     }
 
-    setYieldUg(localYield);
-    setFinalConc(localConc);
-    setA260_280(localPurity);
-    setStatus(localStatus);
-    setFailReason(localFailReason);
+    const hasGoggles = has("safety_goggles");
+    const enhanced = calculateEnhancedResults(
+      userPerformance,
+      stepVolumes,
+      missionId,
+      sampleMass,
+      elutionBufferPreWarmed,
+      {
+        goggles: hasGoggles,
+        gloves: hasGloves,
+        labCoat: hasLabCoat
+      },
+      showPhaseSeparation
+    );
+
+    setEnhancedResult(enhanced);
+    setYieldUg(enhanced.yield);
+    setFinalConc(enhanced.concentration);
+    setA260_280(enhanced.a260_280.toString());
+    setStatus(enhanced.status === 'mastery' ? 'mastery' : 'fail');
+    setFailReason(enhanced.masteryBadge.blockReason || '');
     if (localStatus !== "unverified") {
       setShowQuant(true);
     }
@@ -2877,6 +2928,7 @@ export default function App() {
           onAccept={() => {
             setShowLN2SafetyModal(false);
             setLn2Added(true);
+            setUserPerformance(prev => ({ ...prev, hasUsedLN2: true }));
             if (difficultyMode !== "challenge") {
               addLog("Adding liquid nitrogen to mortar...", "info");
               addLog("⚠️ Wait for the liquid nitrogen to evaporate before grinding. Grinding while LN₂ is still boiling can cause the sample to pop out of the mortar.", "error");
@@ -3447,7 +3499,21 @@ export default function App() {
                               Deselect
                             </button>
                           ) : (
-                            <button onClick={() => { if (isFree || canAfford) { if (!isFree) setCoins(coins - item.cost); setInventory([...inventory, item.id]); addLog(`Acquired: ${item.name}`, 'success'); }}} disabled={!isFree && !canAfford} className={`px-6 py-2 rounded-lg font-bold uppercase text-sm transition-all cursor-pointer border-0 ${isFree || canAfford ? "bg-indigo-600 hover:bg-indigo-500 text-white" : "bg-slate-700 text-slate-500 cursor-not-allowed"}`}>
+                            <button onClick={() => {
+                              if (isFree || canAfford) {
+                                if (!isFree) setCoins(coins - item.cost);
+                                setInventory([...inventory, item.id]);
+                                addLog(`Acquired: ${item.name}`, 'success');
+                                if (item.id === 'gloves' || item.id === 'lab_coat' || item.id === 'safety_goggles') {
+                                  const newSafety = has('gloves') || item.id === 'gloves';
+                                  const newGoggles = has('safety_goggles') || item.id === 'safety_goggles';
+                                  const newCoat = has('lab_coat') || item.id === 'lab_coat';
+                                  if (newSafety && newGoggles && newCoat) {
+                                    setUserPerformance(prev => ({ ...prev, isSafetyCompliant: true }));
+                                  }
+                                }
+                              }
+                            }} disabled={!isFree && !canAfford} className={`px-6 py-2 rounded-lg font-bold uppercase text-sm transition-all cursor-pointer border-0 ${isFree || canAfford ? "bg-indigo-600 hover:bg-indigo-500 text-white" : "bg-slate-700 text-slate-500 cursor-not-allowed"}`}>
                               {isFree ? "Add to Bench" : "Purchase"}
                             </button>
                           )}
@@ -4131,6 +4197,7 @@ export default function App() {
                             setTimeout(() => {
                               setIsWarmingBuffer(false);
                               setElutionBufferPreWarmed(true);
+                              setUserPerformance(prev => ({ ...prev, hasWarmedElution: true }));
                               if (difficultyMode !== "challenge") {
                                 addLog("✓ Elution buffer pre-warmed to 56°C. Ready to use.", "success");
                               }
@@ -4661,6 +4728,9 @@ export default function App() {
                                 console.log('[STEP 1] Updated step1SubActions:', updated);
                                 return updated;
                               });
+                              if (pipetteVolume === 20) {
+                                setUserPerformance(prev => ({ ...prev, hasCorrectProtK: true }));
+                              }
                               showToastNotification(`✓ Added ${pipetteVolume}µL ${reagentName} to sample`);
                             }
                           } else if (currentStep.title === "Binding Preparation") {
@@ -4669,6 +4739,7 @@ export default function App() {
                               showToastNotification(`✓ Added ${pipetteVolume}µL ${reagentName} to sample`);
                             } else if (reagentId === "ethanol") {
                               setStep3SubActions(prev => ({ ...prev, ethanolAdded: true }));
+                              setUserPerformance(prev => ({ ...prev, hasAddedEthanol: true }));
                               showToastNotification(`✓ Added ${pipetteVolume}µL ${reagentName} to sample`);
                             }
                           } else if (currentStep.title === "Wash & Dry") {
@@ -5039,30 +5110,45 @@ export default function App() {
             <div className="min-h-screen bg-[#0f172a]">
               <SharedNavigation onShowManual={() => setShowManual(true)} />
               <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-6">
-              <div className={`bg-gradient-to-br ${status === "mastery" ? "from-emerald-900/20 to-slate-800 border-emerald-500/30" : "from-rose-900/20 to-slate-800 border-rose-500/30"} border p-6 rounded-3xl text-center space-y-5`}>
-                {status === "mastery" && <MasteryBadge />}
-                {status !== "mastery" && (
-                  <div className="flex flex-col items-center">
-                    <AlertCircle size={64} className="text-rose-500 mb-4" />
-                    <h3 className="text-2xl font-black text-slate-50 uppercase tracking-tight">Mission Failed</h3>
-                    <p className="text-sm text-slate-400 mt-2">{failReason}</p>
-                  </div>
-                )}
 
-                <div className="grid grid-cols-3 gap-3">
+              {enhancedResult && (
+                <>
+                  <MasteryBadge
+                    badge={enhancedResult.masteryBadge}
+                    concentration={enhancedResult.concentration}
+                    a260_280={enhancedResult.a260_280}
+                  />
+
+                  <TimelineAnalysis
+                    comparisons={enhancedResult.comparisons}
+                    missionTitle={MISSIONS_DATA[techniqueId][missionId]?.title || 'DNA Extraction'}
+                  />
+
+                  <DiagnosticInsights insights={enhancedResult.insights} />
+                </>
+              )}
+
+              <div className={`bg-gradient-to-br ${status === "mastery" ? "from-emerald-900/20 to-slate-800 border-emerald-500/30" : "from-rose-900/20 to-slate-800 border-rose-500/30"} border p-6 rounded-3xl text-center space-y-5`}>
+
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                   <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-700">
                     <p className="text-[8px] text-slate-500 uppercase font-bold tracking-wider mb-1">Concentration</p>
                     <p className="text-2xl font-black text-white font-mono">{finalConc}</p>
                     <p className="text-[10px] text-slate-400 mt-0.5">ng/µL</p>
                   </div>
                   <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-700">
-                    <p className="text-[8px] text-slate-500 uppercase font-bold tracking-wider mb-1">Purity (260/280)</p>
+                    <p className="text-[8px] text-slate-500 uppercase font-bold tracking-wider mb-1">A260/A280</p>
                     <p className="text-2xl font-black text-white font-mono">{a260_280}</p>
-                    <p className="text-[10px] text-slate-400 mt-0.5">{parseFloat(a260_280) >= 1.7 ? "Acceptable" : "Contaminated"}</p>
+                    <p className="text-[10px] text-slate-400 mt-0.5">{parseFloat(a260_280) >= 1.7 ? "Pure" : "Protein"}</p>
+                  </div>
+                  <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-700">
+                    <p className="text-[8px] text-slate-500 uppercase font-bold tracking-wider mb-1">A260/A230</p>
+                    <p className="text-2xl font-black text-white font-mono">{enhancedResult?.a260_230.toFixed(2) || '2.20'}</p>
+                    <p className="text-[10px] text-slate-400 mt-0.5">{(enhancedResult?.a260_230 || 2.2) >= 2.0 ? "Pure" : "Ethanol"}</p>
                   </div>
                   <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-700">
                     <p className="text-[8px] text-slate-500 uppercase font-bold tracking-wider mb-1">Total Yield</p>
-                    <p className="text-2xl font-black text-white font-mono">{yieldUg}</p>
+                    <p className="text-2xl font-black text-white font-mono">{yieldUg.toFixed(2)}</p>
                     <p className="text-[10px] text-slate-400 mt-0.5">µg</p>
                   </div>
                 </div>
