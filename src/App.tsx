@@ -2343,7 +2343,7 @@ export default function App() {
         title: "Elution",
         prompt: missionId === 'B'
           ? "FIRST: Pre-warm Elution Buffer to 56°C in heat block (2-3 min). THEN: Transfer column to fresh tube, add 50 µL warm buffer to membrane center, wait 1-5 minutes, and SPIN at 12,000 g for 1 minute."
-          : "Transfer column to fresh tube. Add 50 µL Elution Buffer to membrane center, wait 1-5 minutes, then SPIN at 12,000 g for 1 minute.",
+          : "Transfer column to fresh tube. Add 20 µL Elution Buffer to membrane center, wait 1-5 minutes, then SPIN at 12,000 g for 1 minute.",
         science: missionId === 'B'
           ? "Low-salt buffer (TE-based) releases pure DNA from the column. 🌡️ IMPORTANT FOR PLANT DNA: Pre-warming to 56°C is REQUIRED for plant extractions. Plant DNA is very long and 'sticky' - heat helps release it from the silica membrane, increasing yield by 15-20%. ⚠️ CRITICAL: Always transfer column to a fresh, empty tube before elution - otherwise contaminants re-contaminate your DNA."
           : "Low-salt buffer (TE-based) releases pure DNA from the column. TE buffer (Tris-EDTA) protects DNA - the EDTA 'handcuffs' DNase enzymes that would chew up your DNA. Optional: Pre-warm buffer to 56°C for +10-15% yield. ⚠️ CRITICAL: The previous collection tube contains waste (salts, ethanol, proteins). Always transfer the column to a fresh, empty tube before elution - otherwise contaminants wick back into the membrane and re-contaminate your purified DNA.",
@@ -5027,18 +5027,26 @@ export default function App() {
                   if (currentStep.multipleReagents && currentStep.reagents) {
                     currentStep.reagents.forEach(reagent => {
                       const addedVolume = currentStepReagents[reagent.id] || 0;
+                      const tolerance = reagent.tolerance || 50;
+                      const minAcceptable = reagent.targetVolume - tolerance;
+                      const maxAcceptable = reagent.targetVolume + tolerance;
+
                       if (addedVolume === 0) {
                         addLog(`Volume Error: ${reagent.name} was not added!`, "error");
                         setProtocolAdherenceCompromised(true);
-                      } else if (addedVolume !== reagent.targetVolume) {
-                        addLog(`Volume Error: Use exactly ${reagent.targetVolume}µL of ${reagent.name}.`, "error");
+                      } else if (addedVolume < minAcceptable || addedVolume > maxAcceptable) {
+                        addLog(`Volume Error: Use ${minAcceptable}-${maxAcceptable}µL of ${reagent.name}.`, "error");
                         setProtocolAdherenceCompromised(true);
                       }
                     });
                   } else if (currentStep.reagents && currentStep.reagents[0]) {
                     const reagent = currentStep.reagents[0];
-                    if (volumeAddedThisStep !== reagent.targetVolume) {
-                      addLog(`Volume Error: Use exactly ${reagent.targetVolume}µL.`, "error");
+                    const tolerance = reagent.tolerance || 50;
+                    const minAcceptable = reagent.targetVolume - tolerance;
+                    const maxAcceptable = reagent.targetVolume + tolerance;
+
+                    if (volumeAddedThisStep < minAcceptable || volumeAddedThisStep > maxAcceptable) {
+                      addLog(`Volume Error: Use ${minAcceptable}-${maxAcceptable}µL.`, "error");
                       setProtocolAdherenceCompromised(true);
                     }
                   }
