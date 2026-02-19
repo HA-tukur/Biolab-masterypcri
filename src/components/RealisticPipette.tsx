@@ -10,7 +10,7 @@ interface PipetteProps {
   liquidColor: string;
 }
 
-type PipetteSize = 2.5 | 20 | 1000;
+type PipetteSize = 2.5 | 20 | 200 | 1000;
 
 interface PipetteConfig {
   size: PipetteSize;
@@ -25,6 +25,7 @@ interface PipetteConfig {
 const PIPETTE_CONFIGS: Record<PipetteSize, PipetteConfig> = {
   2.5: { size: 2.5, min: 0.5, max: 2.5, step: 0.5, defaultVolume: 2.0, height: 280, width: 50 },
   20: { size: 20, min: 2, max: 20, step: 1, defaultVolume: 10, height: 300, width: 55 },
+  200: { size: 200, min: 20, max: 200, step: 10, defaultVolume: 100, height: 310, width: 57 },
   1000: { size: 1000, min: 100, max: 1000, step: 100, defaultVolume: 500, height: 320, width: 60 }
 };
 
@@ -37,6 +38,7 @@ export function RealisticPipette({ requiredVolume, onVolumeSet, onDispense, disa
   const getCorrectPipette = (vol: number): PipetteSize => {
     if (vol <= 2.5) return 2.5;
     if (vol <= 20) return 20;
+    if (vol <= 200) return 200;
     return 1000;
   };
 

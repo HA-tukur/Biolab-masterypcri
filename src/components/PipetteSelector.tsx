@@ -13,6 +13,7 @@ interface PipetteSelectorProps {
 const PIPETTES = [
   { id: 'p2.5', name: '2.5µL', range: [0.5, 2.5], step: 0.5, color: 'bg-purple-600' },
   { id: 'p20', name: '20µL', range: [2, 20], step: 5, color: 'bg-yellow-600' },
+  { id: 'p200', name: '200µL', range: [20, 200], step: 10, color: 'bg-green-600' },
   { id: 'p1000', name: '1000µL', range: [100, 1000], step: 100, color: 'bg-blue-600' }
 ];
 
@@ -30,6 +31,7 @@ export const PipetteSelector: React.FC<PipetteSelectorProps> = ({
   const getRecommendedPipette = (vol: number) => {
     if (vol <= 2.5) return 'p2.5';
     if (vol <= 20) return 'p20';
+    if (vol <= 200) return 'p200';
     return 'p1000';
   };
 
