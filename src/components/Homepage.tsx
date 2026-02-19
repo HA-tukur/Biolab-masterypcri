@@ -147,34 +147,53 @@ function HeroSection({ onStartFree }: { onStartFree: () => void }) {
 }
 
 function SimulationPreview() {
-  const baselineY = 145;
-  const peak260Height = 90;
-  const valley230Height = peak260Height * 0.30;
-  const shoulder280Height = peak260Height * 0.55;
+  const width = 320;
+  const height = 190;
+  const padding = 40;
 
-  const x220 = 50;
-  const x230 = 90;
-  const x260 = 150;
-  const x280 = 210;
-  const x300 = 255;
-  const x350 = 285;
+  const minWavelength = 220;
+  const maxWavelength = 350;
 
-  const y220 = baselineY - 5;
-  const y230 = baselineY - valley230Height;
-  const y260 = baselineY - peak260Height;
-  const y280 = baselineY - shoulder280Height;
-  const y300 = baselineY - 8;
-  const y350 = baselineY - 1;
+  const wavelengths: number[] = [];
+  for (let i = minWavelength; i <= maxWavelength; i += 0.5) {
+    wavelengths.push(i);
+  }
 
-  const curvePath = `M ${x220},${y220}
-    C ${x220 + 15},${y220 - 8} ${x230 - 15},${y230 - 5} ${x230},${y230}
-    C ${x230 + 20},${y230 + 2} ${x260 - 35},${y260 + 15} ${x260 - 20},${y260 + 5}
-    C ${x260 - 10},${y260 + 2} ${x260 - 5},${y260} ${x260},${y260}
-    C ${x260 + 8},${y260 + 1} ${x280 - 25},${y280 - 8} ${x280},${y280}
-    C ${x280 + 15},${y280 + 5} ${x300 - 20},${y300 - 3} ${x300},${y300}
-    C ${x300 + 10},${y300 + 2} ${x350 - 15},${y350 - 1} ${x350},${y350}`;
+  const absorbanceData = wavelengths.map((wl) => {
+    const dna = 1.2 * Math.exp(-Math.pow((wl - 260) / 22, 2)) * (1 + 0.002 * (260 - wl));
+    const protein = 0.35 * Math.exp(-Math.pow((wl - 280) / 15, 2));
+    const salt = 0.25 * Math.exp(-Math.pow((wl - 230) / 18, 2));
+    const scattering = 1500000000 / Math.pow(wl, 4);
+    const post300Decay = wl > 300 ? Math.exp(-(wl - 300) / 8) : 1;
 
-  const fillPath = `${curvePath} L ${x350},${baselineY} L ${x220},${baselineY} Z`;
+    return (dna + protein + salt + scattering) * post300Decay;
+  });
+
+  const maxAbsorbance = Math.max(...absorbanceData);
+
+  const xScale = (wl: number) =>
+    padding + ((wl - minWavelength) / (maxWavelength - minWavelength)) * (width - 2 * padding);
+
+  const yScale = (abs: number) =>
+    height - padding - (abs / maxAbsorbance) * (height - 2 * padding);
+
+  const pathData = wavelengths
+    .map((wl, i) => {
+      const x = xScale(wl);
+      const y = yScale(absorbanceData[i]);
+      return `${i === 0 ? 'M' : 'L'} ${x} ${y}`;
+    })
+    .join(' ');
+
+  const fillPath = `${pathData} L ${xScale(maxWavelength)} ${height - padding} L ${xScale(minWavelength)} ${height - padding} Z`;
+
+  const x230 = xScale(230);
+  const x260 = xScale(260);
+  const x280 = xScale(280);
+
+  const y230 = yScale(absorbanceData[wavelengths.indexOf(230)]);
+  const y260 = yScale(absorbanceData[wavelengths.indexOf(260)]);
+  const y280 = yScale(absorbanceData[wavelengths.indexOf(280)]);
 
   return (
     <div className="bg-white border-2 border-slate-200 rounded-lg shadow-xl p-4 space-y-4 max-w-md ml-6">
@@ -193,30 +212,30 @@ function SimulationPreview() {
               </linearGradient>
             </defs>
 
-            <line x1="40" y1={baselineY} x2="295" y2={baselineY} stroke="#94a3b8" strokeWidth="1.5"/>
-            <line x1="40" y1={baselineY} x2="40" y2="30" stroke="#94a3b8" strokeWidth="1.5"/>
+            <line x1={padding} y1={height - padding} x2={width - padding} y2={height - padding} stroke="#94a3b8" strokeWidth="1.5"/>
+            <line x1={padding} y1={padding} x2={padding} y2={height - padding} stroke="#94a3b8" strokeWidth="1.5"/>
 
-            <text x="167" y="178" fontSize="10" fill="#64748b" textAnchor="middle" fontWeight="500">Wavelength (nm)</text>
-            <text x="18" y="88" fontSize="10" fill="#64748b" textAnchor="middle" transform="rotate(-90 18 88)" fontWeight="500">Absorbance</text>
+            <text x={width / 2} y={height - 12} fontSize="10" fill="#64748b" textAnchor="middle" fontWeight="500">Wavelength (nm)</text>
+            <text x="18" y={height / 2} fontSize="10" fill="#64748b" textAnchor="middle" transform={`rotate(-90 18 ${height / 2})`} fontWeight="500">Absorbance</text>
 
-            <text x={x220} y="160" fontSize="9" fill="#94a3b8" textAnchor="middle">220</text>
-            <text x={x230} y="160" fontSize="9" fill="#94a3b8" textAnchor="middle">230</text>
-            <text x={x260} y="160" fontSize="9" fill="#94a3b8" textAnchor="middle">260</text>
-            <text x={x280} y="160" fontSize="9" fill="#94a3b8" textAnchor="middle">280</text>
-            <text x={x300} y="160" fontSize="9" fill="#94a3b8" textAnchor="middle">300</text>
+            <text x={xScale(220)} y={height - padding + 15} fontSize="9" fill="#94a3b8" textAnchor="middle">220</text>
+            <text x={x230} y={height - padding + 15} fontSize="9" fill="#94a3b8" textAnchor="middle">230</text>
+            <text x={x260} y={height - padding + 15} fontSize="9" fill="#94a3b8" textAnchor="middle">260</text>
+            <text x={x280} y={height - padding + 15} fontSize="9" fill="#94a3b8" textAnchor="middle">280</text>
+            <text x={xScale(300)} y={height - padding + 15} fontSize="9" fill="#94a3b8" textAnchor="middle">300</text>
 
             <path d={fillPath} fill="url(#curveGradient)"/>
-            <path d={curvePath} stroke="#0d9488" strokeWidth="2.5" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
+            <path d={pathData} stroke="#0d9488" strokeWidth="2.5" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
 
-            <line x1={x230} y1={y230 - 5} x2={x230} y2={baselineY} stroke="#f59e0b" strokeWidth="1" strokeDasharray="3,3" opacity="0.5"/>
+            <line x1={x230} y1={y230 - 5} x2={x230} y2={height - padding} stroke="#f59e0b" strokeWidth="1" strokeDasharray="3,3" opacity="0.5"/>
             <circle cx={x230} cy={y230} r="3.5" fill="#f59e0b"/>
             <text x={x230} y={y230 - 12} fontSize="7.5" fill="#f59e0b" textAnchor="middle" fontWeight="bold">Salt/Solvent</text>
 
-            <line x1={x260} y1={y260 - 5} x2={x260} y2={baselineY} stroke="#dc2626" strokeWidth="1.5" strokeDasharray="3,3" opacity="0.7"/>
+            <line x1={x260} y1={y260 - 5} x2={x260} y2={height - padding} stroke="#dc2626" strokeWidth="1.5" strokeDasharray="3,3" opacity="0.7"/>
             <circle cx={x260} cy={y260} r="4" fill="#dc2626"/>
             <text x={x260} y={y260 - 12} fontSize="8.5" fill="#dc2626" textAnchor="middle" fontWeight="bold">DNA & RNA</text>
 
-            <line x1={x280} y1={y280 - 5} x2={x280} y2={baselineY} stroke="#2563eb" strokeWidth="1" strokeDasharray="3,3" opacity="0.6"/>
+            <line x1={x280} y1={y280 - 5} x2={x280} y2={height - padding} stroke="#2563eb" strokeWidth="1" strokeDasharray="3,3" opacity="0.6"/>
             <circle cx={x280} cy={y280} r="3.5" fill="#2563eb"/>
             <text x={x280} y={y280 - 12} fontSize="7.5" fill="#2563eb" textAnchor="middle" fontWeight="bold">Protein</text>
           </svg>
