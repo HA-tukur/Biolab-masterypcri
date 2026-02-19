@@ -1408,16 +1408,6 @@ const LabManualOverlay = ({ onClose }) => (
 );
 
 
-const MasteryBadge = () => (
-    <div className="flex flex-col items-center p-6 bg-emerald-500/10 border border-emerald-500/30 rounded-3xl shadow-2xl animate-in zoom-in font-sans">
-        <Medal size={64} className="text-emerald-500 mb-4" />
-        <div className="text-center">
-            <h4 className="text-xl font-black text-white uppercase tracking-tighter">Verified Mastery</h4>
-            <p className="text-[10px] text-emerald-400 font-mono uppercase tracking-[0.2em] font-bold italic">Standard Range Confirmed</p>
-        </div>
-    </div>
-);
-
 const FeedbackModule = ({ userRating, setUserRating, feedbackSent, setFeedbackSent }) => (
     <div className="bg-gradient-to-br from-amber-500/10 to-indigo-500/10 border-2 border-amber-500/40 p-8 rounded-3xl text-center font-sans space-y-5 shadow-2xl animate-in zoom-in duration-500">
         <div className="space-y-2 font-sans text-white text-center">
