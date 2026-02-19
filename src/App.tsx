@@ -1435,15 +1435,15 @@ const LabManualOverlay = ({ onClose }) => (
 
 
 const FeedbackModule = ({ userRating, setUserRating, feedbackSent, setFeedbackSent }) => (
-    <div className="bg-gradient-to-br from-amber-500/10 to-indigo-500/10 border-2 border-amber-500/40 p-8 rounded-3xl text-center font-sans space-y-5 shadow-2xl animate-in zoom-in duration-500">
-        <div className="space-y-2 font-sans text-white text-center">
-          <h3 className="text-2xl font-black uppercase text-white tracking-tight leading-none">How was your experience?</h3>
-          <p className="text-sm text-slate-300 font-medium">Rate this simulation to help us improve</p>
+    <div className="bg-slate-900 border border-amber-500 p-10 rounded-2xl text-center font-sans space-y-6 animate-in zoom-in duration-500">
+        <div className="space-y-3 font-sans text-white text-center">
+          <h3 className="text-2xl font-black uppercase text-white tracking-wide leading-none">How was your experience?</h3>
+          <p className="text-sm text-slate-400 font-medium">Rate this simulation to help us improve</p>
         </div>
-        <div className="flex justify-center gap-3 font-sans text-white py-2">{[1, 2, 3, 4, 5].map((s) => (<button key={s} onClick={() => { setUserRating(s); trackEvent('StarRating', 'Feedback', `Rating_${s}`, s); if (s > 3) setFeedbackSent(true); }} className="transition-all hover:scale-125 active:scale-95 cursor-pointer border-0 bg-transparent p-1 hover:drop-shadow-[0_0_8px_rgba(251,191,36,0.8)]">
-          <Star size={48} className={userRating >= s ? "fill-amber-400 text-amber-400 drop-shadow-[0_0_6px_rgba(251,191,36,0.6)]" : "text-slate-600 hover:text-slate-500"} strokeWidth={2.5} />
+        <div className="flex justify-center gap-4 font-sans text-white py-4">{[1, 2, 3, 4, 5].map((s) => (<button key={s} onClick={() => { setUserRating(s); trackEvent('StarRating', 'Feedback', `Rating_${s}`, s); if (s > 3) setFeedbackSent(true); }} className="transition-all hover:scale-110 active:scale-95 cursor-pointer border-0 bg-transparent p-2">
+          <Star size={48} className={userRating >= s ? "fill-amber-400 text-amber-400" : "text-slate-600 hover:text-amber-500"} strokeWidth={2.5} />
         </button>))}</div>
-        {userRating > 0 && userRating <= 3 && !feedbackSent && (<div className="space-y-3 animate-in slide-in-from-top-2 font-sans text-slate-400 text-center"><p className="text-xs text-center font-bold text-slate-300 uppercase tracking-wide">What was the primary issue?</p><div className="grid grid-cols-2 gap-2">{["Confusing Path", "Too Difficult", "Technical Bug", "Lack of Guide"].map((tag, i) => (<button key={`tag-${i}`} onClick={() => { setFeedbackSent(true); trackEvent('LowRatingReason', 'Feedback', tag, userRating); }} className="bg-slate-800 p-3 rounded-lg text-xs font-bold uppercase text-slate-300 border border-slate-700 hover:bg-indigo-900/20 transition-all cursor-pointer">{String(tag)}</button>))}</div></div>)}{feedbackSent && <div className="flex items-center justify-center gap-2 text-base font-bold text-emerald-400 animate-in fade-in"><span>✓</span><span>Thank you for your feedback!</span></div>}
+        {userRating > 0 && userRating <= 3 && !feedbackSent && (<div className="space-y-4 animate-in slide-in-from-top-2 font-sans text-slate-400 text-center pt-2"><p className="text-sm text-center font-bold text-slate-300 uppercase tracking-wide">What was the primary issue?</p><div className="grid grid-cols-2 gap-3">{["Confusing Path", "Too Difficult", "Technical Bug", "Lack of Guide"].map((tag, i) => (<button key={`tag-${i}`} onClick={() => { setFeedbackSent(true); trackEvent('LowRatingReason', 'Feedback', tag, userRating); }} className="bg-slate-800 p-4 rounded-lg text-sm font-bold text-slate-200 border border-slate-700 hover:bg-slate-700 hover:border-slate-600 transition-all cursor-pointer">{String(tag)}</button>))}</div></div>)}{feedbackSent && <div className="flex items-center justify-center gap-2 text-lg font-bold text-emerald-400 animate-in fade-in pt-2"><span>✓</span><span>Thank you for your feedback!</span></div>}
     </div>
 );
 
