@@ -96,9 +96,6 @@ function HeroSection({ onStartFree }: { onStartFree: () => void }) {
             >
               Start Practicing Free
             </button>
-            <p className="text-sm text-gray-500 italic">
-              Trusted by students across 8 African countries
-            </p>
           </div>
 
           <div className="flex flex-col md:flex-row gap-3 mb-6">
