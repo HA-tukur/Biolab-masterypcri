@@ -1469,72 +1469,74 @@ const NanodropVisualComp = ({ step, measured, hasDNA = true, purityScore = 1.8 }
   const showSample = step === 'load' || step === 'measure' || step === 'complete' || measured;
 
   const generateDNASpectrum = () => {
-    const noise = () => (Math.random() - 0.5) * 0.1;
+    const width = 100;
+    const height = 60;
+    const padding = 10;
+    const minWavelength = 220;
+    const maxWavelength = 350;
+
     const purity = parseFloat(purityScore) || 1.8;
-    const contaminationFactor = Math.max(0, (1.8 - purity) / 0.4);
 
-    const baseSpectrum = [
-      { wl: 220, abs: 0.8 },
-      { wl: 230, abs: 1.6 },
-      { wl: 240, abs: 2.9 },
-      { wl: 250, abs: 4.0 },
-      { wl: 260, abs: 4.2 },
-      { wl: 270, abs: 3.4 },
-      { wl: 280, abs: 2.3 },
-      { wl: 290, abs: 1.3 },
-      { wl: 300, abs: 0.5 },
-      { wl: 310, abs: 0.3 },
-      { wl: 320, abs: 0.2 },
-      { wl: 330, abs: 0.1 },
-      { wl: 340, abs: 0.05 },
-      { wl: 350, abs: 0.0 }
-    ];
-
-    const wavelengths = baseSpectrum.map(p => {
-      let adjustedAbs = p.abs;
-
-      if (purity < 1.8) {
-        if (p.wl === 230) adjustedAbs += contaminationFactor * 0.6;
-        if (p.wl === 280) adjustedAbs += contaminationFactor * 0.4;
-        if (p.wl === 260) adjustedAbs -= contaminationFactor * 0.3;
-      }
-
-      return {
-        wl: p.wl,
-        x: 10 + ((p.wl - 220) / (350 - 220)) * 90,
-        abs: Math.max(0, adjustedAbs + noise())
-      };
-    });
-
-    const absToY = (abs) => {
-      const maxAbs = 4.5;
-      const clampedAbs = Math.max(0, Math.min(maxAbs, abs));
-      return 60 - (clampedAbs / maxAbs) * 50;
-    };
-
-    const points = wavelengths.map(p => ({
-      x: p.x,
-      y: absToY(p.abs)
-    }));
-
-    let pathData = `M ${points[0].x} ${points[0].y}`;
-
-    for (let i = 0; i < points.length - 1; i++) {
-      const p0 = points[Math.max(0, i - 1)];
-      const p1 = points[i];
-      const p2 = points[i + 1];
-      const p3 = points[Math.min(points.length - 1, i + 2)];
-
-      const tension = 0.3;
-      const cp1x = p1.x + (p2.x - p0.x) * tension;
-      const cp1y = p1.y + (p2.y - p0.y) * tension;
-      const cp2x = p2.x - (p3.x - p1.x) * tension;
-      const cp2y = p2.y - (p3.y - p1.y) * tension;
-
-      pathData += ` C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${p2.x} ${p2.y}`;
+    const wavelengths: number[] = [];
+    for (let i = minWavelength; i <= maxWavelength; i += 0.5) {
+      wavelengths.push(i);
     }
 
+    const absorbanceData = wavelengths.map((wl) => {
+      const dna = 1.2 * Math.exp(-Math.pow((wl - 260) / 22, 2)) * (1 + 0.002 * (260 - wl));
+      const protein = 0.35 * Math.exp(-Math.pow((wl - 280) / 15, 2));
+      const salt = 0.25 * Math.exp(-Math.pow((wl - 230) / 18, 2));
+      const scattering = 1500000000 / Math.pow(wl, 4);
+      const post300Decay = wl > 300 ? Math.exp(-(wl - 300) / 8) : 1;
+
+      let baseAbs = (dna + protein + salt + scattering) * post300Decay;
+
+      if (purity < 1.8) {
+        const contaminationFactor = (1.8 - purity) / 0.4;
+        if (Math.abs(wl - 280) < 10) baseAbs *= (1 + contaminationFactor * 0.3);
+        if (Math.abs(wl - 230) < 10) baseAbs *= (1 + contaminationFactor * 0.2);
+      }
+
+      return baseAbs;
+    });
+
+    const maxAbsorbance = Math.max(...absorbanceData);
+
+    const xScale = (wl: number) =>
+      padding + ((wl - minWavelength) / (maxWavelength - minWavelength)) * (width - 2 * padding);
+
+    const yScale = (abs: number) =>
+      height - padding - (abs / maxAbsorbance) * (height - 2 * padding);
+
+    const pathData = wavelengths
+      .map((wl, i) => {
+        const x = xScale(wl);
+        const y = yScale(absorbanceData[i]);
+        return `${i === 0 ? 'M' : 'L'} ${x} ${y}`;
+      })
+      .join(' ');
+
     return pathData;
+  };
+
+  const generateFlatLine = () => {
+    const width = 100;
+    const height = 60;
+    const padding = 10;
+    const baselineY = height - padding;
+
+    const noise = Array.from({ length: 10 }, () => (Math.random() - 0.5) * 0.3);
+
+    return `M ${padding} ${baselineY + noise[0]}
+            L ${padding + 10} ${baselineY + noise[1]}
+            L ${padding + 20} ${baselineY + noise[2]}
+            L ${padding + 30} ${baselineY + noise[3]}
+            L ${padding + 40} ${baselineY + noise[4]}
+            L ${padding + 50} ${baselineY + noise[5]}
+            L ${padding + 60} ${baselineY + noise[6]}
+            L ${padding + 70} ${baselineY + noise[7]}
+            L ${padding + 80} ${baselineY + noise[8]}
+            L ${padding + 90} ${baselineY + noise[9]}`;
   };
 
   return (
@@ -1557,21 +1559,27 @@ const NanodropVisualComp = ({ step, measured, hasDNA = true, purityScore = 1.8 }
         </svg>
 
         {measured && (
-          <div className="bg-slate-900 border-2 border-slate-700 rounded-lg p-3 w-32">
+          <div className="bg-slate-900 border-2 border-slate-700 rounded-lg p-3 w-36">
             <div className="text-[8px] text-slate-500 uppercase font-bold mb-2 text-center">Screen</div>
             <svg width="110" height="70" viewBox="0 0 110 70" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <linearGradient id="miniCurveGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                  <stop offset="0%" stopColor="#0d9488" stopOpacity="0.15"/>
+                  <stop offset="100%" stopColor="#0d9488" stopOpacity="0"/>
+                </linearGradient>
+              </defs>
               <rect x="5" y="5" width="100" height="60" fill="#0f172a" rx="2" />
-              <line x1="10" y1="60" x2="100" y2="60" stroke="#475569" strokeWidth="0.5" />
-              <line x1="10" y1="15" x2="10" y2="60" stroke="#475569" strokeWidth="0.5" />
-              <text x="12" y="13" fill="#64748b" fontSize="6">Abs</text>
-              <text x="85" y="68" fill="#64748b" fontSize="6">λ (nm)</text>
+              <line x1="10" y1="60" x2="100" y2="60" stroke="#94a3b8" strokeWidth="1" />
+              <line x1="10" y1="15" x2="10" y2="60" stroke="#94a3b8" strokeWidth="1" />
+              <text x="3" y="38" fill="#64748b" fontSize="6" textAnchor="middle" transform="rotate(-90 3 38)">Abs</text>
+              <text x="55" y="68" fill="#64748b" fontSize="6" textAnchor="middle">Wavelength (nm)</text>
               {hasDNA ? (
-                <path d={generateDNASpectrum()} stroke="#22c55e" strokeWidth="1.5" fill="none" className="animate-in fade-in" />
+                <path d={generateDNASpectrum()} stroke="#0d9488" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round" className="animate-in fade-in" />
               ) : (
-                <line x1="10" y1="60" x2="100" y2="60" stroke="#ef4444" strokeWidth="2" className="animate-in fade-in" />
+                <path d={generateFlatLine()} stroke="#ef4444" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round" className="animate-in fade-in" />
               )}
             </svg>
-            <p className={`text-[7px] font-bold text-center mt-1 ${hasDNA ? 'text-emerald-400' : 'text-rose-400'}`}>
+            <p className={`text-[7px] font-bold text-center mt-1 ${hasDNA ? 'text-teal-400' : 'text-rose-400'}`}>
               {hasDNA ? 'Peak at 260nm' : 'Flat (No DNA)'}
             </p>
           </div>
@@ -1801,6 +1809,11 @@ export default function App() {
     incubated: false
   });
   const [step1ActionOrder, setStep1ActionOrder] = useState([]);
+  const [step2SubActions, setStep2SubActions] = useState({
+    lysisBufferAdded: false,
+    vortexed: false,
+    spun: false
+  });
   const [step3SubActions, setStep3SubActions] = useState({
     bindingBufferAdded: false,
     ethanolAdded: false,
@@ -2038,6 +2051,10 @@ export default function App() {
       const completed = Object.values(step1SubActions).filter(Boolean).length;
       return { completed, total: 4, actions: step1SubActions };
     }
+    if (currentStep?.title === "Lysis") {
+      const completed = Object.values(step2SubActions).filter(Boolean).length;
+      return { completed, total: 3, actions: step2SubActions };
+    }
     if (currentStep?.title === "Binding Preparation") {
       const completed = Object.values(step3SubActions).filter(Boolean).length;
       return { completed, total: 3, actions: step3SubActions };
@@ -2088,6 +2105,17 @@ export default function App() {
           setShowPhaseSeparation(true);
           addLog("Spin complete. Supernatant and pellet separated.", "success");
           setUserPerformance(prev => ({ ...prev, hasClarifiedLysate: true }));
+        }
+
+        // For Mission B Lysis step, mark spin complete
+        if (currentStep?.title === "Lysis") {
+          setStep2SubActions(prev => {
+            const updated = { ...prev, spun: true };
+            console.log('[STEP 2 - Mission B] Updated step2SubActions after spin:', updated);
+            return updated;
+          });
+          setShowPhaseSeparation(true);
+          addLog("Spin complete. Large green debris pellet formed.", "success");
         }
 
         // For Column Binding and Wash steps, liquid goes to collection tube as waste
@@ -2593,6 +2621,7 @@ export default function App() {
     setCurrentReagentId(null);
     setStep1SubActions({ lysisBufferAdded: false, proteinaseKAdded: false, mixed: false, incubated: false });
     setStep1ActionOrder([]);
+    setStep2SubActions({ lysisBufferAdded: false, vortexed: false, spun: false });
     setStep3SubActions({ bindingBufferAdded: false, ethanolAdded: false, mixed: false });
     setStep3ActionOrder([]);
     setShowMixPrompt(false);
@@ -2721,6 +2750,13 @@ export default function App() {
       setIsVortexing(false);
       setTubeVortexed(true);
       setShowVortexPrompt(false);
+      if (currentStep?.title === "Lysis") {
+        setStep2SubActions(prev => {
+          const updated = { ...prev, vortexed: true };
+          console.log('[STEP 2 - Mission B] Updated step2SubActions after vortex:', updated);
+          return updated;
+        });
+      }
       if (difficultyMode !== "challenge") {
         addLog("✓ Tube vortexed - lysis buffer fully saturated into powder. Uniform cloudy green suspension formed.", "success");
       }
@@ -4150,6 +4186,25 @@ export default function App() {
                         </>
                         );
                       })()}
+                      {currentStep.title === "Lysis" && (() => {
+                        console.log('[RENDER CHECKLIST] step2SubActions:', step2SubActions);
+                        return (
+                        <>
+                          <div className={`flex items-center gap-2 text-xs ${step2SubActions.lysisBufferAdded ? 'text-emerald-400' : 'text-slate-500'}`}>
+                            <span>{step2SubActions.lysisBufferAdded ? '☑' : '☐'}</span>
+                            <span>Add Lysis Buffer (500 µL)</span>
+                          </div>
+                          <div className={`flex items-center gap-2 text-xs ${step2SubActions.vortexed ? 'text-emerald-400' : 'text-slate-500'}`}>
+                            <span>{step2SubActions.vortexed ? '☑' : '☐'}</span>
+                            <span>Vortex to mix thoroughly</span>
+                          </div>
+                          <div className={`flex items-center gap-2 text-xs ${step2SubActions.spun ? 'text-emerald-400' : 'text-slate-500'}`}>
+                            <span>{step2SubActions.spun ? '☑' : '☐'}</span>
+                            <span>Spin at 12,000 g for 3 min</span>
+                          </div>
+                        </>
+                        );
+                      })()}
                       {currentStep.title === "Binding Preparation" && (
                         <>
                           <div className={`flex items-center gap-2 text-xs ${step3SubActions.bindingBufferAdded ? 'text-emerald-400' : 'text-slate-500'}`}>
@@ -5041,6 +5096,16 @@ export default function App() {
                               if (pipetteVolume === 20) {
                                 setUserPerformance(prev => ({ ...prev, hasCorrectProtK: true }));
                               }
+                              showToastNotification(`✓ Added ${pipetteVolume}µL ${reagentName} to sample`);
+                            }
+                          } else if (currentStep.title === "Lysis") {
+                            if (reagentId === "lysis") {
+                              console.log('[STEP 2 - Mission B] Lysis Buffer added: true');
+                              setStep2SubActions(prev => {
+                                const updated = { ...prev, lysisBufferAdded: true };
+                                console.log('[STEP 2 - Mission B] Updated step2SubActions:', updated);
+                                return updated;
+                              });
                               showToastNotification(`✓ Added ${pipetteVolume}µL ${reagentName} to sample`);
                             }
                           } else if (currentStep.title === "Binding Preparation") {

@@ -6,7 +6,7 @@ import { CheckCircle, XCircle, RefreshCw, ArrowLeft } from 'lucide-react';
 interface InstructorRequest {
   id: string;
   user_id: string;
-  email: string;
+  email?: string;
   status: string;
   department: string;
   course_taught: string;
@@ -15,6 +15,9 @@ interface InstructorRequest {
   reason: string;
   created_at: string;
   requested_at: string;
+  profiles?: {
+    email: string;
+  } | null;
 }
 
 export function InstructorRequestsAdmin() {
@@ -55,11 +58,11 @@ export function InstructorRequestsAdmin() {
         return;
       }
 
-      // Direct query to instructor_requests table
-      console.log('Querying instructor_requests table...');
+      // Query instructor_requests with profiles join
+      console.log('Querying instructor_requests table with profiles join...');
       const { data: directRequests, error: directError } = await supabase
         .from('instructor_requests')
-        .select('*')
+        .select('*, profiles(email)')
         .eq('status', 'pending')
         .order('created_at', { ascending: false });
 
@@ -68,32 +71,20 @@ export function InstructorRequestsAdmin() {
         throw new Error(`Database error: ${directError.message} (Code: ${directError.code})`);
       }
 
-      console.log('Direct query successful! Requests found:', directRequests?.length || 0);
+      console.log('Query successful! Requests found:', directRequests?.length || 0);
       console.log('Raw requests data:', directRequests);
 
-      // Get emails from profiles table for each request
-      const requestsWithEmails = await Promise.all(
-        (directRequests || []).map(async (request) => {
-          console.log(`Fetching profile for user_id: ${request.user_id}`);
-          const { data: profileData, error: profileError } = await supabase
-            .from('profiles')
-            .select('email')
-            .eq('id', request.user_id)
-            .maybeSingle();
+      // Map requests with defensive null checks
+      const requestsWithEmails = (directRequests || []).map((request) => {
+        const profileEmail = request.profiles?.email;
+        const email = profileEmail || request.university_email || 'Email not found';
+        console.log(`User ${request.user_id} email: ${email}`);
 
-          if (profileError) {
-            console.error(`Error fetching profile for ${request.user_id}:`, profileError);
-          }
-
-          const email = profileData?.email || request.university_email || 'Unknown';
-          console.log(`User ${request.user_id} email: ${email}`);
-
-          return {
-            ...request,
-            email,
-          };
-        })
-      );
+        return {
+          ...request,
+          email,
+        };
+      });
 
       console.log('Requests with emails:', requestsWithEmails);
       setRequests(requestsWithEmails);
@@ -267,22 +258,22 @@ export function InstructorRequestsAdmin() {
                   {requests.map((request) => (
                     <tr key={request.id} className="hover:bg-gray-50">
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900">{request.email}</div>
+                        <div className="text-sm font-medium text-gray-900">{request.email || 'Email not found'}</div>
                         {request.university_email && request.university_email !== request.email && (
                           <div className="text-xs text-gray-500">{request.university_email}</div>
                         )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">{request.department}</div>
+                        <div className="text-sm text-gray-900">{request.department || 'N/A'}</div>
                       </td>
                       <td className="px-6 py-4">
-                        <div className="text-sm text-gray-900 max-w-xs">{request.course_taught}</div>
+                        <div className="text-sm text-gray-900 max-w-xs">{request.course_taught || 'N/A'}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">{request.student_count}</div>
+                        <div className="text-sm text-gray-900">{request.student_count || 'N/A'}</div>
                       </td>
                       <td className="px-6 py-4">
-                        <div className="text-sm text-gray-600 max-w-md">{request.reason}</div>
+                        <div className="text-sm text-gray-600 max-w-md">{request.reason || 'N/A'}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm text-gray-500">
