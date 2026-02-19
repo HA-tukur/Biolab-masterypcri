@@ -1799,11 +1799,13 @@ export default function App() {
     mixed: false,
     incubated: false
   });
+  const [step1ActionOrder, setStep1ActionOrder] = useState([]);
   const [step3SubActions, setStep3SubActions] = useState({
     bindingBufferAdded: false,
     ethanolAdded: false,
     mixed: false
   });
+  const [step3ActionOrder, setStep3ActionOrder] = useState([]);
   const [showMixPrompt, setShowMixPrompt] = useState(false);
   const [protKIncubationOK, setProtKIncubationOK] = useState(false);
   const [yieldQuality, setYieldQuality] = useState(null);
@@ -2097,6 +2099,7 @@ export default function App() {
           addLog("Proteinase K successfully digested proteins at correct temperature.", "success");
           if (currentStep?.title === "Lysis & Protein Digestion") {
             console.log('[STEP 1] Incubation complete: true');
+            checkTaskOrder('Lysis & Protein Digestion', 'incubated');
             setProtKIncubationOK(true);
             setStep1SubActions(prev => {
               const updated = { ...prev, incubated: true };
@@ -2117,6 +2120,74 @@ export default function App() {
     }
   };
 
+  const checkTaskOrder = (step, action) => {
+    const correctOrder = {
+      'Lysis & Protein Digestion': ['lysisBufferAdded', 'proteinaseKAdded', 'mixed', 'incubated'],
+      'Binding Preparation': ['bindingBufferAdded', 'ethanolAdded', 'mixed']
+    };
+
+    if (step === 'Lysis & Protein Digestion') {
+      const expectedOrder = correctOrder[step];
+      const currentIndex = expectedOrder.indexOf(action);
+
+      if (currentIndex === -1) return;
+
+      const outOfOrder = step1ActionOrder.some((prevAction, idx) => {
+        const prevIndex = expectedOrder.indexOf(prevAction);
+        return prevIndex > currentIndex;
+      });
+
+      if (outOfOrder) {
+        const actionNames = {
+          lysisBufferAdded: 'Adding Lysis Buffer',
+          proteinaseKAdded: 'Adding Proteinase K',
+          mixed: 'Mixing by inversion',
+          incubated: 'Incubation at 56°C'
+        };
+        trackMistake('task_order_violation', {
+          step: 'Lysis & Protein Digestion',
+          action: actionNames[action],
+          expectedPosition: currentIndex + 1,
+          actualPosition: step1ActionOrder.length + 1
+        });
+        if (difficultyMode !== "challenge") {
+          addLog(`⚠️ Task Order: ${actionNames[action]} should be done earlier in the protocol.`, "warning");
+        }
+      }
+
+      setStep1ActionOrder(prev => [...prev, action]);
+    } else if (step === 'Binding Preparation') {
+      const expectedOrder = correctOrder[step];
+      const currentIndex = expectedOrder.indexOf(action);
+
+      if (currentIndex === -1) return;
+
+      const outOfOrder = step3ActionOrder.some((prevAction, idx) => {
+        const prevIndex = expectedOrder.indexOf(prevAction);
+        return prevIndex > currentIndex;
+      });
+
+      if (outOfOrder) {
+        const actionNames = {
+          bindingBufferAdded: 'Adding Binding Buffer',
+          ethanolAdded: 'Adding Ethanol',
+          mixed: 'Mixing by inversion'
+        };
+        trackMistake('task_order_violation', {
+          step: 'Binding Preparation',
+          action: actionNames[action],
+          expectedPosition: currentIndex + 1,
+          actualPosition: step3ActionOrder.length + 1
+        });
+        if (difficultyMode !== "challenge") {
+          addLog(`⚠️ Task Order: ${actionNames[action]} should be done earlier in the protocol.`, "warning");
+        }
+      }
+
+      setStep3ActionOrder(prev => [...prev, action]);
+    }
+  };
+
   const calculateConsequences = () => {
     const consequences = [];
     let yieldPenalty = 0;
@@ -2131,7 +2202,17 @@ export default function App() {
         impact: ''
       };
 
-      if (mistake.type === 'wrong_reagent') {
+      if (mistake.type === 'task_order_violation') {
+        const { step, action, expectedPosition, actualPosition } = mistake.details;
+        consequence = {
+          severity: 'major',
+          title: 'Protocol Steps Out of Order',
+          description: `${action} was performed at position ${actualPosition} but should be at position ${expectedPosition} in ${step}.`,
+          impact: 'Performing tasks out of sequence can compromise reagent effectiveness, reduce DNA yield, and affect purity. In real labs, this often requires restarting the entire extraction.'
+        };
+        yieldPenalty += 15;
+        purityPenalty += 0.2;
+      } else if (mistake.type === 'wrong_reagent') {
         const { expected, actual } = mistake.details;
 
         if (expected === 'proteinase_k' && actual !== 'proteinase_k') {
@@ -2210,6 +2291,26 @@ export default function App() {
           impact: 'Reduced accuracy. May introduce pipetting errors (±5-10%).'
         };
         yieldPenalty += 5;
+      } else if (mistake.type === 'skipped_task') {
+        const { step, task } = mistake.details;
+        const taskSeverity = {
+          'Add Lysis Buffer': { severity: 'critical', yieldPenalty: 60, purityPenalty: 0.3 },
+          'Add Proteinase K': { severity: 'critical', yieldPenalty: 70, purityPenalty: 0.4 },
+          'Mix by inversion': { severity: 'major', yieldPenalty: 25, purityPenalty: 0.2 },
+          'Incubate at 56°C': { severity: 'critical', yieldPenalty: 80, purityPenalty: 0.5 },
+          'Add Binding Buffer': { severity: 'critical', yieldPenalty: 90, purityPenalty: 0.6 },
+          'Add Ethanol': { severity: 'critical', yieldPenalty: 95, purityPenalty: 0.8 }
+        };
+        const taskInfo = taskSeverity[task] || { severity: 'major', yieldPenalty: 30, purityPenalty: 0.2 };
+
+        consequence = {
+          severity: taskInfo.severity,
+          title: 'Critical Step Skipped',
+          description: `${task} was not performed in ${step}.`,
+          impact: `Skipping essential protocol steps compromises the entire extraction. This deviation will significantly reduce DNA yield and purity. In real labs, this would require restarting the entire procedure.`
+        };
+        yieldPenalty += taskInfo.yieldPenalty;
+        purityPenalty += taskInfo.purityPenalty;
       }
 
       if (consequence.title) {
@@ -2418,7 +2519,9 @@ export default function App() {
     setCurrentStepReagents({});
     setCurrentReagentId(null);
     setStep1SubActions({ lysisBufferAdded: false, proteinaseKAdded: false, mixed: false, incubated: false });
+    setStep1ActionOrder([]);
     setStep3SubActions({ bindingBufferAdded: false, ethanolAdded: false, mixed: false });
+    setStep3ActionOrder([]);
     setShowMixPrompt(false);
     setProtKIncubationOK(false);
     setTubeAnimating(false);
@@ -2654,6 +2757,7 @@ export default function App() {
         addLog("Proteinase K successfully digested proteins at correct temperature.", "success");
         if (currentStep?.title === "Lysis & Protein Digestion") {
           console.log('[STEP 1] Incubation complete: true');
+          checkTaskOrder('Lysis & Protein Digestion', 'incubated');
           setProtKIncubationOK(true);
           setStep1SubActions(prev => {
             const updated = { ...prev, incubated: true };
@@ -4222,6 +4326,7 @@ export default function App() {
                                     setIsMixing(false);
                                     setShowMixPrompt(false);
                                     setNeedsMixing(false);
+                                    checkTaskOrder('Binding Preparation', 'mixed');
                                     setStep3SubActions(prev => ({ ...prev, mixed: true }));
                                     setStep3Mixed(true);
                                     if (difficultyMode !== "challenge") {
@@ -4249,6 +4354,7 @@ export default function App() {
 
                                     if (currentStep.title === "Lysis & Protein Digestion") {
                                       console.log('[STEP 1] Mixing complete: true');
+                                      checkTaskOrder('Lysis & Protein Digestion', 'mixed');
                                       setStep1SubActions(prev => {
                                         const updated = { ...prev, mixed: true };
                                         console.log('[STEP 1] Updated step1SubActions:', updated);
@@ -4833,6 +4939,7 @@ export default function App() {
                           if (currentStep.title === "Lysis & Protein Digestion") {
                             if (reagentId === "lysis") {
                               console.log('[STEP 1] Buffer ATL added: true');
+                              checkTaskOrder('Lysis & Protein Digestion', 'lysisBufferAdded');
                               setStep1SubActions(prev => {
                                 const updated = { ...prev, lysisBufferAdded: true };
                                 console.log('[STEP 1] Updated step1SubActions:', updated);
@@ -4841,6 +4948,7 @@ export default function App() {
                               showToastNotification(`✓ Added ${pipetteVolume}µL ${reagentName} to sample`);
                             } else if (reagentId === "proteinase_k") {
                               console.log('[STEP 1] Proteinase K added: true');
+                              checkTaskOrder('Lysis & Protein Digestion', 'proteinaseKAdded');
                               setStep1SubActions(prev => {
                                 const updated = { ...prev, proteinaseKAdded: true };
                                 console.log('[STEP 1] Updated step1SubActions:', updated);
@@ -4853,9 +4961,11 @@ export default function App() {
                             }
                           } else if (currentStep.title === "Binding Preparation") {
                             if (reagentId === "binding") {
+                              checkTaskOrder('Binding Preparation', 'bindingBufferAdded');
                               setStep3SubActions(prev => ({ ...prev, bindingBufferAdded: true }));
                               showToastNotification(`✓ Added ${pipetteVolume}µL ${reagentName} to sample`);
                             } else if (reagentId === "ethanol") {
+                              checkTaskOrder('Binding Preparation', 'ethanolAdded');
                               setStep3SubActions(prev => ({ ...prev, ethanolAdded: true }));
                               setUserPerformance(prev => ({ ...prev, hasAddedEthanol: true }));
                               showToastNotification(`✓ Added ${pipetteVolume}µL ${reagentName} to sample`);
@@ -4985,42 +5095,42 @@ export default function App() {
                   }
                   if (currentStep.title === "Lysis & Protein Digestion") {
                     if (!step1SubActions.lysisBufferAdded) {
-                      addLog("Error: Add Lysis Buffer before proceeding", "error");
+                      addLog("⚠️ Protocol Deviation: Lysis Buffer was not added. This will affect DNA yield.", "warning");
                       setProtocolAdherenceCompromised(true);
-                      return;
+                      trackMistake('skipped_task', { step: 'Lysis & Protein Digestion', task: 'Add Lysis Buffer' });
                     }
                     if (!step1SubActions.proteinaseKAdded) {
-                      addLog("Error: Add Proteinase K before proceeding", "error");
+                      addLog("⚠️ Protocol Deviation: Proteinase K was not added. This will severely affect DNA yield.", "warning");
                       setProtocolAdherenceCompromised(true);
-                      return;
+                      trackMistake('skipped_task', { step: 'Lysis & Protein Digestion', task: 'Add Proteinase K' });
                     }
                     if (!step1SubActions.mixed) {
-                      addLog("Error: Mix the tube by inversion before incubating", "error");
+                      addLog("⚠️ Protocol Deviation: Sample was not mixed. This will affect DNA yield.", "warning");
                       setProtocolAdherenceCompromised(true);
-                      return;
+                      trackMistake('skipped_task', { step: 'Lysis & Protein Digestion', task: 'Mix by inversion' });
                     }
                     if (!step1SubActions.incubated) {
-                      addLog("Error: Incubate at 56°C before proceeding", "error");
+                      addLog("⚠️ Protocol Deviation: Incubation at 56°C was skipped. This will severely affect DNA yield.", "warning");
                       setProtocolAdherenceCompromised(true);
-                      return;
+                      trackMistake('skipped_task', { step: 'Lysis & Protein Digestion', task: 'Incubate at 56°C' });
                     }
                   }
 
                   if (currentStep.title === "Binding Preparation") {
                     if (!step3SubActions.bindingBufferAdded) {
-                      addLog("Error: Add Binding Buffer before proceeding", "error");
+                      addLog("⚠️ Protocol Deviation: Binding Buffer was not added. DNA will not bind properly.", "warning");
                       setProtocolAdherenceCompromised(true);
-                      return;
+                      trackMistake('skipped_task', { step: 'Binding Preparation', task: 'Add Binding Buffer' });
                     }
                     if (!step3SubActions.ethanolAdded) {
-                      addLog("Error: Add Ethanol before proceeding. DNA will NOT bind without ethanol!", "error");
+                      addLog("⚠️ Critical Deviation: Ethanol was not added. DNA will NOT bind without ethanol!", "warning");
                       setProtocolAdherenceCompromised(true);
-                      return;
+                      trackMistake('skipped_task', { step: 'Binding Preparation', task: 'Add Ethanol' });
                     }
                     if (!step3SubActions.mixed) {
-                      addLog("Error: Mix the tube by inversion before loading onto column", "error");
+                      addLog("⚠️ Protocol Deviation: Sample was not mixed. This will affect DNA binding.", "warning");
                       setProtocolAdherenceCompromised(true);
-                      return;
+                      trackMistake('skipped_task', { step: 'Binding Preparation', task: 'Mix by inversion' });
                     }
                   }
 
