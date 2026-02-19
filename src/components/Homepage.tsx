@@ -135,7 +135,7 @@ function HeroSection({ onStartFree }: { onStartFree: () => void }) {
           </div>
         </div>
 
-        <div className="hidden lg:block">
+        <div className="flex justify-center lg:justify-end">
           <SimulationPreview />
         </div>
       </div>
