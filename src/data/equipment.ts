@@ -1,8 +1,8 @@
 export const kits_list = [
-  { id: "kit_qiagen", name: "Qiagen DNeasy Kit", cost: 1450, desc: "Highest purity yield for complex biopsies.", type: "extraction" },
-  { id: "kit_zymo", name: "Zymo Research Quick-DNA", cost: 1100, desc: "Optimized for plant tissue lysis.", type: "extraction" },
-  { id: "kit_thermo", name: "Thermo Fisher PureLink", cost: 1300, desc: "Standard genomic DNA kit.", type: "extraction" },
-  { id: "kit_pcr_neb", name: "NEB OneTaq PCR Kit", cost: 1200, desc: "Complete PCR kit with all reagents for reliable amplification.", type: "pcr" },
+  { id: "kit_qiagen", name: "Qiagen DNeasy Kit", cost: 1450, desc: "Premium animal tissue DNA extraction kit. Includes all buffers and spin columns. ⚠️ Add ethanol separately (150 BC). ~50 extractions.", type: "extraction" },
+  { id: "kit_zymo", name: "Zymo Research Quick-DNA (Plant)", cost: 1100, desc: "Plant-optimized DNA extraction kit with bead-beating buffer. ⚠️ Requires: Ethanol, Liquid Nitrogen, Mortar & Pestle (sold separately).", type: "extraction" },
+  { id: "kit_thermo", name: "Thermo Fisher PureLink", cost: 1300, desc: "Standard genomic DNA kit for animal samples. Includes buffers and columns. ⚠️ Add ethanol separately (150 BC). ~50 extractions.", type: "extraction" },
+  { id: "kit_pcr_neb", name: "NEB OneTaq PCR Kit", cost: 1200, desc: "Complete PCR kit with polymerase, buffer, and dNTPs.", type: "pcr" },
   { id: "kit_pcr_bio", name: "Bio-Rad iQ PCR Kit", cost: 1350, desc: "High-fidelity PCR system for demanding applications.", type: "pcr" }
 ];
 
@@ -13,11 +13,11 @@ export const tools_list = [
   { id: "freezer", name: "Freezer (Communal)", cost: 0, desc: "Stores samples and reagents at low temperature.", category: "general" },
   { id: "mortar_pestle", name: "Mortar and Pestle", cost: 0, desc: "Mechanical grinding tool for tough plant tissues.", category: "extraction" },
   { id: "liquid_nitrogen", name: "Liquid Nitrogen", cost: 0, desc: "Ultra-cold reagent for flash-freezing tissues before grinding.", category: "extraction" },
-  { id: "proteinase_k", name: "Proteinase K Enzyme", cost: 350, desc: "Digests proteins to improve DNA purity.", category: "extraction" },
-  { id: "lysis_clean", name: "Manual Lysis Buffer", cost: 400, desc: "Buffer required for cell lysis.", category: "extraction" },
+  { id: "vortex_mixer", name: "Vortex Mixer", cost: 250, desc: "Benchtop device that rapidly vibrates tubes to mix liquids and suspend powder. Essential for plant DNA extraction - ensures lysis buffer fully saturates ground tissue.", category: "extraction" },
+  { id: "ethanol", name: "Ethanol (96-100%)", cost: 150, desc: "High-purity ethanol for DNA precipitation, wash buffer preparation, and sterilization. Required to prepare wash buffers in DNA extraction kits. Flammable - store away from heat sources.", category: "solvents", volume: "500 ml" },
+  { id: "rnase_a", name: "RNase A (ADVANCED - Optional)", cost: 300, desc: "Ribonuclease A - degrades RNA to produce RNA-free DNA samples. Optional addition to DNA extraction protocols when RNA contamination must be avoided (e.g., sensitive sequencing applications). Storage: -20°C", category: "enzymes", volume: "10 mg (100 µl at 100 mg/ml)", badge: "ADVANCED" },
   { id: "wash_buffer", name: "Wash Buffer (Salt/EtOH)", cost: 300, desc: "Removes residual proteins from the matrix.", category: "extraction" },
   { id: "elute_buffer", name: "Elution Buffer (Tris-EDTA)", cost: 300, desc: "Releases DNA from the silica membrane.", category: "extraction" },
-  { id: "column", name: "Silica Spin Columns", cost: 450, desc: "Matrix for DNA purification.", category: "extraction" },
   { id: "thermal_cycler", name: "Thermal Cycler", cost: 0, desc: "Automatically cycles temperatures for DNA amplification.", category: "pcr" },
   { id: "micropipettes", name: "Micropipettes (P10, P20, P200)", cost: 0, desc: "Used to accurately measure microliter volumes.", category: "pcr" },
   { id: "master_mix", name: "Master Mix", cost: 600, desc: "Pre-mixed solution of DNA polymerase (Taq/KOD), dNTPs, and buffer with MgCl₂.", category: "pcr" },

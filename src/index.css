@@ -1,3 +1,63 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer utilities {
+  @keyframes continueButtonPulse {
+    0%, 100% {
+      box-shadow: 0 0 0 0 rgba(255, 140, 0, 0.4);
+    }
+    50% {
+      box-shadow: 0 0 0 8px rgba(255, 140, 0, 0);
+    }
+  }
+
+  .animate-continue-pulse {
+    animation: continueButtonPulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  @keyframes tilt {
+    0%, 100% {
+      transform: rotate(0deg);
+    }
+    25% {
+      transform: rotate(-15deg);
+    }
+    50% {
+      transform: rotate(-20deg);
+    }
+    75% {
+      transform: rotate(-15deg);
+    }
+  }
+
+  @keyframes shake {
+    0%, 100% {
+      transform: translateX(0) rotate(0deg);
+    }
+    10%, 30%, 50%, 70%, 90% {
+      transform: translateX(-3px) rotate(-5deg);
+    }
+    20%, 40%, 60%, 80% {
+      transform: translateX(3px) rotate(5deg);
+    }
+  }
+
+  @keyframes circularGrind {
+    0% {
+      transform: rotate(0deg) translateX(8px) rotate(0deg);
+    }
+    25% {
+      transform: rotate(90deg) translateX(8px) rotate(-90deg);
+    }
+    50% {
+      transform: rotate(180deg) translateX(8px) rotate(-180deg);
+    }
+    75% {
+      transform: rotate(270deg) translateX(8px) rotate(-270deg);
+    }
+    100% {
+      transform: rotate(360deg) translateX(8px) rotate(-360deg);
+    }
+  }
+}

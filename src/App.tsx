@@ -1,6 +1,11 @@
 import React, { useMemo, useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { createClient } from "@supabase/supabase-js";
+import { RealisticPipette } from "./components/RealisticPipette";
+import { ReagentContainers } from "./components/ReagentContainers";
+import { EnhancedReagentContainers } from "./components/EnhancedReagentContainers";
+import { PipetteSelector } from "./components/PipetteSelector";
+import { LabEquipment } from "./components/LabEquipment";
 import {
   FlaskConical,
   AlertCircle,
@@ -33,7 +38,9 @@ import {
   Trophy,
   Microscope,
   Lock,
-  X
+  X,
+  Eye,
+  AlertTriangle
 } from "lucide-react";
 import { SupabaseHistoryStore, HistoryStore } from "./services/historyStore";
 import { PCRModule } from "./components/PCRModule";
@@ -41,9 +48,17 @@ import { TechniqueLibrary } from "./components/TechniqueLibrary";
 import { TechniqueCategories } from "./components/TechniqueCategories";
 import { CategoryTechniques } from "./components/CategoryTechniques";
 import { PCRMissions } from "./components/PCRMissions";
+import { ProtocolTracker } from "./services/protocolTracker";
+import { analyzeProtocolExecution, LabResult } from "./utils/masteryAnalysis";
+import { MasteryResultsPanel } from "./components/MasteryResultsPanel";
 import { ProtocolOverview } from "./components/ProtocolOverview";
 import { AntibodyIcon } from "./components/AntibodyIcon";
 import ClassCodePrompt from "./components/ClassCodePrompt";
+import { calculateEnhancedResults, EnhancedResult } from "./utils/performanceTracker";
+import { TimelineAnalysis } from "./components/TimelineAnalysis";
+import { DiagnosticInsights } from "./components/DiagnosticInsights";
+import { MasteryBadge } from "./components/MasteryBadge";
+import { PostMissionSurvey, SurveyResponses } from "./components/PostMissionSurvey";
 import { AILabAssistant } from "./components/AILabAssistant";
 import { Footer } from "./components/Footer";
 import { ContactSection } from "./components/ContactSection";
@@ -72,43 +87,106 @@ const trackEvent = (action, category, label, value) => {
 };
 
 
-const TubeVisual = ({ volume, solidMass, hasPellet, showSeparation, onSupernatantClick, onPelletClick }) => {
+const TubeVisual = ({ volume, solidMass, hasPellet, showSeparation, onSupernatantClick, onPelletClick, stepTitle, missionId, tubeVortexed }) => {
   const fillPercent = Math.min((volume / 2000) * 100, 85);
   const solidPercent = Math.min((solidMass / 150) * 40, 40);
 
   const supernatantHeight = showSeparation ? fillPercent * 0.7 : 0;
   const pelletHeight = showSeparation ? fillPercent * 0.3 : 0;
 
+  // Determine liquid color based on step
+  let liquidColor = "#38bdf8"; // Default blue
+  let liquidOpacity = 0.4;
+  let supernatantColor = "#F5DEB3"; // Wheat/tan for Step 2 supernatant
+  let pelletColor = "#654321"; // Dark brown for Step 2 pellet
+
+  // Special handling for Mission B Lysis step (not vortexed)
+  const showLayeredState = stepTitle === "Lysis" && missionId === 'B' && volume > 0 && !tubeVortexed;
+
+  if (stepTitle === "Lysis & Protein Digestion") {
+    // Cloudy brownish-pink (homogeneous)
+    liquidColor = "#CD9575";
+    liquidOpacity = 0.85;
+  } else if (stepTitle === "Lysis" && missionId === 'B' && tubeVortexed) {
+    // Mission B after vortexing: uniform cloudy green suspension
+    liquidColor = "#6B8E23";
+    liquidOpacity = 0.75;
+  } else if (stepTitle === "Clarification") {
+    // Before spin: same cloudy brownish-pink
+    // After spin (showSeparation): wheat supernatant + dark brown pellet
+    liquidColor = "#CD9575";
+    liquidOpacity = 0.85;
+    supernatantColor = "#F5DEB3";
+    pelletColor = "#654321";
+  } else if (stepTitle === "Binding Preparation" || stepTitle === "Column Binding") {
+    // Light blue-white, slightly cloudy
+    liquidColor = "#E6F3FF";
+    liquidOpacity = 0.7;
+  }
+
   return (
     <div className="relative flex flex-col items-center p-2">
       <svg width="60" height="120" viewBox="0 0 100 180" fill="none" xmlns="http://www.w3.org/2000/svg">
+        {/* Original Eppendorf tube shape */}
         <path d="M20 10C20 10 20 150 50 170C80 150 80 10 80 10" stroke="#475569" strokeWidth="4" strokeLinecap="round"/>
         <line x1="15" y1="10" x2="85" y2="10" stroke="#475569" strokeWidth="4" strokeLinecap="round"/>
 
-        {showSeparation && volume > 0 ? (
+        {showLayeredState ? (
           <>
+            {/* Layered state for Mission B Lysis (not vortexed): Clear buffer on top, green powder at bottom */}
+            {/* Clear/pink lysis buffer (top layer) */}
+            <path
+              d={`M25 ${150 - fillPercent}C25 ${150 - fillPercent} 25 ${150 - fillPercent * 0.4} 50 ${165 - fillPercent * 0.4}C75 ${150 - fillPercent * 0.4} 75 ${150 - fillPercent} 75 ${150 - fillPercent}`}
+              fill="#ec4899"
+              fillOpacity="0.3"
+            />
+            <text x="50" y={`${140 - fillPercent + 10}`} textAnchor="middle" fontSize="7" fill="#ec4899" fontWeight="bold">Buffer</text>
+
+            {/* Green powder (bottom layer) */}
+            <ellipse cx="50" cy="162" rx="12" ry="4"
+              fill="#228B22"
+              fillOpacity="0.9"
+            />
+            <text x="50" y={`${168}`} textAnchor="middle" fontSize="7" fill="#fbbf24" fontWeight="bold">Powder</text>
+          </>
+        ) : showSeparation && volume > 0 ? (
+          <>
+            {/* Supernatant (top layer) - inside tube */}
             <path
               d={`M25 ${150 - fillPercent}C25 ${150 - fillPercent} 25 ${150 - pelletHeight} 50 ${165 - pelletHeight}C75 ${150 - pelletHeight} 75 ${150 - fillPercent} 75 ${150 - fillPercent}`}
-              fill="#fef08a"
-              fillOpacity="0.7"
-              className={onSupernatantClick ? "cursor-pointer hover:fill-yellow-300 transition-all" : ""}
+              fill={supernatantColor}
+              fillOpacity="0.6"
+              className={onSupernatantClick ? "cursor-pointer hover:opacity-80 transition-all" : ""}
               onClick={onSupernatantClick}
             />
             <text x="50" y={`${140 - fillPercent + 15}`} textAnchor="middle" fontSize="7" fill="#854d0e" fontWeight="bold">Supernatant</text>
 
-            <path
-              d={`M25 ${150 - pelletHeight}C25 ${150 - pelletHeight} 25 150 50 165C75 150 75 ${150 - pelletHeight} 75 ${150 - pelletHeight}`}
-              fill="#78350f"
-              fillOpacity="0.8"
-              className={onPelletClick ? "cursor-pointer hover:fill-amber-800 transition-all" : ""}
+            {/* Pellet (bottom layer) - small compact pellet */}
+            <ellipse cx="50" cy="166" rx="10" ry="3"
+              fill={pelletColor}
+              fillOpacity="0.9"
+              className={onPelletClick ? "cursor-pointer hover:opacity-95 transition-all" : ""}
               onClick={onPelletClick}
             />
-            <text x="50" y={`${158}`} textAnchor="middle" fontSize="7" fill="#fbbf24" fontWeight="bold">Pellet</text>
+            <text x="50" y={`${169}`} textAnchor="middle" fontSize="7" fill="#fbbf24" fontWeight="bold">Pellet</text>
           </>
         ) : (
           <>
-            {volume > 0 && <path d={`M25 ${150 - fillPercent}C25 ${150 - fillPercent} 25 150 50 165C75 150 75 ${150 - fillPercent} 75 ${150 - fillPercent}`} fill="#38bdf8" fillOpacity="0.4" />}
-            {solidMass > 0 && <path d={`M35 ${165 - solidPercent}C35 ${165 - solidPercent} 40 165 50 170C60 165 65 ${165 - solidPercent} 65 ${165 - solidPercent}L35 ${165 - solidPercent}Z`} fill="#78350f" className="opacity-80" />}
+            {/* Homogeneous liquid (no separation) - inside tube */}
+            {volume > 0 && (
+              <path
+                d={`M25 ${150 - fillPercent}C25 ${150 - fillPercent} 25 150 50 165C75 150 75 ${150 - fillPercent} 75 ${150 - fillPercent}`}
+                fill={liquidColor}
+                fillOpacity={liquidOpacity}
+              />
+            )}
+            {/* Solid tissue chunks (only for initial state) */}
+            {solidMass > 0 && (
+              <ellipse cx="50" cy="166" rx="10" ry="3"
+                fill="#8B4513"
+                fillOpacity="0.85"
+              />
+            )}
           </>
         )}
 
@@ -118,12 +196,81 @@ const TubeVisual = ({ volume, solidMass, hasPellet, showSeparation, onSupernatan
   );
 };
 
-const FilterColumnVisual = ({ volume, hasDNA, showSeparation }) => {
+const DualTubeVisual = ({ oldTubeHasSupernatant, freshTubeVolume, freshTubeColor = "#E6F3FF" }) => {
+  const supernatantFill = oldTubeHasSupernatant ? 30 : 0;
+  const freshFill = Math.min((freshTubeVolume / 2000) * 85, 85);
+
+  return (
+    <div className="flex items-center justify-center gap-8 p-4">
+      {/* LEFT TUBE - Old tube with pellet */}
+      <div className="flex flex-col items-center">
+        <p className="text-[9px] text-slate-400 font-bold uppercase mb-2">Step 2 Tube (Waste)</p>
+        <svg width="60" height="120" viewBox="0 0 100 180" fill="none" xmlns="http://www.w3.org/2000/svg">
+          {/* Original Eppendorf tube shape */}
+          <path d="M20 10C20 10 20 150 50 170C80 150 80 10 80 10" stroke="#475569" strokeWidth="4" strokeLinecap="round"/>
+          <line x1="15" y1="10" x2="85" y2="10" stroke="#475569" strokeWidth="4" strokeLinecap="round"/>
+
+          {/* Remaining supernatant (if any) */}
+          {supernatantFill > 0 && (
+            <path
+              d={`M25 ${150 - supernatantFill}C25 ${150 - supernatantFill} 25 150 50 165C75 150 75 ${150 - supernatantFill} 75 ${150 - supernatantFill}`}
+              fill="#F5DEB3"
+              fillOpacity="0.5"
+            />
+          )}
+
+          {/* Brown pellet at bottom */}
+          <ellipse cx="50" cy="166" rx="10" ry="3" fill="#654321" fillOpacity="0.9" />
+          <text x="50" y="169" textAnchor="middle" fontSize="7" fill="#fbbf24" fontWeight="600">Pellet</text>
+        </svg>
+      </div>
+
+      {/* ARROW */}
+      <div className="flex flex-col items-center">
+        <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M5 20 L30 20 M30 20 L23 13 M30 20 L23 27" stroke="#10b981" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+        <p className="text-[8px] text-emerald-500 font-semibold mt-1">Transfer</p>
+      </div>
+
+      {/* RIGHT TUBE - Fresh tube */}
+      <div className="flex flex-col items-center">
+        <p className="text-[9px] text-emerald-400 font-bold uppercase mb-2">Fresh Tube</p>
+        <svg width="60" height="120" viewBox="0 0 100 180" fill="none" xmlns="http://www.w3.org/2000/svg">
+          {/* Original Eppendorf tube shape */}
+          <path d="M20 10C20 10 20 150 50 170C80 150 80 10 80 10" stroke="#475569" strokeWidth="4" strokeLinecap="round"/>
+          <line x1="15" y1="10" x2="85" y2="10" stroke="#475569" strokeWidth="4" strokeLinecap="round"/>
+
+          {/* Fresh tube contents */}
+          {freshFill > 0 && (
+            <path
+              d={`M25 ${150 - freshFill}C25 ${150 - freshFill} 25 150 50 165C75 150 75 ${150 - freshFill} 75 ${150 - freshFill}`}
+              fill={freshTubeColor}
+              fillOpacity="0.7"
+            />
+          )}
+        </svg>
+      </div>
+    </div>
+  );
+};
+
+const FilterColumnVisual = ({ volume, hasDNA, showSeparation, wasteInTube = false, isDiscarding = false }) => {
   const collectionFillPercent = Math.min((volume / 2000) * 100, 70);
+
+  // Calculate liquid in column (before spinning) - visible when volume added but not yet spun
+  const columnLiquidHeight = !wasteInTube && volume > 0 ? Math.min((volume / 500) * 50, 50) : 0;
 
   return (
     <div className="relative flex flex-col items-center p-2">
-      <svg width="90" height="160" viewBox="0 0 120 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <svg
+        width="90"
+        height="160"
+        viewBox="0 0 120 200"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+        className={isDiscarding ? 'animate-[tilt_0.5s_ease-in-out]' : ''}
+      >
         {/* Collection Tube (narrower with U-shaped rounded bottom) */}
         <path
           d="M 35 95 L 35 175 Q 35 185 60 190 Q 85 185 85 175 L 85 95"
@@ -133,8 +280,8 @@ const FilterColumnVisual = ({ volume, hasDNA, showSeparation }) => {
         />
         <ellipse cx="60" cy="95" rx="25" ry="7" fill="#0f172a" stroke="#475569" strokeWidth="2.5"/>
 
-        {/* Liquid in collection tube (flow-through) */}
-        {volume > 0 && (
+        {/* Liquid in collection tube (flow-through) - only show if wasteInTube and not discarding */}
+        {wasteInTube && !isDiscarding && (
           <>
             <path
               d={`M 37 ${180 - collectionFillPercent} L 37 175 Q 37 183 60 187 Q 83 183 83 175 L 83 ${180 - collectionFillPercent}`}
@@ -155,6 +302,29 @@ const FilterColumnVisual = ({ volume, hasDNA, showSeparation }) => {
         {/* Filter Column (tall, narrow cylinder) - upper half outside, lower half inside */}
         <rect x="46" y="15" width="28" height="115" rx="1" fill="#334155" stroke="#64748b" strokeWidth="2"/>
         <ellipse cx="60" cy="15" rx="14" ry="4" fill="#1e293b" stroke="#64748b" strokeWidth="2"/>
+
+        {/* Liquid inside the filter column (wash buffer before spinning) */}
+        {columnLiquidHeight > 0 && (
+          <>
+            <rect
+              x="48"
+              y={125 - columnLiquidHeight}
+              width="24"
+              height={columnLiquidHeight}
+              fill="#38bdf8"
+              opacity="0.5"
+              className="animate-pulse"
+            />
+            <ellipse
+              cx="60"
+              cy={125 - columnLiquidHeight}
+              rx="12"
+              ry="3"
+              fill="#38bdf8"
+              opacity="0.4"
+            />
+          </>
+        )}
 
         {/* Bottom of filter column with mild protrusion */}
         <path
@@ -192,6 +362,8 @@ const FilterColumnVisual = ({ volume, hasDNA, showSeparation }) => {
 
 const TubeWithFilterColumnVisual = ({ volume, hasDNA, stepTitle }) => {
   const tubeVolume = Math.min((volume / 2000) * 100, 70);
+  const isElution = stepTitle === "Elution";
+  const isFreshTube = isElution && volume === 0;
 
   return (
     <div className="relative flex flex-col items-center p-2">
@@ -206,11 +378,20 @@ const TubeWithFilterColumnVisual = ({ volume, hasDNA, stepTitle }) => {
         />
         <line x1="25" y1="20" x2="95" y2="20" stroke="#475569" strokeWidth="4" strokeLinecap="round"/>
 
+        {/* Fresh tube indicator - sparkle when empty in elution step */}
+        {isFreshTube && (
+          <g>
+            <circle cx="40" cy="90" r="2" fill="#10b981" opacity="0.6" className="animate-pulse"/>
+            <circle cx="80" cy="95" r="1.5" fill="#10b981" opacity="0.6" className="animate-pulse" style={{animationDelay: '0.3s'}}/>
+            <circle cx="45" cy="120" r="1.5" fill="#10b981" opacity="0.6" className="animate-pulse" style={{animationDelay: '0.6s'}}/>
+          </g>
+        )}
+
         {/* Liquid in tube */}
         {volume > 0 && (
           <path
             d={`M35 ${170 - tubeVolume}C35 ${170 - tubeVolume} 35 160 60 175C85 160 85 ${170 - tubeVolume} 85 ${170 - tubeVolume}`}
-            fill="#38bdf8"
+            fill={isElution ? "#3b82f6" : "#38bdf8"}
             fillOpacity="0.3"
           />
         )}
@@ -219,7 +400,7 @@ const TubeWithFilterColumnVisual = ({ volume, hasDNA, stepTitle }) => {
         <rect x="50" y="10" width="20" height="120" rx="1" fill="#334155" stroke="#64748b" strokeWidth="2"/>
         <ellipse cx="60" cy="10" rx="10" ry="3" fill="#1e293b" stroke="#64748b" strokeWidth="2"/>
 
-        {/* Bottom of filter column with mild protrusion */}
+        {/* Bottom of filter column with mild protrusion - NOT touching liquid when fresh */}
         <path
           d="M 50 130 L 50 133 Q 50 137 60 139 Q 70 137 70 133 L 70 130"
           fill="#334155"
@@ -245,49 +426,82 @@ const TubeWithFilterColumnVisual = ({ volume, hasDNA, stepTitle }) => {
         )}
       </svg>
       <p className="text-[9px] text-slate-500 font-bold uppercase mt-1">
-        {stepTitle === "Wash Stage" ? "Wash Column" : "Elute DNA"}
+        {isFreshTube ? "Fresh Tube" : stepTitle === "Wash Stage" ? "Wash Column" : "Elute DNA"}
       </p>
+      {isFreshTube && (
+        <div className="mt-1 px-2 py-1 bg-emerald-900/20 border border-emerald-500/30 rounded">
+          <p className="text-[8px] text-emerald-400 text-center">Empty & Clean</p>
+        </div>
+      )}
     </div>
   );
 };
 
-const SpinColumnVisual = ({ volume, hasDNA }) => {
-  const fillPercent = Math.min((volume / 1500) * 90, 85);
+const SpinColumnVisual = ({ volume, hasDNA, hasSpun = false, wasteInTube = false, isDiscarding = false }) => {
   return (
     <div className="relative flex flex-col items-center p-4">
-      <svg width="110" height="160" viewBox="0 0 110 170" fill="none" xmlns="http://www.w3.org/2000/svg">
-        {/* Collection Tube (outer, larger diameter) */}
-        <rect x="20" y="40" width="70" height="120" rx="3" fill="#1e293b" stroke="#475569" strokeWidth="2"/>
-        <ellipse cx="55" cy="40" rx="35" ry="8" fill="#0f172a" stroke="#475569" strokeWidth="2"/>
+      <svg
+        width="90"
+        height="160"
+        viewBox="0 0 120 200"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+        className={isDiscarding ? 'animate-[tilt_0.5s_ease-in-out]' : ''}
+      >
+        {/* Collection tube (outer, wider tube) */}
+        <path d="M 35 95 L 35 175 Q 35 185 60 190 Q 85 185 85 175 L 85 95" fill="#1e293b" stroke="#475569" strokeWidth="2.5"></path>
+        <ellipse cx="60" cy="95" rx="25" ry="7" fill="#0f172a" stroke="#475569" strokeWidth="2.5"></ellipse>
 
-        {/* Spin Column (inner, smaller, slightly longer) */}
-        <rect x="35" y="25" width="40" height="110" rx="2" fill="#334155" stroke="#64748b" strokeWidth="1.5"/>
-        <ellipse cx="55" cy="25" rx="20" ry="5" fill="#1e293b" stroke="#64748b" strokeWidth="1.5"/>
+        {/* Filter column (inner, narrow tube) */}
+        <rect x="46" y="15" width="28" height="115" rx="1" fill="#334155" stroke="#64748b" strokeWidth="2"></rect>
+        <ellipse cx="60" cy="15" rx="14" ry="4" fill="#1e293b" stroke="#64748b" strokeWidth="2"></ellipse>
 
-        {/* Silica Membrane (inside column) */}
-        <rect x="37" y="65" width="36" height="8" fill="#e2e8f0" opacity="0.7"/>
-        <line x1="37" y1="69" x2="73" y2="69" stroke="#94a3b8" strokeWidth="0.5" strokeDasharray="2 1"/>
-
-        {/* DNA bound to membrane indicator */}
-        {hasDNA && (
-          <g>
-            <rect x="40" y="66" width="30" height="5" fill="#10b981" opacity="0.5" className="animate-pulse"/>
-            <text x="55" y="71" textAnchor="middle" fontSize="6" fill="#10b981" fontWeight="bold">DNA</text>
-          </g>
+        {/* Liquid INSIDE filter column (before spinning) */}
+        {volume > 0 && !hasSpun && (
+          <path d="M 48 80 L 48 125 L 72 125 L 72 80 Z" fill="#38bdf8" opacity="0.6"></path>
         )}
 
-        {/* Liquid in collection tube */}
-        {volume > 0 && (
-          <rect x="22" y={`${155 - fillPercent}`} width="66" height={fillPercent} fill="#38bdf8" opacity="0.3"/>
-        )}
+        {/* Silica membrane (white horizontal line inside filter column) */}
+        <g>
+          <rect x="48" y="125" width="24" height="7" fill="#e2e8f0" opacity="0.85"></rect>
+          <line x1="48" y1="127" x2="72" y2="127" stroke="#94a3b8" strokeWidth="0.6" strokeDasharray="2 1"></line>
+          <line x1="48" y1="129" x2="72" y2="129" stroke="#94a3b8" strokeWidth="0.6" strokeDasharray="1.5 1.5"></line>
+          <line x1="48" y1="131" x2="72" y2="131" stroke="#94a3b8" strokeWidth="0.6" strokeDasharray="2 1"></line>
+          {hasDNA && (
+            <rect x="48" y="125" width="24" height="7" fill="#10b981" opacity="0.3"></rect>
+          )}
+        </g>
 
-        {/* Column tip (showing it extends into collection tube) */}
-        <line x1="55" y1="133" x2="55" y2="138" stroke="#64748b" strokeWidth="2"/>
+        {/* Air gap indicator lines (subtle guides showing the space) */}
+        <line x1="35" y1="95" x2="46" y2="95" stroke="#475569" strokeWidth="1" strokeDasharray="3 2" opacity="0.5"></line>
+        <line x1="74" y1="95" x2="85" y2="95" stroke="#475569" strokeWidth="1" strokeDasharray="3 2" opacity="0.5"></line>
+
+        {/* Flow-through liquid at bottom of collection tube (after spinning) */}
+        {wasteInTube && !isDiscarding && (
+          <>
+            <path d="M 37 154.25 L 37 175 Q 37 183 60 187 Q 83 183 83 175 L 83 154.25" fill="#38bdf8" opacity="0.4"></path>
+            <ellipse cx="60" cy="154.25" rx="23" ry="6" fill="#38bdf8" opacity="0.3"></ellipse>
+          </>
+        )}
       </svg>
       <p className="text-[9px] text-slate-500 font-bold uppercase mt-1">Spin Column</p>
     </div>
   );
 };
+
+const PipetteAnimationIcon = ({ position }) => (
+  <div
+    className="absolute z-10 animate-bounce"
+    style={{
+      top: position === 'tube' ? '-40px' : '-30px',
+      left: '50%',
+      transform: 'translateX(-50%)',
+      animation: 'bounce 0.5s ease-in-out infinite'
+    }}
+  >
+    <Pipette size={24} className="text-sky-400 drop-shadow-lg" />
+  </div>
+);
 
 const PCRMachineVisual = () => (
   <svg width="50" height="50" viewBox="0 0 60 60" fill="none">
@@ -347,6 +561,177 @@ const FreezerVisual = () => (
     <line x1="25" y1="36" x2="35" y2="36" stroke="#38bdf8" strokeWidth="1.5"/>
   </svg>
 );
+
+const LN2SafetyModal = ({ onAccept }) => (
+  <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+    <div className="bg-slate-800 border-2 border-amber-500 rounded-2xl p-6 max-w-md w-full">
+      <div className="flex items-center gap-3 mb-4">
+        <ShieldAlert className="text-amber-500" size={32} />
+        <h2 className="text-xl font-black text-white uppercase">Safety Warning</h2>
+      </div>
+      <div className="bg-slate-900 p-4 rounded-xl mb-4">
+        <h3 className="text-sm font-bold text-amber-400 mb-2">Liquid Nitrogen Safety:</h3>
+        <ul className="text-xs text-slate-300 space-y-2">
+          <li className="flex items-start gap-2">
+            <Thermometer size={14} className="text-cyan-400 mt-0.5 flex-shrink-0" />
+            <span><b>Temperature:</b> -196°C (-321°F)</span>
+          </li>
+          <li className="flex items-start gap-2">
+            <ShieldCheck size={14} className="text-emerald-400 mt-0.5 flex-shrink-0" />
+            <span><b>Required PPE:</b> Insulated gloves + safety goggles</span>
+          </li>
+          <li className="flex items-start gap-2">
+            <AlertCircle size={14} className="text-red-400 mt-0.5 flex-shrink-0" />
+            <span><b>Hazard:</b> Severe frostbite on skin contact</span>
+          </li>
+          <li className="flex items-start gap-2">
+            <Activity size={14} className="text-blue-400 mt-0.5 flex-shrink-0" />
+            <span><b>Ventilation:</b> Use in well-ventilated area</span>
+          </li>
+          <li className="flex items-start gap-2">
+            <X size={14} className="text-orange-400 mt-0.5 flex-shrink-0" />
+            <span><b>Never:</b> Seal in closed container (explosion risk)</span>
+          </li>
+        </ul>
+      </div>
+      <button
+        onClick={onAccept}
+        className="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-3 px-4 rounded-xl font-bold uppercase transition-all"
+      >
+        I Understand - Proceed
+      </button>
+    </div>
+  </div>
+);
+
+const BufferWarmingVisual = ({ isWarming, temperature }) => (
+  <div className="flex flex-col items-center justify-center p-6">
+    <svg width="180" height="200" viewBox="0 0 180 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect x="30" y="60" width="120" height="100" rx="8" fill="#1e293b" stroke="#475569" strokeWidth="2"/>
+      <rect x="40" y="70" width="100" height="70" rx="4" fill={isWarming ? "#ff6b35" : "#334155"} fillOpacity={isWarming ? 0.3 : 0.5}/>
+      <rect x="60" y="100" width="20" height="35" rx="2" fill="#3b82f6" fillOpacity="0.6" stroke="#38bdf8" strokeWidth="1.5"/>
+      <ellipse cx="70" cy="98" rx="12" ry="4" fill="#38bdf8" fillOpacity="0.8"/>
+      {isWarming && (
+        <>
+          <circle cx="50" cy="110" r="2" fill="#ff6b35" opacity="0.7" className="animate-ping"/>
+          <circle cx="90" cy="115" r="2.5" fill="#ff6b35" opacity="0.8" className="animate-ping" style={{animationDelay: '0.2s'}}/>
+          <circle cx="70" cy="125" r="2" fill="#ff6b35" opacity="0.6" className="animate-ping" style={{animationDelay: '0.4s'}}/>
+        </>
+      )}
+      <text x="90" y="110" textAnchor="middle" fontSize="10" fill="#fbbf24" fontWeight="bold">
+        {isWarming ? `${temperature}°C` : 'Heat Block'}
+      </text>
+      <rect x="130" y="80" width="8" height="50" rx="4" fill="#334155" stroke="#475569" strokeWidth="1.5"/>
+      <rect x="132" y={isWarming ? 110 : 85} width="4" height={isWarming ? 20 : 45} rx="2" fill={isWarming ? "#ff6b35" : "#3b82f6"}/>
+      <circle cx="134" cy="75" r="6" fill="#334155" stroke="#475569" strokeWidth="1.5"/>
+      <circle cx="134" cy="75" r="4" fill={isWarming ? "#ff6b35" : "#3b82f6"}/>
+    </svg>
+    <p className="text-sm font-bold text-center mt-4">
+      {isWarming ? (
+        <span className="text-amber-400 animate-pulse">Warming buffer to 56°C...</span>
+      ) : (
+        <span className="text-slate-400">Place buffer in heat block</span>
+      )}
+    </p>
+    <p className="text-xs text-slate-500 text-center mt-2 max-w-xs">
+      🌡️ Pre-warming elution buffer to 56°C is especially important for plant DNA. Plant DNA is very long and 'sticky' - heat helps release it from the silica membrane, increasing your yield by 15-20%.
+    </p>
+  </div>
+);
+
+const EnhancedGrindingVisual = ({ ln2Added, vaporCleared, isGrinding, grindingStage }) => {
+  const getLeafColor = () => {
+    if (grindingStage >= 3) return "#2d5016";
+    if (grindingStage >= 2) return "#3d6b1f";
+    if (grindingStage >= 1) return "#4d7c2f";
+    if (vaporCleared) return "#2f5016";
+    return "#4ade80";
+  };
+
+  const getLeafShape = () => {
+    if (grindingStage === 4) return "Fine Powder";
+    if (grindingStage === 3) return "Coarse Pieces";
+    if (grindingStage === 2) return "Small Chunks";
+    if (grindingStage === 1) return "Large Pieces";
+    return "Whole Leaf";
+  };
+
+  return (
+    <div className="relative">
+      <svg width="200" height="280" viewBox="0 0 200 280" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <ellipse cx="100" cy="200" rx="70" ry="18" fill="#475569" opacity="0.6" />
+        <path d="M40 200 Q30 165 35 130 L165 130 Q170 165 160 200 Z" fill="#64748b" stroke="#475569" strokeWidth="2.5" />
+
+        {grindingStage === 0 && !vaporCleared && (
+          <path d="M70 165 Q65 150 75 140 L75 135 Q75 130 85 130 Q90 135 90 140 L90 145 Q100 150 110 145 L110 140 Q110 135 120 130 Q125 130 125 135 L125 140 Q130 150 125 165 Q120 170 110 175 Q100 180 90 175 Q80 170 70 165 Z" fill={getLeafColor()} stroke="#2d5016" strokeWidth="1.5" />
+        )}
+
+        {grindingStage >= 1 && grindingStage < 4 && (
+          <>
+            <circle cx="70" cy="160" r={grindingStage >= 3 ? 2 : 4} fill={getLeafColor()} opacity="0.8" />
+            <circle cx="90" cy="155" r={grindingStage >= 3 ? 2 : 5} fill={getLeafColor()} opacity="0.8" />
+            <circle cx="110" cy="165" r={grindingStage >= 3 ? 1.5 : 4} fill={getLeafColor()} opacity="0.8" />
+            <circle cx="130" cy="160" r={grindingStage >= 3 ? 2 : 4.5} fill={getLeafColor()} opacity="0.8" />
+            <circle cx="80" cy="170" r={grindingStage >= 3 ? 1.5 : 3.5} fill={getLeafColor()} opacity="0.8" />
+            <circle cx="120" cy="170" r={grindingStage >= 3 ? 2 : 4} fill={getLeafColor()} opacity="0.8" />
+            {grindingStage >= 2 && (
+              <>
+                <circle cx="100" cy="175" r="2" fill={getLeafColor()} opacity="0.7" />
+                <circle cx="85" cy="178" r="1.5" fill={getLeafColor()} opacity="0.7" />
+                <circle cx="115" cy="177" r="1.5" fill={getLeafColor()} opacity="0.7" />
+              </>
+            )}
+            {grindingStage >= 3 && (
+              <>
+                <circle cx="75" cy="180" r="1" fill={getLeafColor()} opacity="0.6" />
+                <circle cx="95" cy="182" r="1" fill={getLeafColor()} opacity="0.6" />
+                <circle cx="105" cy="183" r="1" fill={getLeafColor()} opacity="0.6" />
+                <circle cx="125" cy="181" r="1" fill={getLeafColor()} opacity="0.6" />
+              </>
+            )}
+          </>
+        )}
+
+        {grindingStage >= 4 && (
+          <path d="M45 180 Q45 175 160 175 L160 195 Q160 195 45 195 Z" fill={getLeafColor()} fillOpacity="0.9" />
+        )}
+
+        {ln2Added && !vaporCleared && (
+          <>
+            <circle cx="60" cy="150" r="8" fill="#e0f2fe" opacity="0.7" className="animate-ping" />
+            <circle cx="80" cy="145" r="10" fill="#e0f2fe" opacity="0.6" className="animate-ping" style={{animationDelay: '0.2s'}} />
+            <circle cx="100" cy="140" r="12" fill="#e0f2fe" opacity="0.8" className="animate-ping" style={{animationDelay: '0.1s'}} />
+            <circle cx="120" cy="145" r="9" fill="#e0f2fe" opacity="0.7" className="animate-ping" style={{animationDelay: '0.3s'}} />
+            <circle cx="140" cy="150" r="8" fill="#e0f2fe" opacity="0.6" className="animate-ping" style={{animationDelay: '0.15s'}} />
+            <circle cx="70" cy="135" r="7" fill="#e0f2fe" opacity="0.75" className="animate-ping" style={{animationDelay: '0.25s'}} />
+            <circle cx="130" cy="138" r="7" fill="#e0f2fe" opacity="0.75" className="animate-ping" style={{animationDelay: '0.35s'}} />
+          </>
+        )}
+
+        <path
+          d="M75 50 L95 155 L105 155 L125 50 Q115 45 100 45 Q85 45 75 50 Z"
+          fill="#94a3b8"
+          stroke="#64748b"
+          strokeWidth="2"
+          className={isGrinding ? "animate-pulse" : ""}
+          style={{
+            transformOrigin: '100px 155px',
+            transform: isGrinding ? 'rotate(-10deg)' : 'rotate(0deg)',
+            transition: 'transform 0.15s ease-in-out'
+          }}
+        />
+        <ellipse cx="100" cy="45" rx="30" ry="12" fill="#cbd5e1" stroke="#64748b" strokeWidth="2" />
+      </svg>
+
+      <div className="text-center mt-2">
+        {!ln2Added && <p className="text-xs text-cyan-400 font-bold animate-pulse">Click to add liquid nitrogen</p>}
+        {ln2Added && !vaporCleared && <p className="text-xs text-cyan-400 font-bold animate-pulse">Waiting for vapor to clear...</p>}
+        {vaporCleared && !isGrinding && <p className="text-xs text-emerald-400 font-bold animate-pulse">Leaf frozen! Click to begin grinding</p>}
+        {isGrinding && <p className="text-xs text-amber-400 font-bold">Grinding: {getLeafShape()}</p>}
+      </div>
+    </div>
+  );
+};
 
 const ElutionVolumeSelector = ({ onSelect, selectedVolume }) => {
   const volumes = [20, 30, 50];
@@ -766,15 +1151,21 @@ const BiologicalPopup = ({ type, onClose }) => {
   );
 };
 
-const ReadinessOverlay = ({ onClose }) => (
+const ReadinessOverlay = ({ onClose, onCancel }) => (
   <div className="fixed inset-0 z-[140] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md">
-    <div className="bg-slate-800 border border-amber-500/50 w-full max-w-[650px] max-h-[550px] overflow-y-auto rounded-[2.5rem] p-8 space-y-6 text-white shadow-2xl">
+    <div className="bg-slate-800 border border-amber-500/50 w-full max-w-[650px] max-h-[550px] overflow-y-auto rounded-[2.5rem] p-6 space-y-4 text-white shadow-2xl relative">
 
-      {/* Icon */}
-      <ShieldCheck size={48} className="mx-auto text-amber-500" />
+      {/* Close Button */}
+      <button
+        onClick={onCancel}
+        className="absolute top-4 right-4 text-slate-400 hover:text-white transition-colors bg-transparent border-0 cursor-pointer"
+      >
+        <X size={24} />
+      </button>
 
-      {/* Title */}
-      <h3 className="text-xl font-black uppercase tracking-tight text-center">
+      {/* Title with Icon */}
+      <h3 className="text-xl font-black uppercase tracking-tight text-center flex items-center justify-center gap-3">
+        <ShieldCheck size={32} className="text-amber-500" />
         Bench Readiness Check
       </h3>
 
@@ -815,11 +1206,15 @@ const ReadinessOverlay = ({ onClose }) => (
         </p>
       </div>
 
-      {/* Instructions */}
-      <p className="text-sm text-slate-400 leading-relaxed text-center">
-        Review the <b className="text-white">Manual</b> and <b className="text-white">Protocol</b>{' '}
-        buttons in the workspace header before starting.
-      </p>
+      {/* Building Mastery Section */}
+      <div className="bg-slate-900/50 border border-slate-700 p-5 rounded-xl text-left space-y-3">
+        <h4 className="text-white font-bold text-sm flex items-center gap-2">
+          <Target size={16} className="text-emerald-400" /> Building Mastery
+        </h4>
+        <p className="text-xs text-slate-300 leading-relaxed">
+          In BioSimLab, actions have consequences. The simulation will not stop you from skipping steps or making mistakes, just like a real lab. However, your final NanoDrop and Gel results will reflect those choices. True mastery is achieving high-yield, high-purity DNA while maintaining perfect safety standards.
+        </p>
+      </div>
 
       {/* CTA */}
       <button
@@ -835,38 +1230,70 @@ const ReadinessOverlay = ({ onClose }) => (
 const ProtocolBookOverlay = ({ onClose }) => (
     <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md font-sans text-white">
       <div className="bg-slate-800 border border-emerald-500/50 w-full max-w-2xl rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col max-h-[85vh]">
+
+        {/* Header */}
         <div className="p-6 border-b border-slate-700 flex justify-between items-center bg-slate-900/50 text-white font-mono font-bold uppercase tracking-widest">
-          <div className="flex items-center gap-3"><ScrollText size={24} /><h3>Success Criteria</h3></div>
+          <div className="flex items-center gap-3">
+            <ScrollText size={24} />
+            <h3>Researcher's Protocol Manual</h3>
+          </div>
           <button onClick={onClose} className="text-slate-500 hover:text-white border-0 bg-transparent cursor-pointer"><X size={24}/></button>
         </div>
-        <div className="p-8 overflow-y-auto space-y-8 text-xs leading-relaxed text-slate-300 font-mono text-left">
-          <section className="space-y-4 border-b border-slate-700 pb-4">
-            <div className="flex items-center gap-2 text-white"><ShieldAlert size={16} className="text-rose-400"/><h4 className="text-white font-black uppercase text-lg font-sans">Mission A: Clinical Biopsy</h4></div>
-            <ul className="space-y-2 list-decimal ml-4 text-slate-400">
-              <li><b>Tissue Disruption:</b> Select <span className="text-emerald-400">Enzymatic Digestion</span> (recommended for biopsy)</li>
-              <li><b>Proteinase K:</b> Add 2µL. <span className="text-emerald-400">MIX</span>. INCUBATE at 56°C.</li>
-              <li><b>Lysis:</b> Add ~500µL. <span className="text-emerald-400">MIX</span>. SPIN.</li>
-              <li><b>Binding/Column Load:</b> Add 500µL binding buffer and ethanol. Load onto spin column. SPIN.</li>
-              <li><b>Wash:</b> Add 500µL wash buffer to column. SPIN.</li>
-              <li><b>Elute:</b> Add 20µL elution buffer. SPIN.</li>
-              <li><b>Success Range:</b> 200-1200 ng/µL, purity ≥1.7</li>
-              <li><b>Verify:</b> Use <span className="text-amber-400">BOTH</span> Nanodrop <span className="text-amber-400">AND</span> Gel (both required)</li>
-            </ul>
-          </section>
-          <section className="space-y-4 border-b border-slate-700 pb-4">
-            <div className="flex items-center gap-2 text-white"><Leaf size={16} className="text-emerald-400"/><h4 className="text-white font-black uppercase text-lg font-sans">Mission B: Cassava Leaf</h4></div>
-            <ul className="space-y-2 list-decimal ml-4 text-slate-400">
-              <li><b>Disruption:</b> Select <span className="text-emerald-400">Manual Grinding</span> with liquid nitrogen + mortar/pestle (required for plant tissue)</li>
-              <li><b>Lysis:</b> Add ~500µL lysis buffer (CTAB or kit buffer). <span className="text-emerald-400">MIX</span>. SPIN.</li>
-              <li><b>Binding/Column Load:</b> Add 500µL binding buffer. Load onto spin column. SPIN.</li>
-              <li><b>Wash:</b> Add 500µL wash buffer to column. SPIN.</li>
-              <li><b>Elute:</b> Add 50µL elution buffer. SPIN.</li>
-              <li><b>Success Range:</b> 200-350 ng/µL, purity ≥1.7</li>
-              <li><b>Verify:</b> Use <span className="text-amber-400">BOTH</span> Nanodrop <span className="text-amber-400">AND</span> Gel (both required)</li>
-            </ul>
+
+        {/* Content Area */}
+        <div className="p-8 overflow-y-auto space-y-6 text-sm leading-relaxed text-slate-300 font-sans text-left">
+
+          {/* How to View Protocols Section */}
+          <section className="space-y-4">
+            <div className="flex items-center gap-2 text-white">
+              <BookOpen size={20} className="text-cyan-400"/>
+              <h4 className="text-white font-black uppercase text-xl font-sans">How to View Protocols</h4>
+            </div>
+
+            <p className="text-slate-300 leading-relaxed">
+              Scientific success begins with preparation. Study the protocol before selecting your equipment to ensure a "one-trip" procurement phase.
+            </p>
+
+            <div className="space-y-4 mt-4">
+              <div className="bg-slate-900/50 p-4 rounded-xl border border-emerald-500/30">
+                <h5 className="font-bold text-emerald-400 mb-2 flex items-center gap-2">
+                  <ScrollText size={16} />
+                  Pre-Lab Review
+                </h5>
+                <p className="text-slate-300 text-sm leading-relaxed">
+                  As soon as you select a mission, the 📋 Protocol button appears in the top-right corner. Open it while in Procurement to see exactly which reagents (e.g., Ethanol, BashingBead Buffer) are required.
+                </p>
+              </div>
+
+              <div className="bg-slate-900/50 p-4 rounded-xl border border-cyan-500/30">
+                <h5 className="font-bold text-cyan-400 mb-2 flex items-center gap-2">
+                  <Eye size={16} />
+                  Persistent Access
+                </h5>
+                <p className="text-slate-300 text-sm leading-relaxed">
+                  Once you Enter Lab, the Protocol button remains visible. Click it anytime to review critical details like spin speeds, incubation temperatures, or specific volumes.
+                </p>
+              </div>
+
+              <div className="bg-slate-900/50 p-4 rounded-xl border border-amber-500/30">
+                <h5 className="font-bold text-amber-400 mb-2 flex items-center gap-2">
+                  <AlertTriangle size={16} />
+                  Preparation is Mandatory
+                </h5>
+                <p className="text-slate-300 text-sm leading-relaxed">
+                  Check the protocol to verify you have all required items (like Liquid Nitrogen for plants, Ethanol, etc) before clicking "Enter Lab."
+                </p>
+              </div>
+            </div>
           </section>
         </div>
-        <div className="p-6 bg-slate-900/50 border-t border-slate-700 font-mono"><button onClick={onClose} className="w-full bg-emerald-600 py-4 rounded-2xl font-black text-white border-0 cursor-pointer font-bold uppercase tracking-widest">Acknowledge</button></div>
+
+        {/* Footer */}
+        <div className="p-6 bg-slate-900/50 border-t border-slate-700 font-mono">
+          <button onClick={onClose} className="w-full bg-emerald-600 py-4 rounded-2xl font-black text-white border-0 cursor-pointer uppercase tracking-widest hover:bg-emerald-500 transition-colors">
+            Acknowledge Protocol
+          </button>
+        </div>
       </div>
     </div>
 );
@@ -875,45 +1302,49 @@ const ProtocolGuideOverlay = ({ onClose, missionId }) => {
   const protocolContent = {
     A: {
       title: "Clinical Tissue Biopsy Protocol",
-      subtitle: "Human/Animal DNA Extraction -Select appropriate kit (e.g. Qiagen) tailored for soft tissues (e.g., 3-25mg biopsies). Volumes: 2/500/500/20 µl.",
+      subtitle: "Human/Animal DNA Extraction - Select silica-column kit (e.g., Qiagen) for soft tissues (3-25mg). Standard Volumes: 20/200/200/50 µl.",
       steps: [
         {
-          title: "Tissue Disruption (Enzymatic Digestion)",
-          content: "Add Proteinase K (2µl concentrated stock). Mix and incubate at 56°C (shortened for simulation; real: 1-3 hours). Targets proteins in animal matrices; no grinding needed unlike plants."
+          title: "1. Lysis & Digestion (Combined Step)",
+          content: "Add 200µl Lysis Buffer and 20µl Proteinase K to the sample. Mix and incubate at 56°C until the tissue is fully dissolved. Detergents break membranes while the enzyme digests proteins."
         },
         {
-          title: "Lysis",
-          content: "Add lysis buffer (500µl). Mix and spin (~12,000g) to pellet debris. Skips RNase for simplicity, assuming minor RNA is tolerable."
+          title: "2. Clarification",
+          content: "Spin at 12,000g for 3 minutes. Carefully transfer the clear Supernatant to a fresh tube, leaving the debris pellet behind. This ensures the spin column does not clog."
         },
         {
-          title: "Binding/Wash/Elute",
-          content: "Add binding buffer (500µl) and spin to bind DNA to column. Wash (500µl, repeat) and spin. Elute in 20µl, then NanoDrop. Column skips phenol-chloroform (common for phase separation) for safety, speed, and non-toxicity."
+          title: "3. Binding Preparation",
+          content: "Add 200µl Binding Buffer and 200µl Ethanol (96-100%). Mix by gentle inversion. Ethanol is mandatory to allow DNA to precipitate and bind to the silica membrane."
         },
         {
-          title: "Equipment",
-          content: "Microcentrifuge, pipettes/tips, incubator, NanoDrop, safety kit."
+          title: "4. Wash & Dry",
+          content: "Load mixture onto column and spin. Wash with 500µl Wash Buffer (repeat). Perform a 2-minute Dry Spin at max speed to remove all residual ethanol before elution."
+        },
+        {
+          title: "5. Elution",
+          content: "Transfer column to a brand-new 1.5ml tube. Add 50µl Elution Buffer (TE/AE) to the membrane center. Wait 1 min, then spin. 50µl ensures optimal recovery of purified DNA."
         }
       ]
     },
     B: {
       title: "Cassava Extraction Protocol",
-      subtitle: "Plant DNA Extraction - Select the Zymo kit for tough plant tissues (e.g., 20-100mg cassava). Volumes: 500/500/20 µl.",
+      subtitle: "Plant DNA Extraction - Select the Zymo kit for tough plant tissues (e.g., 20-100mg cassava). Volumes: 500/500/50 µl.",
       steps: [
         {
-          title: "Tissue Disruption (Manual Grinding + Liquid N₂)",
-          content: "Grind in mortar/pestle with LN₂ (no Proteinase K). Flash-freezes to brittle tissue, preventing phenolic oxidation—key for plants but not animals."
+          title: "Step 1: Tissue Disruption (Manual Grinding + Liquid N₂)",
+          content: "⚠️ SAFETY FIRST: Review liquid nitrogen safety (cryogenic hazard). Add LN₂ to mortar, wait for vapor to clear (~5 sec), then use CIRCULAR grinding motion along mortar sides. This shearing action pulverizes tough cellulose fibers. Grind until fine powder (chunks → coarse → fine). No Proteinase K needed for plants."
         },
         {
-          title: "Lysis & Binding",
-          content: "Add lysis buffer (500µl). Mix and spin. Add binding buffer (500µl) to column and spin. Skips chloroform:isoamyl alcohol (for phenolic removal in CTAB methods) for safety and speed via column binding."
+          title: "Step 2-5: Lysis, Binding, & Washing",
+          content: "Add lysis buffer (500µl), mix and spin. Transfer clear supernatant (leave green pellet). Add binding buffer (500µl) + ethanol (200µl), mix and load onto column. Spin. Wash twice (500µl each), spin thoroughly to remove ethanol."
         },
         {
-          title: "Wash & Elute",
-          content: "Wash (500µl, repeat) and spin. Elute in 20µl, spin, NanoDrop. No β-mercaptoethanol (BME; reduces oxidation) as small samples/low phenolics rely on buffer additives like PVP."
+          title: "Step 6: Elution (Pre-warming REQUIRED)",
+          content: "🌡️ CRITICAL FOR PLANT DNA: Pre-warm elution buffer to 56°C in heat block (2-3 min). Plant DNA is very long and 'sticky' - heat helps release it from silica membrane, increasing yield 15-20%. Add 50µl warm buffer to membrane center, wait 1-5 min, then spin. Transfer to fresh tube first!"
         },
         {
           title: "Equipment",
-          content: "Mortar/pestle, LN₂ (safety kit for cryogenics), microcentrifuge, NanoDrop, pipettes/tips."
+          content: "Mortar/pestle, LN₂ (safety kit for cryogenics), heat block/thermocycler, microcentrifuge, NanoDrop, pipettes/tips, spin columns."
         }
       ]
     }
@@ -978,31 +1409,21 @@ const LabManualOverlay = ({ onClose }) => (
           </section>
           <section className="space-y-3 font-sans text-white">
             <h4 className="text-indigo-300 font-bold uppercase text-xs font-mono flex items-center gap-2"><ScrollText size={14} />2. How to View Protocols</h4>
-            <p className="text-slate-300">Before starting any experiment, review the full protocol:</p>
-            <div className="bg-slate-900/30 border border-slate-700/50 p-4 rounded-xl space-y-2">
-              <p className="text-indigo-400 font-semibold text-xs flex items-center gap-2">📋 Step-by-Step:</p>
-              <ul className="space-y-1.5 text-slate-300 text-xs leading-relaxed ml-4">
-                <li>→ Click "Proceed to Bench" → "Proceed to Procurement"</li>
-                <li>→ Scroll to bottom → Click "Enter Lab"</li>
-                <li>→ Look for "📋 Protocol" button (top-right corner)</li>
-                <li>→ Click to read step-by-step instructions</li>
-                <li>→ Note which equipment and reagents you need</li>
-                <li>→ Click "Add Equipment" to return to Procurement</li>
-                <li>→ Select correct tools and reagents</li>
-                <li>→ Click "Enter Lab" again to start</li>
-              </ul>
+            <p className="text-slate-300 mb-4">Scientific success begins with preparation. Study the protocol before selecting your equipment to ensure a "one-trip" procurement phase.</p>
+            <div className="space-y-3">
+              <div className="bg-slate-900/30 border border-slate-700/50 p-4 rounded-xl">
+                <p className="text-indigo-400 font-semibold text-xs flex items-center gap-2 mb-2">📋 Pre-Lab Review:</p>
+                <p className="text-slate-300 text-xs leading-relaxed">As soon as you select a mission, the 📋 Protocol button appears in the top-right corner. Open it while in Procurement to see exactly which reagents (e.g., Ethanol, BashingBead Buffer) are required.</p>
+              </div>
+              <div className="bg-slate-900/30 border border-slate-700/50 p-4 rounded-xl">
+                <p className="text-cyan-400 font-semibold text-xs flex items-center gap-2 mb-2">👁️ Persistent Access:</p>
+                <p className="text-slate-300 text-xs leading-relaxed">Once you Enter Lab, the Protocol button remains visible. Click it anytime to review critical details like spin speeds, incubation temperatures, or specific volumes.</p>
+              </div>
+              <div className="bg-amber-900/20 border border-amber-500/30 p-4 rounded-xl">
+                <p className="text-amber-300 text-xs flex items-center gap-2"><AlertTriangle size={12} /><span className="font-semibold">Preparation is Mandatory:</span></p>
+                <p className="text-slate-300 text-xs leading-relaxed mt-2">Use the manual to verify you have all required items (like Liquid Nitrogen for plants or Proteinase K for animal tissue) before clicking "Enter Lab."</p>
+              </div>
             </div>
-            <div className="bg-amber-900/20 border border-amber-500/30 p-3 rounded-xl">
-              <p className="text-amber-300 text-xs flex items-center gap-2"><Lightbulb size={12} /><span className="font-semibold">Tip:</span> Protocol button is always visible during experiments. Click it anytime to review steps.</p>
-            </div>
-          </section>
-          <section className="space-y-2 font-sans text-white">
-            <h4 className="text-indigo-300 font-bold uppercase text-xs font-mono flex items-center gap-2"><ShoppingCart size={14} />3. Procurement</h4>
-            <p className="text-slate-300">Selecting the correct Kit and Equipment is mandatory. Without appropriate buffers, failure is certain. Always review the protocol (see #2 above) before purchasing.</p>
-          </section>
-          <section className="space-y-2 font-sans text-white">
-            <h4 className="text-indigo-300 font-bold uppercase text-xs font-mono flex items-center gap-2"><Database size={14} />4. Lab IDs</h4>
-            <p className="text-slate-300">Your progress is saved to your Lab ID and tracked automatically for your learning journey.</p>
           </section>
         </div>
         <div className="p-6 bg-slate-900/50 border-t border-slate-700 font-mono"><button onClick={onClose} className="w-full bg-indigo-600 py-4 rounded-2xl font-black uppercase text-white shadow-lg border-0 cursor-pointer text-xs font-mono font-bold tracking-widest uppercase">Return to Bench</button></div>
@@ -1011,26 +1432,16 @@ const LabManualOverlay = ({ onClose }) => (
 );
 
 
-const MasteryBadge = () => (
-    <div className="flex flex-col items-center p-6 bg-emerald-500/10 border border-emerald-500/30 rounded-3xl shadow-2xl animate-in zoom-in font-sans">
-        <Medal size={64} className="text-emerald-500 mb-4" />
-        <div className="text-center">
-            <h4 className="text-xl font-black text-white uppercase tracking-tighter">Verified Mastery</h4>
-            <p className="text-[10px] text-emerald-400 font-mono uppercase tracking-[0.2em] font-bold italic">Standard Range Confirmed</p>
-        </div>
-    </div>
-);
-
 const FeedbackModule = ({ userRating, setUserRating, feedbackSent, setFeedbackSent }) => (
-    <div className="bg-gradient-to-br from-amber-500/10 to-indigo-500/10 border-2 border-amber-500/40 p-8 rounded-3xl text-center font-sans space-y-5 shadow-2xl animate-in zoom-in duration-500">
-        <div className="space-y-2 font-sans text-white text-center">
-          <h3 className="text-2xl font-black uppercase text-white tracking-tight leading-none">How was your experience?</h3>
-          <p className="text-sm text-slate-300 font-medium">Rate this simulation to help us improve</p>
+    <div className="bg-slate-900 border border-amber-500 p-10 rounded-2xl text-center font-sans space-y-6 animate-in zoom-in duration-500">
+        <div className="space-y-3 font-sans text-white text-center">
+          <h3 className="text-2xl font-black uppercase text-white tracking-wide leading-none">How was your experience?</h3>
+          <p className="text-sm text-slate-400 font-medium">Rate this simulation to help us improve</p>
         </div>
-        <div className="flex justify-center gap-3 font-sans text-white py-2">{[1, 2, 3, 4, 5].map((s) => (<button key={s} onClick={() => { setUserRating(s); trackEvent('StarRating', 'Feedback', `Rating_${s}`, s); if (s > 3) setFeedbackSent(true); }} className="transition-all hover:scale-125 active:scale-95 cursor-pointer border-0 bg-transparent p-1 hover:drop-shadow-[0_0_8px_rgba(251,191,36,0.8)]">
-          <Star size={48} className={userRating >= s ? "fill-amber-400 text-amber-400 drop-shadow-[0_0_6px_rgba(251,191,36,0.6)]" : "text-slate-600 hover:text-slate-500"} strokeWidth={2.5} />
+        <div className="flex justify-center gap-4 font-sans text-white py-4">{[1, 2, 3, 4, 5].map((s) => (<button key={s} onClick={() => { setUserRating(s); trackEvent('StarRating', 'Feedback', `Rating_${s}`, s); if (s > 3) setFeedbackSent(true); }} className="transition-all hover:scale-110 active:scale-95 cursor-pointer border-0 bg-transparent p-2">
+          <Star size={48} className={userRating >= s ? "fill-amber-400 text-amber-400" : "text-slate-600 hover:text-amber-500"} strokeWidth={2.5} />
         </button>))}</div>
-        {userRating > 0 && userRating <= 3 && !feedbackSent && (<div className="space-y-3 animate-in slide-in-from-top-2 font-sans text-slate-400 text-center"><p className="text-xs text-center font-bold text-slate-300 uppercase tracking-wide">What was the primary issue?</p><div className="grid grid-cols-2 gap-2">{["Confusing Path", "Too Difficult", "Technical Bug", "Lack of Guide"].map((tag, i) => (<button key={`tag-${i}`} onClick={() => { setFeedbackSent(true); trackEvent('LowRatingReason', 'Feedback', tag, userRating); }} className="bg-slate-800 p-3 rounded-lg text-xs font-bold uppercase text-slate-300 border border-slate-700 hover:bg-indigo-900/20 transition-all cursor-pointer">{String(tag)}</button>))}</div></div>)}{feedbackSent && <div className="flex items-center justify-center gap-2 text-base font-bold text-emerald-400 animate-in fade-in"><span>✓</span><span>Thank you for your feedback!</span></div>}
+        {userRating > 0 && userRating <= 3 && !feedbackSent && (<div className="space-y-4 animate-in slide-in-from-top-2 font-sans text-slate-400 text-center pt-2"><p className="text-sm text-center font-bold text-slate-300 uppercase tracking-wide">What was the primary issue?</p><div className="grid grid-cols-2 gap-3">{["Confusing Path", "Too Difficult", "Technical Bug", "Lack of Guide"].map((tag, i) => (<button key={`tag-${i}`} onClick={() => { setFeedbackSent(true); trackEvent('LowRatingReason', 'Feedback', tag, userRating); }} className="bg-slate-800 p-4 rounded-lg text-sm font-bold text-slate-200 border border-slate-700 hover:bg-slate-700 hover:border-slate-600 transition-all cursor-pointer">{String(tag)}</button>))}</div></div>)}{feedbackSent && <div className="flex items-center justify-center gap-2 text-lg font-bold text-emerald-400 animate-in fade-in pt-2"><span>✓</span><span>Thank you for your feedback!</span></div>}
     </div>
 );
 
@@ -1190,12 +1601,20 @@ export default function App() {
     console.log('App mounted, screen:', screen);
     const sim = searchParams.get('sim');
     if (sim) {
+      // Only allow DNA Extraction and PCR
+      const availableSimulations = ['dna-extraction', 'pcr-setup'];
+
+      if (!availableSimulations.includes(sim)) {
+        // Locked simulation - redirect to browse page with message
+        console.log('Attempted to access locked simulation:', sim);
+        alert('⏳ This simulation is not yet available. Only DNA Extraction and PCR are currently accessible.');
+        navigate('/browse');
+        return;
+      }
+
       const simulationMap: Record<string, string> = {
         'dna-extraction': 'missions',
         'pcr-setup': 'pcr-missions',
-        'western-blot': 'welcome',
-        'gel-electrophoresis': 'welcome',
-        'confocal-microscopy': 'welcome'
       };
       const targetScreen = simulationMap[sim] || 'welcome';
       const missionFlowScreens = ['briefing', 'procurement', 'lab', 'workspace', 'result'];
@@ -1312,6 +1731,7 @@ export default function App() {
   const [verificationDone, setVerificationDone] = useState({ nanodrop: false, gel: false });
   const [coins, setCoins] = useState(0);
   const [inventory, setInventory] = useState([]);
+  const [purchasedItems, setPurchasedItems] = useState([]);
   const [logs, setLogs] = useState([]);
   const [status, setStatus] = useState("idle");
   const [protocolIndex, setProtocolIndex] = useState(0);
@@ -1324,11 +1744,22 @@ export default function App() {
   const [isSpinning, setIsSpinning] = useState(false);
   const [hasSpunThisStep, setHasSpunThisStep] = useState(false);
   const [tubeInCentrifuge, setTubeInCentrifuge] = useState(false);
+  const [selectedPipetteForTransfer, setSelectedPipetteForTransfer] = useState(null);
+  const [hasAspiratedFromTube, setHasAspiratedFromTube] = useState(false);
+  const [liquidInColumn, setLiquidInColumn] = useState(false);
+  const [showPipetteAnimation, setShowPipetteAnimation] = useState(false);
+  const [pipetteAnimationPosition, setPipetteAnimationPosition] = useState('tube');
+  const [hasDiscardedWaste, setHasDiscardedWaste] = useState(false);
+  const [isDiscardingWaste, setIsDiscardingWaste] = useState(false);
+  const [wasteInCollectionTube, setWasteInCollectionTube] = useState(false);
   const [missedSpins, setMissedSpins] = useState(0);
   const [missedReagents, setMissedReagents] = useState(0);
   const [stoichiometryError, setStoichiometryError] = useState(false);
+  const [mistakes, setMistakes] = useState([]);
   const [activeTool, setActiveTool] = useState(null);
   const [pipetteVolume, setPipetteVolume] = useState(null);
+  const [pipetteHasLiquid, setPipetteHasLiquid] = useState(false);
+  const [pipetteLiquidColor, setPipetteLiquidColor] = useState("#3b82f6");
   const [isMixing, setIsMixing] = useState(false);
   const [needsMixing, setNeedsMixing] = useState(false);
   const [yieldUg, setYieldUg] = useState(null);
@@ -1357,19 +1788,78 @@ export default function App() {
     protK: 0,
     lysis: 0,
     binding: 0,
+    ethanol: 0,
     wash: 0,
     elution: 0,
   });
+  const [currentStepReagents, setCurrentStepReagents] = useState({});
+  const [currentReagentId, setCurrentReagentId] = useState(null);
+  const [step1SubActions, setStep1SubActions] = useState({
+    lysisBufferAdded: false,
+    proteinaseKAdded: false,
+    mixed: false,
+    incubated: false
+  });
+  const [step1ActionOrder, setStep1ActionOrder] = useState([]);
+  const [step3SubActions, setStep3SubActions] = useState({
+    bindingBufferAdded: false,
+    ethanolAdded: false,
+    mixed: false
+  });
+  const [step3ActionOrder, setStep3ActionOrder] = useState([]);
+  const [showMixPrompt, setShowMixPrompt] = useState(false);
   const [protKIncubationOK, setProtKIncubationOK] = useState(false);
   const [yieldQuality, setYieldQuality] = useState(null);
   const [isGrinding, setIsGrinding] = useState(false);
   const [showGrindingSetup, setShowGrindingSetup] = useState(false);
+  const [grindingStage, setGrindingStage] = useState('idle');
+  const [grindingProgress, setGrindingProgress] = useState(0);
   const [difficultyMode, setDifficultyMode] = useState("learning");
+  const [toastMessage, setToastMessage] = useState(null);
+  const [showToast, setShowToast] = useState(false);
   const [challengeModeErrors, setChallengeModeErrors] = useState([]);
   const [showProtocolGuide, setShowProtocolGuide] = useState(false);
   const [guestModeDismissed, setGuestModeDismissed] = useState(false);
+  const [equipmentUsageLog, setEquipmentUsageLog] = useState([]);
+  const [showLN2SafetyModal, setShowLN2SafetyModal] = useState(false);
+  const [ln2Added, setLn2Added] = useState(false);
+  const [vaporCleared, setVaporCleared] = useState(false);
+  const [leafFrozen, setLeafFrozen] = useState(false);
+  const [elutionBufferPreWarmed, setElutionBufferPreWarmed] = useState(false);
+  const [showElutionWarmingStep, setShowElutionWarmingStep] = useState(false);
+  const [isWarmingBuffer, setIsWarmingBuffer] = useState(false);
+  const [isVortexing, setIsVortexing] = useState(false);
+  const [tubeVortexed, setTubeVortexed] = useState(false);
+  const [showVortexPrompt, setShowVortexPrompt] = useState(false);
+  const [screenBeforeReadiness, setScreenBeforeReadiness] = useState(null);
+
+  const [userPerformance, setUserPerformance] = useState({
+    hasCorrectProtK: false,
+    hasUsedLN2: false,
+    hasAddedEthanol: false,
+    hasPerformedDrySpin: false,
+    drySpinDuration: 0,
+    isSafetyCompliant: false,
+    hasCorrectLysisVolume: false,
+    hasCorrectBindingVolume: false,
+    hasCorrectElutionVolume: false,
+    hasWarmedElution: false,
+    hasClarifiedLysate: false,
+  });
+
+  const [washTracking, setWashTracking] = useState({
+    wash1: false,
+    wash2: false,
+    drySpin: false,
+    drySpinDuration: 0
+  });
 
   const anonymousUser = useAnonymousUser();
+  const [protocolTracker] = useState(() => new ProtocolTracker());
+  const [masteryReport, setMasteryReport] = useState(null);
+  const [enhancedResult, setEnhancedResult] = useState<EnhancedResult | null>(null);
+  const [masteryProgress, setMasteryProgress] = useState({ successCount: 0, totalAttempts: 0, bestPurity: 0, bestConcentration: 0 });
+  const [showPostMissionSurvey, setShowPostMissionSurvey] = useState(false);
 
   const has = (itemId) => inventory.includes(itemId);
 
@@ -1386,13 +1876,521 @@ export default function App() {
   const hasReagentForStep = (reagentId) => {
     if (!reagentId) return true;
     const reagentMap = {
-      proteinase_k: ['proteinase_k'],
+      proteinase_k: ['kit_qiagen', 'kit_thermo', 'proteinase_k'],
       lysis: ['kit_qiagen', 'kit_zymo', 'kit_thermo', 'lysis_clean'],
       binding: ['kit_qiagen', 'kit_zymo', 'kit_thermo', 'column'],
+      ethanol: ['ethanol'],
       wash: ['kit_qiagen', 'kit_zymo', 'kit_thermo', 'wash_buffer'],
       elute: ['kit_qiagen', 'kit_zymo', 'kit_thermo', 'elute_buffer']
     };
-    return (reagentMap[reagentId] || []).some(r => has(r));
+    const sources = reagentMap[reagentId] || [];
+    const isAvailable = sources.some(r => has(r));
+
+    console.log(`[Reagent Check] ${reagentId}:`, {
+      sources,
+      inventory,
+      available: isAvailable
+    });
+
+    return isAvailable;
+  };
+
+  const getLiquidColor = (reagentId) => {
+    const colorMap = {
+      proteinase_k: '#f59e0b',
+      lysis: '#ec4899',
+      binding: '#a855f7',
+      ethanol: '#60a5fa',
+      wash: '#e2e8f0',
+      elute: '#3b82f6'
+    };
+    return colorMap[reagentId] || '#3b82f6';
+  };
+
+  const getAvailableReagents = (currentStep) => {
+    if (!currentStep) return [];
+
+    const allReagents = [
+      {
+        id: 'proteinase_k',
+        name: 'Proteinase K',
+        type: 'tube',
+        color: '#f59e0b',
+        volume: '20µL',
+        available: hasReagentForStep('proteinase_k')
+      },
+      {
+        id: 'lysis',
+        name: 'Buffer ATL (Lysis Buffer)',
+        type: 'bottle',
+        color: '#ec4899',
+        volume: '50mL',
+        available: hasReagentForStep('lysis')
+      },
+      {
+        id: 'binding',
+        name: 'Buffer AL (Binding Buffer)',
+        type: 'bottle',
+        color: '#a855f7',
+        volume: '50mL',
+        available: hasReagentForStep('binding')
+      },
+      {
+        id: 'ethanol',
+        name: 'Ethanol (96-100%)',
+        type: 'bottle',
+        color: '#60a5fa',
+        volume: '500mL',
+        available: hasReagentForStep('ethanol')
+      },
+      {
+        id: 'wash',
+        name: 'Wash Buffer',
+        type: 'bottle',
+        color: '#e2e8f0',
+        volume: '50mL',
+        available: hasReagentForStep('wash')
+      },
+      {
+        id: 'elute',
+        name: 'Buffer AE (Elution Buffer)',
+        type: 'bottle',
+        color: '#3b82f6',
+        volume: '10mL',
+        available: hasReagentForStep('elute')
+      }
+    ];
+
+    if (currentStep.reagents) {
+      const stepReagentIds = currentStep.reagents.map(r => r.id);
+      const availableForStep = allReagents.filter(r => r.available && stepReagentIds.includes(r.id));
+
+      console.log('[Available Reagents]', {
+        stepTitle: currentStep.title,
+        stepReagentIds,
+        allReagents: allReagents.map(r => ({ id: r.id, available: r.available })),
+        availableForStep: availableForStep.map(r => r.id)
+      });
+
+      return availableForStep;
+    }
+
+    return allReagents.filter(r => r.available);
+  };
+
+  const getCurrentReagent = () => {
+    if (!currentStep || !currentStep.reagents) return null;
+
+    if (currentStep.multipleReagents) {
+      const reagentsToAdd = currentStep.reagents.filter(r => !currentStepReagents[r.id]);
+      return reagentsToAdd.length > 0 ? reagentsToAdd[0] : currentStep.reagents[0];
+    }
+
+    return currentStep.reagents[0];
+  };
+
+  const getTargetVolume = () => {
+    // If user has selected a specific reagent, use that reagent's target
+    if (currentReagentId && currentStep?.reagents) {
+      const selectedReagent = currentStep.reagents.find(r => r.id === currentReagentId);
+      if (selectedReagent) {
+        console.log('[getTargetVolume] Using currentReagentId:', currentReagentId, 'target:', selectedReagent.targetVolume);
+        return selectedReagent.targetVolume;
+      }
+    }
+
+    // Otherwise, use the next reagent to be added
+    const reagent = getCurrentReagent();
+    if (reagent) {
+      console.log('[getTargetVolume] Using getCurrentReagent:', reagent.id, 'target:', reagent.targetVolume);
+      return reagent.targetVolume;
+    }
+    if (currentStep?.targetVolume) return currentStep.targetVolume;
+    return 500;
+  };
+
+  const getCurrentTolerance = () => {
+    // If user has selected a specific reagent, use that reagent's tolerance
+    if (currentReagentId && currentStep?.reagents) {
+      const selectedReagent = currentStep.reagents.find(r => r.id === currentReagentId);
+      if (selectedReagent) {
+        return selectedReagent.tolerance || 0;
+      }
+    }
+
+    // Otherwise, use the next reagent to be added
+    const reagent = getCurrentReagent();
+    if (reagent) {
+      return reagent.tolerance || 0;
+    }
+    return 50;
+  };
+
+  const getRemainingReagentsText = () => {
+    if (!currentStep || !currentStep.multipleReagents || !currentStep.reagents) return null;
+    const remaining = currentStep.reagents.filter(r => !currentStepReagents[r.id]);
+    if (remaining.length === 0) return null;
+    return `Still needed: ${remaining.map(r => `${r.name} (${r.targetVolume}µL)`).join(', ')}`;
+  };
+
+  const getSubActionProgress = () => {
+    if (currentStep?.title === "Lysis & Protein Digestion") {
+      const completed = Object.values(step1SubActions).filter(Boolean).length;
+      return { completed, total: 4, actions: step1SubActions };
+    }
+    if (currentStep?.title === "Binding Preparation") {
+      const completed = Object.values(step3SubActions).filter(Boolean).length;
+      return { completed, total: 3, actions: step3SubActions };
+    }
+    return null;
+  };
+
+  const showToastNotification = (message) => {
+    setToastMessage(message);
+    setShowToast(true);
+    setTimeout(() => {
+      setShowToast(false);
+    }, 3000);
+  };
+
+  const trackMistake = (type, details) => {
+    setMistakes(prev => [...prev, {
+      type,
+      step: currentStep?.title || 'Unknown',
+      stepIndex: protocolIndex,
+      details,
+      timestamp: Date.now()
+    }]);
+  };
+
+  const handleEquipmentUse = (equipment, action, settings = {}) => {
+    const currentStepTitle = currentStep?.title || 'Unknown';
+    const usageRecord = {
+      equipment,
+      action,
+      settings,
+      step: currentStepTitle,
+      timestamp: Date.now(),
+      protocolIndex
+    };
+    setEquipmentUsageLog(prev => [...prev, usageRecord]);
+
+    if (action === 'spin' && equipment === 'centrifuge') {
+      setIsSpinning(true);
+      setTubeInCentrifuge(false);
+      setTimeout(() => {
+        setIsSpinning(false);
+        setHasSpunThisStep(true);
+        setPelletVisible(currentStep?.requiresSpin || false);
+
+        // For Clarification step, show phase separation after spinning
+        if (currentStep?.title === "Clarification") {
+          setShowPhaseSeparation(true);
+          addLog("Spin complete. Supernatant and pellet separated.", "success");
+          setUserPerformance(prev => ({ ...prev, hasClarifiedLysate: true }));
+        }
+
+        // For Column Binding and Wash steps, liquid goes to collection tube as waste
+        if (currentStep?.title === "Column Binding" || currentStep?.title === "Wash & Dry") {
+          if (currentStep?.title === "Wash & Dry") {
+            if (liquidInColumn === 0) {
+              const spinDuration = (settings.duration || spinDuration || 5) * 60;
+              setUserPerformance(prev => ({ ...prev, hasPerformedDrySpin: true, drySpinDuration: spinDuration }));
+              setWashTracking(prev => ({ ...prev, drySpin: true, drySpinDuration: spinDuration }));
+
+              protocolTracker.logAction({
+                stepIndex: protocolIndex,
+                stepName: currentStep?.title || 'Wash & Dry',
+                action: 'dry_spin',
+                duration: spinDuration,
+                timestamp: Date.now()
+              });
+
+              addLog(`Dry spin complete (${Math.floor(spinDuration / 60)} min). Column is dry.`, "success");
+            } else {
+              if (!washTracking.wash1) {
+                setWashTracking(prev => ({ ...prev, wash1: true }));
+                addLog("First wash complete. Salts removed.", "success");
+              } else if (!washTracking.wash2) {
+                setWashTracking(prev => ({ ...prev, wash2: true }));
+                addLog("Second wash complete. Ethanol residue removed.", "success");
+              }
+            }
+          }
+          setWasteInCollectionTube(true);
+          setHasDiscardedWaste(false);
+          if (currentStep?.title !== "Wash & Dry" || liquidInColumn > 0) {
+            addLog("Spin complete. Flow-through collected at bottom of tube.", "success");
+          }
+        }
+      }, 2500);
+    } else if (action === 'start' && equipment === 'thermocycler') {
+      if (settings.temp !== undefined) {
+        setIncubationTemp(settings.temp);
+      }
+      setTubeInCentrifuge(true);
+
+      const tempOK = (settings.temp || incubationTemp) >= 50 && (settings.temp || incubationTemp) <= 60;
+      if (!tempOK) {
+        addLog(`ERROR: Temperature ${settings.temp || incubationTemp}°C is outside the required 50-60°C range. Proteinase K will not work correctly!`, "error");
+        setProtocolAdherenceCompromised(true);
+      } else if ((settings.temp || incubationTemp) !== currentStep.incubationTemp) {
+        addLog(`Temperature set to ${settings.temp || incubationTemp}°C. Within acceptable range for Proteinase K.`, "info");
+      }
+
+      setIsIncubating(true);
+      addLog(`Incubation started at ${settings.temp || incubationTemp}°C...`, "info");
+      setTimeout(() => {
+        setIsIncubating(false);
+        setHasSpunThisStep(true);
+        setTubeInCentrifuge(false);
+        addLog("Incubation complete. Tube removed from thermocycler.", "success");
+        if (tempOK) {
+          addLog("Proteinase K successfully digested proteins at correct temperature.", "success");
+          if (currentStep?.title === "Lysis & Protein Digestion") {
+            console.log('[STEP 1] Incubation complete: true');
+            checkTaskOrder('Lysis & Protein Digestion', 'incubated');
+            setProtKIncubationOK(true);
+            setStep1SubActions(prev => {
+              const updated = { ...prev, incubated: true };
+              console.log('[STEP 1] Updated step1SubActions:', updated);
+              return updated;
+            });
+          }
+        } else {
+          addLog("WARNING: Incorrect temperature used. This may affect DNA yield.", "error");
+        }
+      }, 3500);
+    } else if (action === 'load' && equipment === 'thermocycler') {
+      setTubeInCentrifuge(true);
+      addLog("Tube loaded into thermocycler.", "success");
+    } else if (action === 'remove' && equipment === 'thermocycler') {
+      setTubeInCentrifuge(false);
+      addLog("Tube removed from thermocycler.", "info");
+    }
+  };
+
+  const checkTaskOrder = (step, action) => {
+    const correctOrder = {
+      'Lysis & Protein Digestion': ['lysisBufferAdded', 'proteinaseKAdded', 'mixed', 'incubated'],
+      'Binding Preparation': ['bindingBufferAdded', 'ethanolAdded', 'mixed']
+    };
+
+    if (step === 'Lysis & Protein Digestion') {
+      const expectedOrder = correctOrder[step];
+      const currentIndex = expectedOrder.indexOf(action);
+
+      if (currentIndex === -1) return;
+
+      const outOfOrder = step1ActionOrder.some((prevAction, idx) => {
+        const prevIndex = expectedOrder.indexOf(prevAction);
+        return prevIndex > currentIndex;
+      });
+
+      if (outOfOrder) {
+        const actionNames = {
+          lysisBufferAdded: 'Adding Lysis Buffer',
+          proteinaseKAdded: 'Adding Proteinase K',
+          mixed: 'Mixing by inversion',
+          incubated: 'Incubation at 56°C'
+        };
+        trackMistake('task_order_violation', {
+          step: 'Lysis & Protein Digestion',
+          action: actionNames[action],
+          expectedPosition: currentIndex + 1,
+          actualPosition: step1ActionOrder.length + 1
+        });
+        if (difficultyMode !== "challenge") {
+          addLog(`⚠️ Task Order: ${actionNames[action]} should be done earlier in the protocol.`, "warning");
+        }
+      }
+
+      setStep1ActionOrder(prev => [...prev, action]);
+    } else if (step === 'Binding Preparation') {
+      const expectedOrder = correctOrder[step];
+      const currentIndex = expectedOrder.indexOf(action);
+
+      if (currentIndex === -1) return;
+
+      const outOfOrder = step3ActionOrder.some((prevAction, idx) => {
+        const prevIndex = expectedOrder.indexOf(prevAction);
+        return prevIndex > currentIndex;
+      });
+
+      if (outOfOrder) {
+        const actionNames = {
+          bindingBufferAdded: 'Adding Binding Buffer',
+          ethanolAdded: 'Adding Ethanol',
+          mixed: 'Mixing by inversion'
+        };
+        trackMistake('task_order_violation', {
+          step: 'Binding Preparation',
+          action: actionNames[action],
+          expectedPosition: currentIndex + 1,
+          actualPosition: step3ActionOrder.length + 1
+        });
+        if (difficultyMode !== "challenge") {
+          addLog(`⚠️ Task Order: ${actionNames[action]} should be done earlier in the protocol.`, "warning");
+        }
+      }
+
+      setStep3ActionOrder(prev => [...prev, action]);
+    }
+  };
+
+  const calculateConsequences = () => {
+    const consequences = [];
+    let yieldPenalty = 0;
+    let purityPenalty = 0;
+    let concentrationPenalty = 0;
+
+    const requiredItems = MISSIONS_DATA[techniqueId]?.[missionId]?.requiredItems || [];
+    const unnecessaryPurchases = purchasedItems.filter(item => !requiredItems.includes(item));
+
+    if (unnecessaryPurchases.length > 0) {
+      const itemNames = unnecessaryPurchases.map(id => {
+        const kit = kits_list.find(k => k.id === id);
+        if (kit) return kit.name;
+        const tool = tools_list.find(t => t.id === id);
+        if (tool) return tool.name;
+        const consumable = consumables_ppe_list.find(c => c.id === id);
+        if (consumable) return consumable.name;
+        return id;
+      }).join(', ');
+
+      consequences.push({
+        severity: 'minor',
+        title: 'Budget Mismanagement',
+        description: `You wasted funds by purchasing: ${itemNames}. These items are not required for this experiment.`,
+        impact: 'In real research labs, budget management is critical. Learn to purchase only the reagents and consumables that the protocol requires. Unnecessary purchases reduce your available funding for future experiments.'
+      });
+    }
+
+    mistakes.forEach(mistake => {
+      let consequence = {
+        severity: 'minor',
+        title: '',
+        description: '',
+        impact: ''
+      };
+
+      if (mistake.type === 'task_order_violation') {
+        const { step, action, expectedPosition, actualPosition } = mistake.details;
+        consequence = {
+          severity: 'major',
+          title: 'Protocol Steps Out of Order',
+          description: `${action} was performed at position ${actualPosition} but should be at position ${expectedPosition} in ${step}.`,
+          impact: 'Performing tasks out of sequence can compromise reagent effectiveness, reduce DNA yield, and affect purity. In real labs, this often requires restarting the entire extraction.'
+        };
+        yieldPenalty += 15;
+        purityPenalty += 0.2;
+      } else if (mistake.type === 'wrong_reagent') {
+        const { expected, actual } = mistake.details;
+
+        if (expected === 'proteinase_k' && actual !== 'proteinase_k') {
+          consequence = {
+            severity: 'critical',
+            title: 'Missing Proteinase K in Lysis',
+            description: `Used ${actual} instead of Proteinase K during tissue digestion.`,
+            impact: 'Cell membranes not digested. DNA remains trapped in intact cells. Complete extraction failure expected.'
+          };
+          yieldPenalty = 100;
+        } else if (expected === 'lysis' && actual !== 'lysis') {
+          consequence = {
+            severity: 'critical',
+            title: 'Wrong Lysis Buffer',
+            description: `Used ${actual} instead of Lysis Buffer.`,
+            impact: 'Cells not lysed properly. DNA yield severely reduced (60-90% loss).'
+          };
+          yieldPenalty += 75;
+        } else if (expected === 'binding' && actual !== 'binding') {
+          consequence = {
+            severity: 'critical',
+            title: 'Wrong Binding Buffer',
+            description: `Used ${actual} instead of Binding Buffer.`,
+            impact: 'DNA not retained on column. Most DNA washed to waste (80-95% loss).'
+          };
+          yieldPenalty += 85;
+        } else if (expected === 'wash' && actual !== 'wash') {
+          consequence = {
+            severity: 'major',
+            title: 'Wrong Wash Buffer',
+            description: `Used ${actual} instead of Wash Buffer.`,
+            impact: 'Contaminants not removed. DNA purity severely compromised (proteins, salts remain).'
+          };
+          purityPenalty += 0.6;
+        } else if (expected === 'elute' && actual !== 'elute') {
+          consequence = {
+            severity: 'major',
+            title: 'Wrong Elution Buffer',
+            description: `Used ${actual} instead of Elution Buffer.`,
+            impact: 'DNA poorly eluted from membrane. Low yield and potential DNA degradation.'
+          };
+          yieldPenalty += 40;
+          purityPenalty += 0.3;
+        }
+      } else if (mistake.type === 'wrong_volume') {
+        const { expected, actual, deviation } = mistake.details;
+        const percentOff = Math.round((deviation / expected) * 100);
+
+        if (percentOff > 50) {
+          consequence = {
+            severity: 'major',
+            title: 'Severe Volume Deviation',
+            description: `Used ${actual}µL instead of ${expected}µL (${percentOff}% deviation).`,
+            impact: 'Reagent concentrations incorrect. May affect binding efficiency and elution completeness.'
+          };
+          if (actual > expected) {
+            concentrationPenalty += 30;
+          } else {
+            yieldPenalty += 20;
+          }
+        } else if (percentOff > 20) {
+          consequence = {
+            severity: 'minor',
+            title: 'Volume Inaccuracy',
+            description: `Used ${actual}µL instead of ${expected}µL (${percentOff}% deviation).`,
+            impact: 'Minor impact on DNA concentration and overall yield.'
+          };
+          concentrationPenalty += 10;
+        }
+      } else if (mistake.type === 'wrong_pipette') {
+        const { expected, actual, volume } = mistake.details;
+        consequence = {
+          severity: 'minor',
+          title: 'Suboptimal Pipette Selection',
+          description: `Used ${actual} pipette instead of ${expected} for ${volume}µL.`,
+          impact: 'Reduced accuracy. May introduce pipetting errors (±5-10%).'
+        };
+        yieldPenalty += 5;
+      } else if (mistake.type === 'skipped_task') {
+        const { step, task } = mistake.details;
+        const taskSeverity = {
+          'Add Lysis Buffer': { severity: 'critical', yieldPenalty: 60, purityPenalty: 0.3 },
+          'Add Proteinase K': { severity: 'critical', yieldPenalty: 70, purityPenalty: 0.4 },
+          'Mix by inversion': { severity: 'major', yieldPenalty: 25, purityPenalty: 0.2 },
+          'Incubate at 56°C': { severity: 'critical', yieldPenalty: 80, purityPenalty: 0.5 },
+          'Add Binding Buffer': { severity: 'critical', yieldPenalty: 90, purityPenalty: 0.6 },
+          'Add Ethanol': { severity: 'critical', yieldPenalty: 95, purityPenalty: 0.8 }
+        };
+        const taskInfo = taskSeverity[task] || { severity: 'major', yieldPenalty: 30, purityPenalty: 0.2 };
+
+        consequence = {
+          severity: taskInfo.severity,
+          title: 'Critical Step Skipped',
+          description: `${task} was not performed in ${step}.`,
+          impact: `Skipping essential protocol steps compromises the entire extraction. This deviation will significantly reduce DNA yield and purity. In real labs, this would require restarting the entire procedure.`
+        };
+        yieldPenalty += taskInfo.yieldPenalty;
+        purityPenalty += taskInfo.purityPenalty;
+      }
+
+      if (consequence.title) {
+        consequences.push(consequence);
+      }
+    });
+
+    return { consequences, yieldPenalty, purityPenalty, concentrationPenalty };
   };
 
   useEffect(() => {
@@ -1413,13 +2411,143 @@ export default function App() {
 
   const protocolSteps = useMemo(() => {
     if (techniqueId !== "DNA_EXT") return [];
+
+    const step1_Animal = {
+      title: "Lysis & Protein Digestion",
+      prompt: "Add 200 µL Lysis Buffer (Buffer ATL) and 20 µL Proteinase K to minced tissue. MIX gently and INCUBATE at 56°C for 1-3 hours.",
+      science: "Detergents break open cell membranes while Proteinase K digests proteins (histones, nucleases, structural proteins) that interfere with DNA recovery. ⚠️ Note: Both Lysis Buffer and Proteinase K are included in your DNA extraction kit. 20 µL Proteinase K is the standard amount for ~25 mg tissue.",
+      requiresIncubation: true,
+      incubationTemp: 56,
+      incubationDuration: 120,
+      requiresVolume: true,
+      requiresMixing: true,
+      multipleReagents: true,
+      reagents: [
+        { id: "lysis", name: "Lysis Buffer", targetVolume: 200, tolerance: 20, color: "#ec4899" },
+        { id: "proteinase_k", name: "Proteinase K", targetVolume: 20, tolerance: 5, color: "#f59e0b" }
+      ],
+      successCriteria: "Lysate should be clear with no visible tissue chunks",
+      educationalNote: "🔬 Why 20 µL? This is the standard amount for ~25 mg tissue. Insufficient Proteinase K leads to protein contamination and poor yields."
+    };
+
+    const step1_Plant = {
+      title: "Physical Disruption",
+      prompt: "Grind cassava leaf into fine powder using mortar and pestle with liquid nitrogen. Transfer powder to microfuge tube.",
+      science: "Plant cells have tough cellulose walls that require mechanical disruption. Liquid nitrogen flash-freezes tissue to -196°C, making it brittle and preventing phenolic oxidation. Use circular grinding motion along mortar sides to pulverize fibers effectively. ⚠️ SAFETY: Wear insulated gloves and safety goggles when handling liquid nitrogen.",
+      requiresVolume: false,
+      requiresMixing: false,
+      requiresSpin: false,
+      requiresGrinding: true,
+      successCriteria: "Leaf ground to fine powder, transferred to tube",
+      educationalNote: "💡 Use a circular grinding motion against the mortar sides. This shearing action pulverizes the tough cellulose fibers more effectively than simple crushing. Wait for LN₂ vapor to clear before grinding to prevent sample from popping out."
+    };
+
+    const step1 = missionId === 'B' ? step1_Plant : step1_Animal;
+
+    const step2_Animal = {
+      title: "Clarification",
+      prompt: "SPIN at 12,000-14,000 g for 3 minutes. Carefully transfer supernatant to fresh tube.",
+      science: "Centrifugation removes debris that could clog the column and reduce DNA purity. The DNA is in the supernatant (liquid), not the pellet.",
+      requiresSpin: true,
+      spinDuration: 3,
+      successCriteria: "Supernatant is clear",
+      educationalNote: "⚠️ Carefully pipette only the clear supernatant in the next step. Avoid disturbing the pellet - it contains debris, not DNA."
+    };
+
+    const step2_Plant = {
+      title: "Lysis",
+      prompt: "Add 500 µL Lysis Buffer to ground tissue, VORTEX to mix thoroughly, then SPIN at 12,000 g for 3 minutes.",
+      science: "Lysis buffer contains detergents that break open cell membranes and chaotropic salts that denature proteins. For plant tissue, this step releases DNA from the pulverized cells. Spinning pellets large amounts of cellular debris (chloroplasts, cell wall fragments) that could clog the column. ⚠️ Note: Plant tissue produces much more debris than animal tissue - expect a large green pellet.",
+      requiresVolume: true,
+      requiresVortexing: true,
+      requiresSpin: true,
+      spinDuration: 3,
+      reagents: [
+        { id: "lysis", name: "Lysis Buffer", targetVolume: 500, tolerance: 50, color: "#ec4899" }
+      ],
+      successCriteria: "Large green debris pellet formed, supernatant ready for binding",
+      educationalNote: "💡 Vortexing ensures the lysis buffer fully saturates the ground leaf powder. Plant powder is highly absorbent; without vigorous mixing, the DNA remains trapped inside dry clumps of cellulose. The subsequent spin will remove the large amount of green debris (chlorophyll and cell walls) that plants produce."
+    };
+
+    const step2 = missionId === 'B' ? step2_Plant : step2_Animal;
+
     const allSteps = [
-      { title: "Tissue Disruption", prompt: missionId === 'A' ? "Mission A: Use Enzymatic Digestion (recommended for biopsy)" : "Mission B: Use Manual Grinding with liquid nitrogen + mortar/pestle (required for plant tissue)", science: "Biological Context: Cells make up tissues. We must first break down the extracellular matrix to release individual cells into the buffer so lysis reagents can reach the membranes.", options: [{ label: "Enzymatic Digestion", log: "Gentle digestion complete. HMW DNA integrity preserved.", method: "enzymatic", ok: true }, { label: "Manual Grinding", log: "Manual disruption complete with liquid nitrogen. Plant cell walls broken down.", method: "manual", ok: has("mortar_pestle") && has("liquid_nitrogen") }] },
-      { title: "Proteinase K Digestion", prompt: "Add Proteinase K, MIX, and INCUBATE at 56°C for 1 hour.", science: "Proteinase K is a powerful enzyme that digests proteins including histones and other contaminants. This enzymatic digestion helps release DNA and improves purity. Incubation at 56°C for 1 hour provides optimal enzyme activity and complete protein digestion.", requiresIncubation: true, incubationTemp: 56, incubationDuration: 60, requiresVolume: true, targetVolume: 2, requiresMixing: true, reagentRequired: "proteinase_k", skipIf: () => step1Method === "manual" && missionId === 'B' },
-      { title: "Lysis Phase", prompt: "Add Lysis Buffer (~500 µL), MIX, and SPIN.", science: "Mechanism: Lysis buffer contains detergents (like SDS for animal tissue or CTAB for plant material) to dissolve cell membranes and salts to stabilize the DNA. This releases genomic DNA into the aqueous solution. Spinning separates lysed cellular debris.", requiresVolume: true, targetVolume: 500, requiresMixing: true, requiresSpin: true, reagentRequired: "lysis" },
-      { title: "Binding/Column Load", prompt: "Add binding buffer and ethanol, then load onto spin column and SPIN.", science: "Binding Chemistry: In the presence of chaotropic salts and ethanol, DNA binds to the silica membrane in the spin column. The combination of binding buffer and ethanol creates optimal conditions for DNA to adhere to the column while proteins and other contaminants remain in solution.", requiresVolume: true, targetVolume: 500, requiresSpin: true, reagentRequired: "binding" },
-      { title: "Wash Stage", prompt: "Add Wash Buffer to column and SPIN.", science: "Wash buffers remove residual salts and proteins while keeping the DNA bound securely to the silica membrane.", requiresVolume: true, targetVolume: 500, requiresSpin: true, reagentRequired: "wash" },
-      { title: "Elution", prompt: "Add Elution Buffer and SPIN to collect purified DNA.", science: "Final Step: Low-salt Elution buffer (TE or water) releases the high-purity DNA from the column into your final microtube for quantification.", requiresVolume: true, targetVolume: missionId === 'A' ? 20 : 50, requiresSpin: true, isElution: true, reagentRequired: "elute" }
+      step1,
+      step2,
+      {
+        title: "Binding Preparation",
+        prompt: "Add 200 µL Binding Buffer (Buffer AL) and 200 µL Ethanol (96-100%) to cleared lysate. MIX gently - do not vortex.",
+        science: "Chaotropic salts + ethanol create conditions for DNA to bind to silica column membranes. 🧪 WHY THIS MATTERS: Without ethanol, DNA will NOT bind to the silica membrane and will wash away. This is the #1 reason beginners get low yields. ⚠️ Note: Binding Buffer comes from your kit; Ethanol must be purchased separately from Equipment & Reagents.",
+        requiresVolume: true,
+        requiresMixing: true,
+        multipleReagents: true,
+        reagents: [
+          { id: "binding", name: "Binding Buffer", targetVolume: 200, tolerance: 20, color: "#a855f7" },
+          { id: "ethanol", name: "Ethanol (96-100%)", targetVolume: 200, tolerance: 20, color: "#60a5fa" }
+        ],
+        kitNote: "📋 Kit Reality Check: Your DNA extraction kit includes concentrated wash buffer. In real labs, you would add ethanol from your lab stock before using it. In BioSim Lab, we assume this step is already done - your wash buffer is ready to use.",
+        successCriteria: "Binding Buffer added (200 µL), Ethanol added (200 µL), Mixed gently",
+        educationalNote: missionId === 'B'
+          ? "💡 Transfer ONLY the clear supernatant to the fresh tube. Leave the green pellet behind - it contains chloroplasts and cell wall debris, not DNA."
+          : "💡 Transfer ONLY the clear supernatant to the fresh tube. Leave the brown pellet behind - it contains debris, not DNA."
+      },
+      {
+        title: "Column Binding",
+        prompt: "Load mixture onto silica spin column and SPIN at 8,000-14,000 g for 1 minute. Discard flow-through.",
+        science: "DNA binds to silica membrane while contaminants flow through. The chaotropic salts disrupt water molecules around DNA, making it 'sticky' to the silica. If volume >700 µL, load in multiple batches. ⚠️ The visual shows your sample tube (left) and an empty spin column in a fresh collection tube (right). Transfer the liquid from the sample tube into the column, then centrifuge.",
+        requiresSpin: true,
+        spinDuration: 1,
+        educationalNote: "💡 Pretty cool chemistry! The salts make DNA hydrophobic so it sticks to the silica surface. During centrifugation, contaminants (proteins, salts, cell debris) pass through the membrane and collect in the tube below as waste, while purified DNA stays bound to the silica membrane."
+      },
+      {
+        title: "Wash & Dry",
+        prompt: "Add 500 µL Wash Buffer and SPIN (1st wash). Add 500 µL Wash Buffer and SPIN (2nd wash). DRY SPIN at maximum speed for 3 minutes.",
+        science: "Remove salts and contaminants without releasing DNA. Two washes = higher purity. ⚠️ CRITICAL: Dry spin removes residual ethanol that would inhibit PCR. Never skip the dry spin! Residual ethanol is PCR's worst enemy - it denatures the polymerase enzyme.",
+        requiresVolume: true,
+        requiresSpin: true,
+        spinDuration: 5,
+        reagents: [
+          { id: "wash", name: "Wash Buffer", targetVolume: 500, tolerance: 50, color: "#e2e8f0", requireTwoAdditions: true }
+        ],
+        successCriteria: "Column is completely dry after final spin",
+        educationalNote: "This buffer already has ethanol added (see Binding Preparation step). Two washes ensure maximum purity."
+      },
+      {
+        title: "Elution",
+        prompt: missionId === 'B'
+          ? "FIRST: Pre-warm Elution Buffer to 56°C in heat block (2-3 min). THEN: Transfer column to fresh tube, add 50 µL warm buffer to membrane center, wait 1-5 minutes, and SPIN at 12,000 g for 1 minute."
+          : "Transfer column to fresh tube. Add 20 µL Elution Buffer to membrane center, wait 1-5 minutes, then SPIN at 12,000 g for 1 minute.",
+        science: missionId === 'B'
+          ? "Low-salt buffer (TE-based) releases pure DNA from the column. 🌡️ IMPORTANT FOR PLANT DNA: Pre-warming to 56°C is REQUIRED for plant extractions. Plant DNA is very long and 'sticky' - heat helps release it from the silica membrane, increasing yield by 15-20%. ⚠️ CRITICAL: Always transfer column to a fresh, empty tube before elution - otherwise contaminants re-contaminate your DNA."
+          : "Low-salt buffer (TE-based) releases pure DNA from the column. TE buffer (Tris-EDTA) protects DNA - the EDTA 'handcuffs' DNase enzymes that would chew up your DNA. Optional: Pre-warm buffer to 56°C for +10-15% yield. ⚠️ CRITICAL: The previous collection tube contains waste (salts, ethanol, proteins). Always transfer the column to a fresh, empty tube before elution - otherwise contaminants wick back into the membrane and re-contaminate your purified DNA.",
+        requiresVolume: true,
+        requiresSpin: true,
+        isElution: true,
+        requiresBufferWarming: missionId === 'B',
+        reagents: [
+          { id: "elute", name: missionId === 'B' ? "Elution Buffer (Pre-warmed 56°C)" : "Elution Buffer", targetVolume: missionId === 'A' ? 20 : 50, tolerance: 5, color: "#3b82f6" }
+        ],
+        storageNote: "Store DNA at 4°C (short-term, days-weeks) or -20°C/-80°C (long-term, years)",
+        educationalNote: missionId === 'B'
+          ? "🌡️ Plant DNA is much longer than bacterial/animal DNA and binds more tightly to the silica. Warming helps it release efficiently. This step can mean the difference between 200 ng/µL and 300+ ng/µL!"
+          : "💡 Why a fresh tube? The old tube contains waste liquid (salts, ethanol, proteins) from washing. If the column touches this liquid, contaminants wick back up into the silica membrane, re-contaminating your DNA. This is a common beginner mistake that ruins otherwise perfect extractions!"
+      },
+      {
+        title: "Quality Check (NanoDrop)",
+        prompt: "Measure DNA concentration and purity using NanoDrop.",
+        science: "Expected results: Concentration 50-500 ng/µL, A₂₆₀/A₂₈₀ ratio 1.8-2.0 (pure DNA), A₂₆₀/A₂₃₀ ratio 2.0-2.2 (no salt contamination).",
+        isQualityCheck: true,
+        expectedResults: {
+          concentration: "50-500 ng/µL",
+          ratio260_280: "1.8-2.0",
+          ratio260_230: "2.0-2.2"
+        },
+        troubleshooting: {
+          lowRatio260_280: "⚠️ Protein contamination. Causes: Insufficient Proteinase K digestion (extend incubation) or not enough washes. Next time: Increase Proteinase K or add third wash.",
+          lowRatio260_230: "⚠️ Salt/solvent contamination. Causes: Incomplete dry spin (ethanol residue) or chaotropic salts. Next time: Extend dry spin to 5 minutes.",
+          lowConcentration: "⚠️ Low yield. Causes: Incomplete lysis (tissue still visible?), Lost DNA in debris pellet, Forgot ethanol → DNA didn't bind (MOST COMMON), or insufficient starting material. Review Steps 1-3 carefully."
+        }
+      }
     ];
     return allSteps.filter(step => !step.skipIf || !step.skipIf());
   }, [techniqueId, missionId, inventory, step1Method]);
@@ -1430,8 +2558,9 @@ export default function App() {
     setTechniqueId(tId);
     setMissionId(mId);
     setCoins(MISSIONS_DATA[tId][mId].budget);
-    const baseInventory = mId === 'B' ? ['mortar_pestle', 'liquid_nitrogen'] : [];
+    const baseInventory = mId === 'B' ? ['mortar_pestle', 'liquid_nitrogen', 'vortex_mixer'] : [];
     setInventory(baseInventory);
+    setPurchasedItems([]);
     setLogs([]);
     setProtocolIndex(0);
     setSampleMass(50);
@@ -1447,6 +2576,8 @@ export default function App() {
     setTubeInCentrifuge(false);
     setNeedsMixing(false);
     setIsMixing(false);
+    setPipetteHasLiquid(false);
+    setPipetteLiquidColor("#3b82f6");
     setMissedSpins(0);
     setMissedReagents(0);
     setStoichiometryError(false);
@@ -1457,7 +2588,14 @@ export default function App() {
     setCanNanodropNow(false);
     setShowPhaseSeparation(false);
     setShowBioPopup(null);
-    setStepVolumes({ protK: 0, lysis: 0, binding: 0, wash: 0, elution: 0 });
+    setStepVolumes({ protK: 0, lysis: 0, binding: 0, ethanol: 0, wash: 0, elution: 0 });
+    setCurrentStepReagents({});
+    setCurrentReagentId(null);
+    setStep1SubActions({ lysisBufferAdded: false, proteinaseKAdded: false, mixed: false, incubated: false });
+    setStep1ActionOrder([]);
+    setStep3SubActions({ bindingBufferAdded: false, ethanolAdded: false, mixed: false });
+    setStep3ActionOrder([]);
+    setShowMixPrompt(false);
     setProtKIncubationOK(false);
     setTubeAnimating(false);
     setHasSeenBalancingTip(false);
@@ -1471,13 +2609,131 @@ export default function App() {
     setYieldQuality(null);
     setDifficultyMode("learning");
     setChallengeModeErrors([]);
+    setMistakes([]);
+    setEquipmentUsageLog([]);
+    setShowLN2SafetyModal(false);
+    setLn2Added(false);
+    setVaporCleared(false);
+    setLeafFrozen(false);
+    setGrindingStage('idle');
+    setIsGrinding(false);
+    setShowGrindingSetup(false);
+    setElutionBufferPreWarmed(false);
+    setShowElutionWarmingStep(false);
+    setIsWarmingBuffer(false);
+    setIsVortexing(false);
+    setTubeVortexed(false);
+    setShowVortexPrompt(false);
+    setScreenBeforeReadiness(screen);
+    setUserPerformance({
+      hasCorrectProtK: false,
+      hasUsedLN2: false,
+      hasAddedEthanol: false,
+      hasPerformedDrySpin: false,
+      drySpinDuration: 0,
+      isSafetyCompliant: false,
+      hasCorrectLysisVolume: false,
+      hasCorrectBindingVolume: false,
+      hasCorrectElutionVolume: false,
+      hasWarmedElution: false,
+      hasClarifiedLysate: false,
+    });
+    setWashTracking({
+      wash1: false,
+      wash2: false,
+      drySpin: false,
+      drySpinDuration: 0
+    });
+    setEnhancedResult(null);
     setScreen("briefing");
     setShowReadinessModal(true);
+
+    const studentId = getOrCreateStudentId();
+    const missionTitle = MISSIONS_DATA[tId][mId]?.title || 'DNA Extraction';
+
+    supabase
+      .from('mastery_progress')
+      .select('*')
+      .eq('student_id', studentId)
+      .eq('mission_name', missionTitle)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data) {
+          setMasteryProgress({
+            successCount: data.success_count || 0,
+            totalAttempts: data.total_attempts || 0,
+            bestPurity: data.best_purity || 0,
+            bestConcentration: data.best_concentration || 0
+          });
+        } else {
+          setMasteryProgress({ successCount: 0, totalAttempts: 0, bestPurity: 0, bestConcentration: 0 });
+        }
+      })
+      .catch(err => {
+        console.error('Error loading mastery progress:', err);
+        setMasteryProgress({ successCount: 0, totalAttempts: 0, bestPurity: 0, bestConcentration: 0 });
+      });
+  };
+
+  const handleSurveyComplete = async (responses: SurveyResponses) => {
+    const studentId = getOrCreateStudentId();
+    const missionTitle = MISSIONS_DATA[techniqueId][missionId]?.title || 'DNA Extraction';
+
+    try {
+      await supabase
+        .from('post_mission_surveys')
+        .insert([{
+          student_id: studentId,
+          mission_name: missionTitle,
+          result_id: savedRecordId,
+          muscle_memory_step: responses.muscleMemoryStep,
+          confidence_level: responses.confidenceLevel,
+          peer_challenge_shared: responses.peerChallengeShared
+        }]);
+
+      setShowPostMissionSurvey(false);
+
+      if (!user && techniqueId === 'DNA_EXT') {
+        localStorage.removeItem('guestTrial');
+        setShowGuestSignupModal(true);
+      } else {
+        setShowSuccessModal(true);
+      }
+    } catch (error) {
+      console.error('Error saving survey:', error);
+      setShowPostMissionSurvey(false);
+      setShowSuccessModal(true);
+    }
+  };
+
+  const handleVortexTube = () => {
+    if (!has("vortex_mixer")) {
+      addLog("Hardware Error: Vortex Mixer required.", "error");
+      return;
+    }
+    if (tubeVortexed) {
+      addLog("Tube already vortexed.", "info");
+      return;
+    }
+    setIsVortexing(true);
+    addLog("Vortexing tube...", "info");
+    setTimeout(() => {
+      setIsVortexing(false);
+      setTubeVortexed(true);
+      setShowVortexPrompt(false);
+      if (difficultyMode !== "challenge") {
+        addLog("✓ Tube vortexed - lysis buffer fully saturated into powder. Uniform cloudy green suspension formed.", "success");
+      }
+    }, 3500);
   };
 
   const handleLoadTube = () => {
     if (!has("centrifuge")) {
       addLog("Hardware Error: Centrifuge required.", "error");
+      return;
+    }
+    if (currentStep?.requiresVortexing && !tubeVortexed) {
+      addLog("Error: Must vortex tube before centrifuging.", "error");
       return;
     }
     setTubeAnimating(true);
@@ -1504,6 +2760,15 @@ export default function App() {
     }
     setIsSpinning(true);
     addLog("Centrifugation started (13,000 rpm)...", "info");
+
+    protocolTracker.logAction({
+      stepIndex: protocolIndex,
+      stepName: currentStep?.title || 'Unknown',
+      action: 'spin',
+      duration: 3,
+      timestamp: Date.now()
+    });
+
     setTimeout(() => {
       setIsSpinning(false);
       setHasSpunThisStep(true);
@@ -1515,10 +2780,12 @@ export default function App() {
 
       if (protocolIndex === 1) setCurrentSolidMass(0);
 
+      // Step 3 (Binding Preparation) - reset phase separation and pellet since we're using fresh tube
       if (protocolIndex === 2) {
-        setShowPhaseSeparation(true);
+        setShowPhaseSeparation(false);
+        setPelletVisible(false);
         setShowBioPopup("lysis");
-        setTimeout(() => setShowPhaseSeparation(false), 8000);
+        addLog("Transferred clear supernatant to a fresh, clean tube. No debris.", "success");
       }
 
       if (protocolIndex === 4 && !stoichiometryError) setPelletVisible(true);
@@ -1551,6 +2818,16 @@ export default function App() {
 
     setIsIncubating(true);
     addLog(`Incubation started at ${incubationTemp}°C...`, "info");
+
+    protocolTracker.logAction({
+      stepIndex: protocolIndex,
+      stepName: currentStep?.title || 'Unknown',
+      action: 'incubate',
+      temperature: incubationTemp,
+      duration: 120,
+      timestamp: Date.now()
+    });
+
     setTimeout(() => {
       setIsIncubating(false);
       setHasSpunThisStep(true);
@@ -1558,8 +2835,15 @@ export default function App() {
       addLog("Incubation complete. Tube removed from thermocycler.", "success");
       if (tempOK) {
         addLog("Proteinase K successfully digested proteins at correct temperature.", "success");
-        if (currentStep?.title === "Proteinase K Digestion") {
+        if (currentStep?.title === "Lysis & Protein Digestion") {
+          console.log('[STEP 1] Incubation complete: true');
+          checkTaskOrder('Lysis & Protein Digestion', 'incubated');
           setProtKIncubationOK(true);
+          setStep1SubActions(prev => {
+            const updated = { ...prev, incubated: true };
+            console.log('[STEP 1] Updated step1SubActions:', updated);
+            return updated;
+          });
         }
       } else {
         addLog("Proteinase K activity failed due to incorrect temperature. Protocol compromised.", "error");
@@ -1639,13 +2923,20 @@ export default function App() {
         }
       }
     } else {
-      // Normal yield calculation
-      let yieldPenalty = 1.0;
-      if (missedSpins > 0) yieldPenalty *= 0.1;
-      if (protocolAdherenceCompromised) yieldPenalty *= 0.7;
+      // Calculate mistake-based penalties
+      const { yieldPenalty: mistakeYieldPenalty, purityPenalty: mistakePurityPenalty, concentrationPenalty: mistakeConcentrationPenalty } = calculateConsequences();
 
-      localYield = parseFloat((sampleMass * yieldMultiplier * yieldPenalty).toFixed(2));
-      localConc = parseFloat(((localYield * 1000) / elutionVolume).toFixed(1));
+      // Normal yield calculation
+      let yieldPenaltyPercent = 1.0;
+      if (missedSpins > 0) yieldPenaltyPercent *= 0.1;
+      if (protocolAdherenceCompromised) yieldPenaltyPercent *= 0.7;
+
+      yieldPenaltyPercent *= (1 - mistakeYieldPenalty / 100);
+
+      localYield = parseFloat((sampleMass * yieldMultiplier * yieldPenaltyPercent).toFixed(2));
+
+      let adjustedConcentrationPenalty = 1.0 - (mistakeConcentrationPenalty / 100);
+      localConc = parseFloat(((localYield * 1000 * adjustedConcentrationPenalty) / elutionVolume).toFixed(1));
 
       // PURITY LOGIC: Checking for MIXING and WASH steps
       let purityScore = 1.88;
@@ -1658,6 +2949,8 @@ export default function App() {
 
       // Lysis (Step 3) MUST be mixed
       if (!step3Mixed) purityScore -= 0.4;
+
+      purityScore -= mistakePurityPenalty;
 
       localPurity = Math.max(0.4, purityScore).toFixed(2);
 
@@ -1695,11 +2988,27 @@ export default function App() {
       }
     }
 
-    setYieldUg(localYield);
-    setFinalConc(localConc);
-    setA260_280(localPurity);
-    setStatus(localStatus);
-    setFailReason(localFailReason);
+    const hasGoggles = has("safety_goggles");
+    const enhanced = calculateEnhancedResults(
+      userPerformance,
+      stepVolumes,
+      missionId,
+      sampleMass,
+      elutionBufferPreWarmed,
+      {
+        goggles: hasGoggles,
+        gloves: hasGloves,
+        labCoat: hasLabCoat
+      },
+      showPhaseSeparation
+    );
+
+    setEnhancedResult(enhanced);
+    setYieldUg(enhanced.yield);
+    setFinalConc(enhanced.concentration);
+    setA260_280(enhanced.a260_280.toString());
+    setStatus(enhanced.status === 'mastery' ? 'mastery' : 'fail');
+    setFailReason(enhanced.masteryBadge.blockReason || '');
     if (localStatus !== "unverified") {
       setShowQuant(true);
     }
@@ -1748,12 +3057,46 @@ export default function App() {
 
       if (data) {
         setSavedRecordId(data.id);
-        if (!user && techniqueId === 'DNA_EXT') {
-          localStorage.removeItem('guestTrial');
-          setShowGuestSignupModal(true);
+
+        const isSuccess = enhanced.concentration >= 200 && enhanced.a260_280 >= 1.7;
+        const newTotalAttempts = masteryProgress.totalAttempts + 1;
+        const newSuccessCount = isSuccess ? masteryProgress.successCount + 1 : masteryProgress.successCount;
+        const newBestPurity = Math.max(masteryProgress.bestPurity, enhanced.a260_280);
+        const newBestConcentration = Math.max(masteryProgress.bestConcentration, enhanced.concentration);
+
+        await supabase
+          .from('mastery_progress')
+          .upsert({
+            student_id: studentId,
+            mission_name: missionTitle,
+            success_count: newSuccessCount,
+            total_attempts: newTotalAttempts,
+            best_purity: newBestPurity,
+            best_concentration: newBestConcentration,
+            last_completed_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          }, {
+            onConflict: 'student_id,mission_name'
+          });
+
+        setMasteryProgress({
+          successCount: newSuccessCount,
+          totalAttempts: newTotalAttempts,
+          bestPurity: newBestPurity,
+          bestConcentration: newBestConcentration
+        });
+
+        if (isSuccess) {
+          setShowPostMissionSurvey(true);
         } else {
-          setShowSuccessModal(true);
+          if (!user && techniqueId === 'DNA_EXT') {
+            localStorage.removeItem('guestTrial');
+            setShowGuestSignupModal(true);
+          } else {
+            setShowSuccessModal(true);
+          }
         }
+
         anonymousUser.recordSimulation(missionTitle);
       }
 
@@ -1800,8 +3143,25 @@ export default function App() {
       setYieldUg(localYield);
       setFinalConc(localConc);
       setA260_280(localPurity);
+
+      const labResult: LabResult = {
+        concentration: localConc,
+        ratio260_280: parseFloat(localPurity),
+        ratio260_230: 2.1,
+        gelQuality: isSheared ? 'degraded' : isFaint ? 'good' : 'excellent',
+        yieldMicrograms: localYield
+      };
+
+      const report = analyzeProtocolExecution(
+        protocolTracker.getProtocolLog(),
+        protocolTracker.getSafetyLog(),
+        labResult,
+        missionId || 'A'
+      );
+
+      setMasteryReport(report);
     }
-  }, [status, finalConc, missionId, step1Method, step2Mixed, protKIncubationOK, step3Mixed, stepVolumes, elutionVolume, missedSpins, protocolAdherenceCompromised, sampleMass]);
+  }, [status, finalConc, missionId, step1Method, step2Mixed, protKIncubationOK, step3Mixed, stepVolumes, elutionVolume, missedSpins, protocolAdherenceCompromised, sampleMass, protocolTracker]);
 
   const isFail = status === "fail" || !finalConc || finalConc <= 0;
   const isSheared = missedSpins > 0;
@@ -1855,10 +3215,37 @@ export default function App() {
       {showManual && <LabManualOverlay onClose={() => setShowManual(false)} />}
       {showProtocol && <ProtocolBookOverlay onClose={() => setShowProtocol(false)} />}
       {showProtocolGuide && <ProtocolGuideOverlay onClose={() => setShowProtocolGuide(false)} missionId={missionId} />}
-      {showReadinessModal && <ReadinessOverlay onClose={() => {
-        setShowReadinessModal(false);
-        setScreen("briefing");
-      }} />}
+      {showLN2SafetyModal && (
+        <LN2SafetyModal
+          onAccept={() => {
+            setShowLN2SafetyModal(false);
+            setLn2Added(true);
+            setUserPerformance(prev => ({ ...prev, hasUsedLN2: true }));
+            if (difficultyMode !== "challenge") {
+              addLog("Adding liquid nitrogen to mortar...", "info");
+              addLog("⚠️ Wait for the liquid nitrogen to evaporate before grinding. Grinding while LN₂ is still boiling can cause the sample to pop out of the mortar.", "error");
+            }
+            setTimeout(() => {
+              setVaporCleared(true);
+              setLeafFrozen(true);
+              if (difficultyMode !== "challenge") {
+                addLog("✓ LN₂ vapor cleared. Leaf is now frozen and ready for grinding.", "success");
+                addLog("💡 Use a circular grinding motion against the mortar sides. This shearing action pulverizes the tough cellulose fibers more effectively than simple crushing.", "info");
+              }
+            }, 5000);
+          }}
+        />
+      )}
+      {showReadinessModal && <ReadinessOverlay
+        onClose={() => {
+          setShowReadinessModal(false);
+          setScreen("briefing");
+        }}
+        onCancel={() => {
+          setShowReadinessModal(false);
+          setScreen(screenBeforeReadiness || "missions");
+        }}
+      />}
       {showProtocolOverview && (
         <div className="fixed inset-0 z-[150] flex items-start justify-center bg-slate-950/80 backdrop-blur-md overflow-y-auto">
           <div className="w-full">
@@ -2275,14 +3662,25 @@ export default function App() {
             <div className="min-h-screen bg-[#0f172a]">
               <SharedNavigation onShowManual={() => setShowManual(true)} />
               <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-8">
-              <div className="bg-slate-800 border border-slate-700 p-6 rounded-2xl flex justify-between items-center">
-                <div>
-                  <h2 className="text-2xl font-black text-slate-50 uppercase tracking-tight">Laboratory Procurement</h2>
-                  <p className="text-sm text-slate-400 mt-1">Laboratory procurement is a core biotech skill that teaches you how to choose the right reagents and equipment, manage budgets, and prioritise resources for real-world experiments.</p>
-                </div>
-                <div className="text-right">
-                  <p className="text-[9px] text-slate-500 uppercase font-bold tracking-wider mb-1">Available Budget</p>
-                  <p className="text-3xl text-amber-400 font-black font-mono">{coins} BC</p>
+              <div className="bg-slate-800 border border-slate-700 p-6 rounded-2xl">
+                <div className="flex justify-between items-start gap-4 mb-4">
+                  <div className="flex-1">
+                    <h2 className="text-2xl font-black text-slate-50 uppercase tracking-tight">Laboratory Procurement</h2>
+                    <p className="text-sm text-slate-400 mt-1">Laboratory procurement is a core biotech skill that teaches you how to choose the right reagents and equipment, manage budgets, and prioritise resources for real-world experiments.</p>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={() => setShowProtocolGuide(true)}
+                      className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-bold uppercase transition-all cursor-pointer border-0 flex items-center gap-2 whitespace-nowrap"
+                    >
+                      <BookOpen size={14} />
+                      Protocol
+                    </button>
+                    <div className="text-right">
+                      <p className="text-[9px] text-slate-500 uppercase font-bold tracking-wider mb-1">Available Budget</p>
+                      <p className="text-3xl text-amber-400 font-black font-mono">{coins} BC</p>
+                    </div>
+                  </div>
                 </div>
               </div>
 
@@ -2318,11 +3716,11 @@ export default function App() {
                         <div className="flex items-center gap-4">
                           <p className="text-xl font-black text-amber-400 font-mono">{kit.cost} BC</p>
                           {owned ? (
-                            <button onClick={() => { setCoins(coins + kit.cost); setInventory(inventory.filter(i => i !== kit.id)); addLog(`Deselected: ${kit.name}. Refunded ${kit.cost} BC`, 'info'); }} className="px-6 py-2 rounded-lg font-bold uppercase text-sm transition-all cursor-pointer border-0 bg-rose-600 hover:bg-rose-500 text-white">
+                            <button onClick={() => { setCoins(coins + kit.cost); setInventory(inventory.filter(i => i !== kit.id)); setPurchasedItems(purchasedItems.filter(i => i !== kit.id)); addLog(`Deselected: ${kit.name}. Refunded ${kit.cost} BC`, 'info'); }} className="px-6 py-2 rounded-lg font-bold uppercase text-sm transition-all cursor-pointer border-0 bg-rose-600 hover:bg-rose-500 text-white">
                               Deselect
                             </button>
                           ) : (
-                            <button onClick={() => { if (canAfford) { setCoins(coins - kit.cost); setInventory([...inventory, kit.id]); addLog(`Purchased: ${kit.name}`, 'success'); }}} disabled={!canAfford} className={`px-6 py-2 rounded-lg font-bold uppercase text-sm transition-all cursor-pointer border-0 ${canAfford ? "bg-indigo-600 hover:bg-indigo-500 text-white" : "bg-slate-700 text-slate-500 cursor-not-allowed"}`}>
+                            <button onClick={() => { if (canAfford) { setCoins(coins - kit.cost); setInventory([...inventory, kit.id]); setPurchasedItems([...purchasedItems, kit.id]); addLog(`Purchased: ${kit.name}`, 'success'); }}} disabled={!canAfford} className={`px-6 py-2 rounded-lg font-bold uppercase text-sm transition-all cursor-pointer border-0 ${canAfford ? "bg-indigo-600 hover:bg-indigo-500 text-white" : "bg-slate-700 text-slate-500 cursor-not-allowed"}`}>
                               Purchase
                             </button>
                           )}
@@ -2354,11 +3752,11 @@ export default function App() {
                         <div className="flex items-center gap-4">
                           <p className="text-xl font-black text-amber-400 font-mono">{isFree ? "FREE" : `${tool.cost} BC`}</p>
                           {owned ? (
-                            <button onClick={() => { if (!isFree) setCoins(coins + tool.cost); setInventory(inventory.filter(i => i !== tool.id)); addLog(`Deselected: ${tool.name}${!isFree ? `. Refunded ${tool.cost} BC` : ''}`, 'info'); }} className="px-6 py-2 rounded-lg font-bold uppercase text-sm transition-all cursor-pointer border-0 bg-rose-600 hover:bg-rose-500 text-white">
+                            <button onClick={() => { if (!isFree) setCoins(coins + tool.cost); setInventory(inventory.filter(i => i !== tool.id)); setPurchasedItems(purchasedItems.filter(i => i !== tool.id)); addLog(`Deselected: ${tool.name}${!isFree ? `. Refunded ${tool.cost} BC` : ''}`, 'info'); }} className="px-6 py-2 rounded-lg font-bold uppercase text-sm transition-all cursor-pointer border-0 bg-rose-600 hover:bg-rose-500 text-white">
                               Deselect
                             </button>
                           ) : (
-                            <button onClick={() => { if (isFree || canAfford) { if (!isFree) setCoins(coins - tool.cost); setInventory([...inventory, tool.id]); addLog(`Acquired: ${tool.name}`, 'success'); }}} disabled={!isFree && !canAfford} className={`px-6 py-2 rounded-lg font-bold uppercase text-sm transition-all cursor-pointer border-0 ${isFree || canAfford ? "bg-indigo-600 hover:bg-indigo-500 text-white" : "bg-slate-700 text-slate-500 cursor-not-allowed"}`}>
+                            <button onClick={() => { if (isFree || canAfford) { if (!isFree) setCoins(coins - tool.cost); setInventory([...inventory, tool.id]); if (!isFree) setPurchasedItems([...purchasedItems, tool.id]); addLog(`Acquired: ${tool.name}`, 'success'); }}} disabled={!isFree && !canAfford} className={`px-6 py-2 rounded-lg font-bold uppercase text-sm transition-all cursor-pointer border-0 ${isFree || canAfford ? "bg-indigo-600 hover:bg-indigo-500 text-white" : "bg-slate-700 text-slate-500 cursor-not-allowed"}`}>
                               {isFree ? "Add to Bench" : "Purchase"}
                             </button>
                           )}
@@ -2389,11 +3787,26 @@ export default function App() {
                         <div className="flex items-center gap-4">
                           <p className="text-xl font-black text-amber-400 font-mono">{isFree ? "FREE" : `${item.cost} BC`}</p>
                           {owned ? (
-                            <button onClick={() => { if (!isFree) setCoins(coins + item.cost); setInventory(inventory.filter(i => i !== item.id)); addLog(`Deselected: ${item.name}${!isFree ? `. Refunded ${item.cost} BC` : ''}`, 'info'); }} className="px-6 py-2 rounded-lg font-bold uppercase text-sm transition-all cursor-pointer border-0 bg-rose-600 hover:bg-rose-500 text-white">
+                            <button onClick={() => { if (!isFree) setCoins(coins + item.cost); setInventory(inventory.filter(i => i !== item.id)); setPurchasedItems(purchasedItems.filter(i => i !== item.id)); addLog(`Deselected: ${item.name}${!isFree ? `. Refunded ${item.cost} BC` : ''}`, 'info'); }} className="px-6 py-2 rounded-lg font-bold uppercase text-sm transition-all cursor-pointer border-0 bg-rose-600 hover:bg-rose-500 text-white">
                               Deselect
                             </button>
                           ) : (
-                            <button onClick={() => { if (isFree || canAfford) { if (!isFree) setCoins(coins - item.cost); setInventory([...inventory, item.id]); addLog(`Acquired: ${item.name}`, 'success'); }}} disabled={!isFree && !canAfford} className={`px-6 py-2 rounded-lg font-bold uppercase text-sm transition-all cursor-pointer border-0 ${isFree || canAfford ? "bg-indigo-600 hover:bg-indigo-500 text-white" : "bg-slate-700 text-slate-500 cursor-not-allowed"}`}>
+                            <button onClick={() => {
+                              if (isFree || canAfford) {
+                                if (!isFree) setCoins(coins - item.cost);
+                                setInventory([...inventory, item.id]);
+                                if (!isFree) setPurchasedItems([...purchasedItems, item.id]);
+                                addLog(`Acquired: ${item.name}`, 'success');
+                                if (item.id === 'gloves' || item.id === 'lab_coat' || item.id === 'safety_goggles') {
+                                  const newSafety = has('gloves') || item.id === 'gloves';
+                                  const newGoggles = has('safety_goggles') || item.id === 'safety_goggles';
+                                  const newCoat = has('lab_coat') || item.id === 'lab_coat';
+                                  if (newSafety && newGoggles && newCoat) {
+                                    setUserPerformance(prev => ({ ...prev, isSafetyCompliant: true }));
+                                  }
+                                }
+                              }
+                            }} disabled={!isFree && !canAfford} className={`px-6 py-2 rounded-lg font-bold uppercase text-sm transition-all cursor-pointer border-0 ${isFree || canAfford ? "bg-indigo-600 hover:bg-indigo-500 text-white" : "bg-slate-700 text-slate-500 cursor-not-allowed"}`}>
                               {isFree ? "Add to Bench" : "Purchase"}
                             </button>
                           )}
@@ -2459,10 +3872,24 @@ export default function App() {
             <div className="min-h-screen bg-[#0f172a]">
               <SharedNavigation onShowManual={() => setShowManual(true)} />
               <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-8">
-              <div className="bg-slate-800 border border-slate-700 p-6 rounded-2xl">
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-xl font-black text-slate-50 uppercase tracking-tight">Step {protocolIndex + 1}: {currentStep.title}</h2>
-                  <div className="flex items-center gap-3">
+              <div className="bg-slate-800 border border-slate-700 p-6 rounded-2xl relative">
+                <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between mb-4 gap-4">
+                  <div className="flex-1">
+                    <h2 className="text-xl font-black text-slate-50 uppercase tracking-tight">Step {protocolIndex + 1}: {currentStep.title}</h2>
+                    <div className="flex items-center gap-3 mt-1">
+                      <span className="text-xs text-slate-500 font-mono">Progress: {protocolIndex + 1}/{protocolSteps.length}</span>
+                      {(() => {
+                        const subProgress = getSubActionProgress();
+                        if (subProgress && subProgress.completed === subProgress.total) {
+                          return (
+                            <span className="text-xs text-emerald-400 font-bold">All tasks complete ✓</span>
+                          );
+                        }
+                        return null;
+                      })()}
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto">
                     {difficultyMode === "challenge" && (
                       <div className="px-3 py-1 bg-amber-900/30 border border-amber-500/30 rounded-lg">
                         <span className="text-[10px] text-amber-400 font-bold uppercase">🏆 Challenge</span>
@@ -2478,370 +3905,1367 @@ export default function App() {
                     <button onClick={() => { setScreen("procurement"); addLog("Returned to procurement. Biological state preserved.", "info"); }} className="px-4 py-2 bg-amber-600 hover:bg-amber-500 text-white rounded-lg text-xs font-bold uppercase transition-all cursor-pointer border-0">
                       Add Equipment
                     </button>
-                    <span className="text-xs text-slate-500 font-mono">Progress: {protocolIndex + 1}/{protocolSteps.length}</span>
+
+                    {/* Continue Button - Top Right */}
+                    {(() => {
+                      const subProgress = getSubActionProgress();
+                      let canContinue = false;
+                      let remainingTasks = 0;
+
+                      if (subProgress) {
+                        // Has subtasks - check if all complete
+                        canContinue = subProgress.completed === subProgress.total;
+                        remainingTasks = subProgress.total - subProgress.completed;
+                        console.log(`[CONTINUE BUTTON] Step "${currentStep?.title}" - Progress: ${subProgress.completed}/${subProgress.total}, Can Continue: ${canContinue}`);
+                        if (currentStep?.title === "Lysis & Protein Digestion") {
+                          console.log('[CONTINUE BUTTON] Step 1 complete status:', canContinue ? 'true' : 'false');
+                          console.log('[CONTINUE BUTTON] Subtasks:', subProgress.actions);
+                        }
+                      } else {
+                        // No subtasks - use existing logic
+                        if (currentStep.title === "Column Binding") {
+                          // Special condition for Column Binding: must load liquid, spin, and discard waste
+                          canContinue = liquidInColumn && hasSpunThisStep && hasDiscardedWaste;
+                        } else {
+                          const cond1 = (currentStep.requiresVolume && hasDispensedThisStep) || (currentStep.options) || (!currentStep.requiresVolume && !currentStep.options);
+                          const cond2 = currentStep.requiresSpin || currentStep.requiresIncubation ? hasSpunThisStep : true;
+                          const cond3 = currentStep.requiresMixing ? (currentStep.title === "Lysis & Protein Digestion" ? step2Mixed : currentStep.title === "Binding Preparation" ? step3Mixed : !needsMixing) : true;
+                          const cond4 = currentStep.requiresVortexing ? tubeVortexed : true;
+                          canContinue = cond1 && cond2 && cond3 && cond4;
+                        }
+                      }
+
+                      const nextStepNumber = protocolIndex + 2;
+                      const buttonText = canContinue
+                        ? `CONTINUE TO STEP ${nextStepNumber} →`
+                        : remainingTasks > 0
+                          ? `SKIP TO STEP ${nextStepNumber} (${remainingTasks} task${remainingTasks === 1 ? '' : 's'} incomplete) →`
+                          : `CONTINUE TO STEP ${nextStepNumber} →`;
+
+                      return (
+                        <button
+                          onClick={() => {
+                            console.log('Moving to step', protocolIndex + 2);
+
+                            // Track incomplete tasks for Sandbox learning model
+                            const incompleteTasks = [];
+
+                            // Validation checks - now just tracking, not blocking
+                            if (currentStep.requiresSpin && !hasSpunThisStep) {
+                              setMissedSpins(missedSpins + 1);
+                              addLog("Note: Centrifugation step skipped.", "error");
+                              setProtocolAdherenceCompromised(true);
+                              incompleteTasks.push('centrifugation');
+                            }
+
+                            if (currentStep.requiresVolume && !hasDispensedThisStep) {
+                              addLog("Note: No reagent added.", "error");
+                              setMissedReagents(missedReagents + 1);
+                              setProtocolAdherenceCompromised(true);
+                              incompleteTasks.push('reagent_addition');
+                            }
+
+                            if (currentStep.title === "Lysis & Protein Digestion") {
+                              if (!step1SubActions.lysisBufferAdded) {
+                                addLog("Note: Lysis Buffer was not added.", "error");
+                                setProtocolAdherenceCompromised(true);
+                                incompleteTasks.push('lysis_buffer');
+                              }
+                              if (!step1SubActions.proteinaseKAdded) {
+                                addLog("Note: Proteinase K was not added.", "error");
+                                setProtocolAdherenceCompromised(true);
+                                incompleteTasks.push('proteinase_k');
+                              }
+                              if (!step1SubActions.mixed) {
+                                addLog("Note: Tube was not mixed by inversion.", "error");
+                                setProtocolAdherenceCompromised(true);
+                                incompleteTasks.push('mixing');
+                              }
+                              if (!step1SubActions.incubated) {
+                                addLog("Note: Incubation at 56°C was skipped.", "error");
+                                setProtocolAdherenceCompromised(true);
+                                incompleteTasks.push('incubation');
+                              }
+                            }
+
+                            if (currentStep.title === "Binding Preparation") {
+                              if (!step3SubActions.bindingBufferAdded) {
+                                addLog("Note: Binding Buffer was not added.", "error");
+                                setProtocolAdherenceCompromised(true);
+                                incompleteTasks.push('binding_buffer');
+                              }
+                              if (!step3SubActions.ethanolAdded) {
+                                addLog("Note: Ethanol was not added. DNA will NOT bind without ethanol!", "error");
+                                setProtocolAdherenceCompromised(true);
+                                incompleteTasks.push('ethanol');
+                              }
+                              if (!step3SubActions.mixed) {
+                                addLog("Note: Tube was not mixed by inversion.", "error");
+                                setProtocolAdherenceCompromised(true);
+                                incompleteTasks.push('mixing');
+                              }
+                            }
+
+                            // Volume validation
+                            if (currentStep.multipleReagents && currentStep.reagents) {
+                              currentStep.reagents.forEach(reagent => {
+                                const addedVolume = currentStepReagents[reagent.id] || 0;
+                                if (addedVolume === 0) {
+                                  addLog(`Note: ${reagent.name} was not added.`, "error");
+                                  setProtocolAdherenceCompromised(true);
+                                  incompleteTasks.push(`volume_${reagent.id}`);
+                                } else if (addedVolume !== reagent.targetVolume) {
+                                  addLog(`Note: ${reagent.name} volume was ${addedVolume}µL instead of ${reagent.targetVolume}µL.`, "error");
+                                  setProtocolAdherenceCompromised(true);
+                                  incompleteTasks.push(`volume_incorrect_${reagent.id}`);
+                                }
+                              });
+                            } else if (currentStep.reagents && currentStep.reagents[0]) {
+                              const reagent = currentStep.reagents[0];
+                              if (volumeAddedThisStep !== reagent.targetVolume && volumeAddedThisStep > 0) {
+                                addLog(`Note: Volume was ${volumeAddedThisStep}µL instead of ${reagent.targetVolume}µL.`, "error");
+                                setProtocolAdherenceCompromised(true);
+                                incompleteTasks.push('volume_incorrect');
+                              }
+                            }
+
+                            // Record incomplete tasks in userPerformance for sandbox learning model
+                            if (incompleteTasks.length > 0) {
+                              setUserPerformance(prev => ({
+                                ...prev,
+                                [`step${protocolIndex + 1}_incomplete`]: incompleteTasks
+                              }));
+                              console.log('[SANDBOX MODE] Incomplete tasks recorded:', incompleteTasks);
+                            }
+
+                            console.log('[NAVIGATE] Moving to Step', protocolIndex + 2);
+
+                            // Check if this is the last step
+                            if (protocolIndex === protocolSteps.length - 1) {
+                              setCanNanodropNow(true);
+                              setStatus("verification");
+                            } else {
+                              const nextStep = protocolSteps[protocolIndex + 1];
+
+                              // For Binding Preparation step (Step 3), reset volume to ~200µL (supernatant only)
+                              if (nextStep?.title === "Binding Preparation") {
+                                setBufferVolume(200);
+                                addLog("Transferred ~200µL clear supernatant to fresh tube. Pellet discarded.", "info");
+                              }
+                              // For Elution step, reset buffer volume to show fresh, empty tube
+                              else if (nextStep?.isElution) {
+                                setBufferVolume(0);
+                                addLog("Column transferred to fresh, empty collection tube.", "info");
+                              } else {
+                                setBufferVolume(bufferVolume + volumeAddedThisStep);
+                              }
+
+                              setVolumeAddedThisStep(0);
+                              setProtocolIndex(protocolIndex + 1);
+                              setHasDispensedThisStep(false);
+                              setHasSpunThisStep(false);
+                              setNeedsMixing(false);
+                              setIsMixing(false);
+                              setStep2Mixed(false);
+                              setStep3Mixed(false);
+                              setCurrentStepReagents({});
+                              setCurrentReagentId(null);
+                              setShowMixPrompt(false);
+                              setTubeVortexed(false);
+                              setShowVortexPrompt(false);
+                              setSelectedPipetteForTransfer(null);
+                              setHasAspiratedFromTube(false);
+                              setLiquidInColumn(false);
+                              setShowPipetteAnimation(false);
+                              setPipetteAnimationPosition('tube');
+                              setHasDiscardedWaste(false);
+                              setIsDiscardingWaste(false);
+                              setWasteInCollectionTube(false);
+                              window.scrollTo({ top: 0, behavior: 'smooth' });
+                            }
+                          }}
+                          className={`
+                            w-full lg:w-auto px-6 py-3 rounded-lg font-bold text-sm transition-all border-0 whitespace-nowrap cursor-pointer
+                            ${canContinue
+                              ? 'bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-500 hover:to-orange-400 text-white hover:scale-105 hover:shadow-lg hover:shadow-orange-500/40 animate-continue-pulse'
+                              : 'bg-gradient-to-r from-amber-700 to-amber-600 hover:from-amber-600 hover:to-amber-500 text-white hover:scale-105'
+                            }
+                          `}
+                        >
+                          {buttonText}
+                        </button>
+                      );
+                    })()}
                   </div>
                 </div>
                 <div className="bg-indigo-900/20 border border-indigo-500/30 p-4 rounded-xl mb-4">
                   <p className="text-sm text-indigo-300 font-bold mb-2">{currentStep.prompt}</p>
                   <p className="text-xs text-slate-400 leading-relaxed">{currentStep.science}</p>
+                  {currentStep.educationalNote && (
+                    <div className="mt-3 p-3 bg-emerald-900/20 border border-emerald-500/30 rounded-lg">
+                      <p className="text-xs text-emerald-300 leading-relaxed">{currentStep.educationalNote}</p>
+                    </div>
+                  )}
+                  {currentStep.storageNote && (
+                    <div className="mt-3 p-3 bg-blue-900/20 border border-blue-500/30 rounded-lg">
+                      <p className="text-xs text-blue-300 leading-relaxed">💾 Storage: {currentStep.storageNote}</p>
+                    </div>
+                  )}
                 </div>
+
+                {getSubActionProgress() && (
+                  <div className="bg-slate-900/50 border border-slate-700 p-4 rounded-xl">
+                    <div className="flex items-center justify-between mb-3">
+                      <h4 className="text-xs font-bold text-white uppercase">Tasks ({getSubActionProgress().completed}/{getSubActionProgress().total} complete)</h4>
+                      <div className="flex gap-1">
+                        {Array.from({ length: getSubActionProgress().total }).map((_, i) => (
+                          <div
+                            key={i}
+                            className={`w-2 h-2 rounded-full ${i < getSubActionProgress().completed ? 'bg-emerald-500' : 'bg-slate-600'}`}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      {currentStep.title === "Lysis & Protein Digestion" && (() => {
+                        console.log('[RENDER CHECKLIST] step1SubActions:', step1SubActions);
+                        return (
+                        <>
+                          <div className={`flex items-center gap-2 text-xs ${step1SubActions.lysisBufferAdded ? 'text-emerald-400' : 'text-slate-500'}`}>
+                            <span>{step1SubActions.lysisBufferAdded ? '☑' : '☐'}</span>
+                            <span>Add Lysis Buffer (200 µL)</span>
+                          </div>
+                          <div className={`flex items-center gap-2 text-xs ${step1SubActions.proteinaseKAdded ? 'text-emerald-400' : 'text-slate-500'}`}>
+                            <span>{step1SubActions.proteinaseKAdded ? '☑' : '☐'}</span>
+                            <span>Add Proteinase K (20 µL)</span>
+                          </div>
+                          <div className={`flex items-center gap-2 text-xs ${step1SubActions.mixed ? 'text-emerald-400' : 'text-slate-500'}`}>
+                            <span>{step1SubActions.mixed ? '☑' : '☐'}</span>
+                            <span>Mix by inverting tube</span>
+                          </div>
+                          <div className={`flex items-center gap-2 text-xs ${step1SubActions.incubated ? 'text-emerald-400' : 'text-slate-500'}`}>
+                            <span>{step1SubActions.incubated ? '☑' : '☐'}</span>
+                            <span>Incubate at 56°C</span>
+                          </div>
+                        </>
+                        );
+                      })()}
+                      {currentStep.title === "Binding Preparation" && (
+                        <>
+                          <div className={`flex items-center gap-2 text-xs ${step3SubActions.bindingBufferAdded ? 'text-emerald-400' : 'text-slate-500'}`}>
+                            <span>{step3SubActions.bindingBufferAdded ? '☑' : '☐'}</span>
+                            <span>Add Binding Buffer (200 µL)</span>
+                          </div>
+                          <div className={`flex items-center gap-2 text-xs ${step3SubActions.ethanolAdded ? 'text-emerald-400' : 'text-slate-500'}`}>
+                            <span>{step3SubActions.ethanolAdded ? '☑' : '☐'}</span>
+                            <span>Add Ethanol 96-100% (200 µL)</span>
+                          </div>
+                          <div className={`flex items-center gap-2 text-xs ${step3SubActions.mixed ? 'text-emerald-400' : 'text-slate-500'}`}>
+                            <span>{step3SubActions.mixed ? '☑' : '☐'}</span>
+                            <span>Mix by inverting tube</span>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
 
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                <div className="space-y-6">
-                  <div className="bg-slate-800 border border-slate-700 p-6 rounded-2xl relative min-h-[400px]">
-                    <LabBenchVisual inventory={inventory} />
-                    <h3 className="text-sm font-bold text-white uppercase mb-4 flex items-center gap-2"><FlaskConical size={16} /> {showGrindingSetup ? "Manual Grinding" : (currentStep.title === "Binding/Column Load" || currentStep.title === "Wash Stage") ? "Filter Column" : "Sample Tube"}</h3>
+              {/* 3 Column Layout: Sample | Reagents | Pipettes */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {/* Column 1: Sample Tube (30%) */}
+                <div className="md:col-span-1">
+                  <div className="bg-slate-800 border border-slate-700 p-4 rounded-2xl relative">
+                    <h3 className="text-sm font-bold text-white uppercase mb-3 flex items-center gap-2"><FlaskConical size={16} /> {showGrindingSetup ? "Manual Grinding" : currentStep.title === "Column Binding" ? "Sample & Column" : (currentStep.title === "Binding/Column Load" || currentStep.title === "Wash Stage" || currentStep.title === "Wash & Dry") ? "Filter Column" : "Sample Tube"}</h3>
                     {showGrindingSetup ? (
-                      <div className="flex justify-center items-center min-h-[300px]">
-                        <div className="relative">
-                          <svg width="200" height="250" viewBox="0 0 200 250" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <ellipse cx="100" cy="180" rx="60" ry="15" fill="#475569" opacity="0.6" />
-                            <path d="M50 180 Q40 150 45 120 L155 120 Q160 150 150 180 Z" fill="#64748b" stroke="#475569" strokeWidth="2" />
-                            {isGrinding && (
-                              <>
-                                <circle cx="70" cy="140" r="3" fill="#60a5fa" opacity="0.7" className="animate-ping" />
-                                <circle cx="90" cy="150" r="2" fill="#60a5fa" opacity="0.6" className="animate-ping" style={{animationDelay: '0.2s'}} />
-                                <circle cx="110" cy="145" r="2.5" fill="#60a5fa" opacity="0.8" className="animate-ping" style={{animationDelay: '0.4s'}} />
-                                <circle cx="130" cy="155" r="2" fill="#60a5fa" opacity="0.7" className="animate-ping" style={{animationDelay: '0.1s'}} />
-                              </>
-                            )}
-                            <rect x="85" y="140" width="30" height="35" rx="2" fill="#1e293b" opacity="0.8" />
-                            <text x="100" y="160" textAnchor="middle" fill="#22c55e" fontSize="8" fontWeight="bold">LN₂ GAS</text>
-                            <path
-                              d="M80 60 L100 140 L120 60"
-                              fill="#94a3b8"
-                              stroke="#64748b"
-                              strokeWidth="2"
-                              className={isGrinding ? "animate-pulse" : ""}
-                              style={{
-                                transform: isGrinding ? 'translateY(10px)' : 'translateY(0)',
-                                transition: 'transform 0.3s ease-in-out'
-                              }}
-                            />
-                            <ellipse cx="100" cy="55" rx="25" ry="10" fill="#cbd5e1" stroke="#64748b" strokeWidth="2" />
-                          </svg>
-                          <p className="text-center text-xs text-emerald-400 font-bold mt-2 animate-pulse">
-                            {isGrinding ? "Grinding tissue..." : "Adding liquid nitrogen..."}
-                          </p>
-                        </div>
+                      <div
+                        className="flex justify-center items-center min-h-[300px] cursor-pointer"
+                        onClick={() => {
+                          if (!ln2Added) {
+                            if (!showLN2SafetyModal) {
+                              setShowLN2SafetyModal(true);
+                            }
+                          } else if (vaporCleared && !isGrinding) {
+                            setIsGrinding(true);
+                            if (difficultyMode !== "challenge") {
+                              addLog("Using circular grinding motion...", "info");
+                            }
+                            const stages = [1, 2, 3, 4];
+                            stages.forEach((stage, index) => {
+                              setTimeout(() => {
+                                setGrindingStage(stage);
+                                if (stage === 4) {
+                                  setTimeout(() => {
+                                    setIsGrinding(false);
+                                    setShowGrindingSetup(false);
+                                    setLn2Added(false);
+                                    setVaporCleared(false);
+                                    setLeafFrozen(false);
+                                    setGrindingStage('idle');
+                                    if (difficultyMode !== "challenge") {
+                                      addLog("✓ Cassava leaf ground to fine powder. Ready for lysis.", "success");
+                                    }
+                                  }, 2000);
+                                }
+                              }, index * 5000);
+                            });
+                          }
+                        }}
+                      >
+                        <EnhancedGrindingVisual
+                          ln2Added={ln2Added}
+                          vaporCleared={vaporCleared}
+                          isGrinding={isGrinding}
+                          grindingStage={grindingStage}
+                        />
                       </div>
                     ) : (
-                      <div className={`flex justify-center transition-all duration-500 ${tubeAnimating ? 'opacity-20 scale-75' : 'opacity-100 scale-100'}`}>
-                        {(currentStep.title === "Binding/Column Load" || currentStep.title === "Wash Stage") ? (
-                          <FilterColumnVisual
-                            volume={bufferVolume + volumeAddedThisStep}
-                            hasDNA={currentStep.title === "Wash Stage"}
-                            showSeparation={showPhaseSeparation}
-                          />
+                      <div className={`flex justify-center transition-all duration-500 ${tubeAnimating ? 'opacity-20 scale-75' : 'opacity-100 scale-100'} ${isMixing ? 'animate-[wiggle_0.5s_ease-in-out_4]' : ''}`}>
+                        {currentStep.title === "Column Binding" ? (
+                          <div className="flex items-center justify-center gap-6">
+                            <div className="flex flex-col items-center relative">
+                              <div
+                                className={`relative ${selectedPipetteForTransfer && !hasAspiratedFromTube ? 'cursor-pointer hover:scale-105 transition-transform ring-4 ring-sky-400 ring-opacity-50 animate-pulse' : ''}`}
+                                onClick={() => {
+                                  if (selectedPipetteForTransfer && !hasAspiratedFromTube) {
+                                    setHasAspiratedFromTube(true);
+                                    setShowPipetteAnimation(true);
+                                    setPipetteAnimationPosition('tube');
+                                    addLog(`Aspirated ${bufferVolume + volumeAddedThisStep}µL from sample tube`, "info");
+                                    setTimeout(() => {
+                                      setShowPipetteAnimation(false);
+                                    }, 1500);
+                                  }
+                                }}
+                              >
+                                {showPipetteAnimation && pipetteAnimationPosition === 'tube' && (
+                                  <PipetteAnimationIcon position="tube" />
+                                )}
+                                <TubeVisual
+                                  volume={hasAspiratedFromTube ? 0 : (bufferVolume + volumeAddedThisStep)}
+                                  solidMass={currentSolidMass}
+                                  hasPellet={pelletVisible}
+                                  stepTitle={currentStep.title}
+                                  missionId={missionId}
+                                  tubeVortexed={tubeVortexed}
+                                />
+                              </div>
+                              <p className="text-[9px] text-slate-400 font-bold uppercase mt-2">Sample Tube</p>
+                              <p className="text-[8px] text-emerald-400 mt-1">
+                                {hasAspiratedFromTube ? '0µL' : `${bufferVolume + volumeAddedThisStep}µL`}
+                              </p>
+                              {selectedPipetteForTransfer && !hasAspiratedFromTube && (
+                                <p className="text-[9px] text-sky-400 mt-1 animate-pulse">Click to aspirate →</p>
+                              )}
+                            </div>
+                            <div className="text-slate-400 text-2xl">→</div>
+                            <div className="flex flex-col items-center relative">
+                              <div
+                                className={`relative ${hasAspiratedFromTube && !liquidInColumn ? 'cursor-pointer hover:scale-105 transition-transform ring-4 ring-sky-400 ring-opacity-50 animate-pulse' : ''}`}
+                                onClick={() => {
+                                  if (hasAspiratedFromTube && !liquidInColumn) {
+                                    setLiquidInColumn(true);
+                                    setShowPipetteAnimation(true);
+                                    setPipetteAnimationPosition('column');
+                                    addLog(`Dispensed ${bufferVolume + volumeAddedThisStep}µL into spin column`, "success");
+                                    setTimeout(() => {
+                                      setShowPipetteAnimation(false);
+                                    }, 1500);
+                                  }
+                                }}
+                              >
+                                {showPipetteAnimation && pipetteAnimationPosition === 'column' && (
+                                  <PipetteAnimationIcon position="column" />
+                                )}
+                                <SpinColumnVisual
+                                  volume={liquidInColumn ? (bufferVolume + volumeAddedThisStep) : 0}
+                                  hasDNA={false}
+                                  hasSpun={hasSpunThisStep}
+                                  wasteInTube={wasteInCollectionTube}
+                                  isDiscarding={isDiscardingWaste}
+                                />
+                              </div>
+                              {hasAspiratedFromTube && !liquidInColumn && (
+                                <p className="text-[9px] text-sky-400 mt-1 animate-pulse">Click to dispense →</p>
+                              )}
+
+                              {/* Discard Waste Button */}
+                              {wasteInCollectionTube && !hasDiscardedWaste && (
+                                <button
+                                  onClick={() => {
+                                    setIsDiscardingWaste(true);
+                                    addLog("Discarding flow-through waste...", "info");
+                                    setTimeout(() => {
+                                      setWasteInCollectionTube(false);
+                                      setIsDiscardingWaste(false);
+                                      setHasDiscardedWaste(true);
+                                      setVolumeAddedThisStep(0);
+                                      addLog("✓ Waste discarded. DNA remains safely bound to silica membrane.", "success");
+                                    }, 800);
+                                  }}
+                                  className="mt-2 px-4 py-2 bg-orange-600 hover:bg-orange-500 text-white rounded-lg text-xs font-bold uppercase transition-all cursor-pointer border-0 flex items-center gap-2 animate-pulse"
+                                >
+                                  <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    width="16"
+                                    height="16"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeWidth="2"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                  >
+                                    <path d="M3 6h18" />
+                                    <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+                                    <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+                                  </svg>
+                                  DISCARD WASTE
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        ) : (currentStep.title === "Binding/Column Load" || currentStep.title === "Wash Stage" || currentStep.title === "Wash & Dry") ? (
+                          <div className="flex flex-col items-center">
+                            <FilterColumnVisual
+                              volume={currentStep.title === "Wash & Dry" ? volumeAddedThisStep : (bufferVolume + volumeAddedThisStep)}
+                              hasDNA={currentStep.title === "Wash Stage" || currentStep.title === "Wash & Dry"}
+                              showSeparation={showPhaseSeparation}
+                              wasteInTube={wasteInCollectionTube}
+                              isDiscarding={isDiscardingWaste}
+                            />
+
+                            {/* Discard Waste Button for Wash & Dry step */}
+                            {currentStep.title === "Wash & Dry" && wasteInCollectionTube && !hasDiscardedWaste && (
+                              <button
+                                onClick={() => {
+                                  setIsDiscardingWaste(true);
+                                  addLog("Discarding flow-through waste...", "info");
+                                  setTimeout(() => {
+                                    setWasteInCollectionTube(false);
+                                    setIsDiscardingWaste(false);
+                                    setHasDiscardedWaste(true);
+                                    setVolumeAddedThisStep(0);
+                                    addLog("✓ Waste discarded. DNA remains safely bound to silica membrane.", "success");
+                                  }, 800);
+                                }}
+                                className="mt-2 px-4 py-2 bg-orange-600 hover:bg-orange-500 text-white rounded-lg text-xs font-bold uppercase transition-all cursor-pointer border-0 flex items-center gap-2 animate-pulse"
+                              >
+                                <svg
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  width="16"
+                                  height="16"
+                                  viewBox="0 0 24 24"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  strokeWidth="2"
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                >
+                                  <path d="M3 6h18" />
+                                  <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+                                  <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+                                </svg>
+                                DISCARD WASTE
+                              </button>
+                            )}
+
+                            {/* Educational tooltip */}
+                            {currentStep.title === "Wash & Dry" && wasteInCollectionTube && !hasDiscardedWaste && (
+                              <div className="mt-2 p-2 bg-blue-900/20 border border-blue-500/30 rounded-lg max-w-xs">
+                                <p className="text-[9px] text-blue-300 text-center">
+                                  The flow-through contains salts and contaminants. Your DNA is safely bound to the silica membrane.
+                                </p>
+                              </div>
+                            )}
+                          </div>
                         ) : currentStep.title === "Elution" ? (
                           <TubeWithFilterColumnVisual
                             volume={bufferVolume + volumeAddedThisStep}
                             hasDNA={true}
                             stepTitle={currentStep.title}
                           />
+                        ) : currentStep.title === "Binding Preparation" ? (
+                          <div className="relative">
+                            <DualTubeVisual
+                              oldTubeHasSupernatant={showPhaseSeparation}
+                              freshTubeVolume={bufferVolume + volumeAddedThisStep}
+                              freshTubeColor="#E6F3FF"
+                            />
+                            {showMixPrompt && (
+                              <div className="absolute top-0 left-1/2 transform -translate-x-1/2 bg-emerald-600 text-white text-xs font-bold px-3 py-1 rounded-lg animate-pulse whitespace-nowrap z-10">
+                                👆 Click fresh tube to mix
+                              </div>
+                            )}
+                            <div
+                              className={`${showMixPrompt ? 'cursor-pointer hover:opacity-80 transition-opacity' : ''} absolute inset-0`}
+                              onClick={() => {
+                                if (showMixPrompt && !isMixing) {
+                                  setIsMixing(true);
+                                  if (difficultyMode !== "challenge") {
+                                    addLog("Mixing by inversion...", "info");
+                                  }
+                                  setTimeout(() => {
+                                    setIsMixing(false);
+                                    setShowMixPrompt(false);
+                                    setNeedsMixing(false);
+                                    checkTaskOrder('Binding Preparation', 'mixed');
+                                    setStep3SubActions(prev => ({ ...prev, mixed: true }));
+                                    setStep3Mixed(true);
+                                    if (difficultyMode !== "challenge") {
+                                      addLog("✓ Mixed. Ready for column binding.", "success");
+                                    }
+                                  }, 2000);
+                                }
+                              }}
+                            />
+                          </div>
                         ) : (
-                          <TubeVisual
-                            volume={bufferVolume + volumeAddedThisStep}
-                            solidMass={currentSolidMass}
-                            hasPellet={pelletVisible}
-                            showSeparation={showPhaseSeparation}
-                            onSupernatantClick={showPhaseSeparation ? () => setShowBioPopup("supernatant") : null}
-                            onPelletClick={showPhaseSeparation ? () => setShowBioPopup("pellet") : null}
-                          />
+                          <div className="relative">
+                            <div
+                              className={`${showMixPrompt ? 'cursor-pointer hover:scale-105 transition-transform ring-4 ring-emerald-400 ring-opacity-50 animate-pulse rounded-full' : ''}`}
+                              onClick={() => {
+                                if (showMixPrompt && !isMixing) {
+                                  setIsMixing(true);
+                                  if (difficultyMode !== "challenge") {
+                                    addLog("Mixing by inversion...", "info");
+                                  }
+                                  setTimeout(() => {
+                                    setIsMixing(false);
+                                    setShowMixPrompt(false);
+                                    setNeedsMixing(false);
+
+                                    if (currentStep.title === "Lysis & Protein Digestion") {
+                                      console.log('[STEP 1] Mixing complete: true');
+                                      checkTaskOrder('Lysis & Protein Digestion', 'mixed');
+                                      setStep1SubActions(prev => {
+                                        const updated = { ...prev, mixed: true };
+                                        console.log('[STEP 1] Updated step1SubActions:', updated);
+                                        return updated;
+                                      });
+                                      setStep2Mixed(true);
+                                      if (difficultyMode !== "challenge") {
+                                        addLog("✓ Mixed. Proceed to incubate at 56°C.", "success");
+                                      }
+                                    }
+                                  }, 2000);
+                                }
+                              }}
+                            >
+                              {showMixPrompt && (
+                                <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-emerald-600 text-white text-xs font-bold px-3 py-1 rounded-lg animate-pulse whitespace-nowrap">
+                                  👆 Click to mix by inversion
+                                </div>
+                              )}
+                              <TubeVisual
+                                volume={bufferVolume + volumeAddedThisStep}
+                                solidMass={currentSolidMass}
+                                hasPellet={pelletVisible}
+                                showSeparation={showPhaseSeparation}
+                                onSupernatantClick={showPhaseSeparation ? () => setShowBioPopup("supernatant") : null}
+                                onPelletClick={showPhaseSeparation ? () => setShowBioPopup("pellet") : null}
+                                stepTitle={currentStep.title}
+                                missionId={missionId}
+                                tubeVortexed={tubeVortexed}
+                              />
+                            </div>
+                          </div>
                         )}
                       </div>
                     )}
                     <div className="text-center text-xs text-slate-400 font-mono space-y-1">
                       {currentSolidMass > 0 && (bufferVolume + volumeAddedThisStep === 0) ? (
                         <p className="text-sm font-bold">{currentSolidMass} mg tissue</p>
+                      ) : currentStep.title === "Binding Preparation" ? (
+                        <p className="text-sm font-bold text-emerald-400">Fresh Tube: {bufferVolume + volumeAddedThisStep} µl</p>
                       ) : (
                         <p className="text-sm font-bold">{bufferVolume + volumeAddedThisStep} µl</p>
                       )}
                     </div>
-
-                    {activeTool === 'pipette' && pipetteVolume && !needsMixing && !hasDispensedThisStep && (
-                      <div
-                        className="absolute top-8 right-12 p-4 rounded-3xl shadow-2xl border-2 bg-indigo-600 border-indigo-400 animate-bounce cursor-pointer hover:bg-indigo-500 hover:scale-110 transition-all shadow-indigo-500/30"
-                        style={{
-                          animation: 'bounce 1s infinite, drip 2s ease-in-out infinite'
-                        }}
-                        onClick={() => {
-                          if (!hasReagentForStep(currentStep.reagentRequired)) {
-                            addLog(`Aspiration Error: Missing ${currentStep.reagentRequired} reagent.`, "error");
-                            setMissedReagents(missedReagents + 1);
-                            setPipetteVolume(null);
-                            setActiveTool(null);
-                            return;
-                          }
-                          if (currentStep.isElution) {
-                            setElutionVolume(pipetteVolume);
-                          }
-                          setVolumeAddedThisStep(pipetteVolume);
-                          setStepVolumes(prev => {
-                            const title = currentStep?.title;
-                            if (title === "Proteinase K Digestion") return { ...prev, protK: pipetteVolume };
-                            if (title === "Lysis Phase") return { ...prev, lysis: pipetteVolume };
-                            if (title === "Binding/Column Load") return { ...prev, binding: pipetteVolume };
-                            if (title === "Wash Stage") return { ...prev, wash: pipetteVolume };
-                            if (title === "Elution") return { ...prev, elution: pipetteVolume };
-                            return prev;
-                          });
-                          addLog(`Dispensed ${pipetteVolume}µL`, "success");
-                          if (currentStep.targetVolume && Math.abs(pipetteVolume - currentStep.targetVolume) > 50) {
-                            setStoichiometryError(true);
-                            addLog("Warning: Volume deviates significantly from protocol.", "error");
-                          }
-                          setPipetteVolume(null);
-                          setActiveTool(null);
-                          if (currentStep.isElution) {
-                            addLog("Elution buffer added. Wait 1 minute for DNA to elute from the membrane.", "info");
-                            setTimeout(() => {
-                              setHasDispensedThisStep(true);
-                              addLog("Elution wait complete. Proceed to centrifugation.", "success");
-                            }, 1000);
-                          } else if (currentStep.requiresMixing) {
-                            setNeedsMixing(true);
-                            addLog("Click pipette above tube to mix solution.", "info");
-                          } else {
-                            setHasDispensedThisStep(true);
-                            addLog("Reagent added. Ready for next step.", "success");
-                          }
-                        }}
-                      >
-                        <Pipette size={28} className="text-white" />
-                        <span className="block text-[8px] font-black text-center mt-2 uppercase tracking-widest text-white">
-                          Dispense
-                        </span>
-                      </div>
-                    )}
-
-                    {needsMixing && !hasDispensedThisStep && (
-                      <div
-                        className="absolute top-8 right-12 p-4 rounded-3xl shadow-2xl border-2 bg-emerald-600 border-emerald-400 cursor-pointer hover:bg-emerald-500 hover:scale-110 transition-all shadow-emerald-500/30"
-                        style={{
-                          animation: isMixing ? 'pulse 0.3s ease-in-out infinite' : 'bounce 1s infinite'
-                        }}
-                        onClick={() => {
-                          setIsMixing(true);
-                          addLog("Mixing solution...", "info");
-
-                          if (currentStep.title === "Proteinase K Digestion") setStep2Mixed(true);
-                          if (currentStep.title === "Lysis Phase") setStep3Mixed(true);
-
-                          setTimeout(() => {
-                            setIsMixing(false);
-                            setNeedsMixing(false);
-                            setHasDispensedThisStep(true);
-                            addLog("Mixing complete. Solution homogenized.", "success");
-                          }, 2000);
-                        }}
-                      >
-                        <Pipette size={28} className={`text-white ${isMixing ? 'animate-pulse' : ''}`} style={{
-                          animation: isMixing ? 'pulse 0.3s ease-in-out infinite' : 'none'
-                        }} />
-                        <span className="block text-[8px] font-black text-center mt-2 uppercase tracking-widest text-white">
-                          {isMixing ? 'Mixing...' : 'Mix'}
-                        </span>
-                      </div>
-                    )}
                   </div>
-
-                  {/* Thermocycler on Bench (for Proteinase K incubation) */}
-                  {currentStep?.requiresIncubation && (
-                    <div className="bg-slate-800 border border-slate-700 p-6 rounded-2xl">
-                      <ThermocyclerVisual
-                        isIncubating={isIncubating}
-                        hasTube={tubeInCentrifuge}
-                        temperature={incubationTemp}
-                        duration={currentStep?.incubationDuration}
-                        onLoadTube={handleLoadTubeThermocycler}
-                        onStartIncubation={handleStartIncubation}
-                        onTempChange={handleTempChange}
-                        canLoad={hasDispensedThisStep && !tubeInCentrifuge && !hasSpunThisStep}
-                        canStart={tubeInCentrifuge && !isIncubating}
-                      />
-                    </div>
-                  )}
-
-                  {/* Centrifuge on Bench */}
-                  {currentStep?.requiresSpin && !currentStep?.requiresIncubation && has("centrifuge") && (
-                    <div className="bg-slate-800 border border-slate-700 p-6 rounded-2xl">
-                      <CentrifugeVisual
-                        isSpinning={isSpinning}
-                        hasTube={tubeInCentrifuge}
-                        onLoadTube={handleLoadTube}
-                        onStartSpin={handleSpin}
-                        canLoad={hasDispensedThisStep && !tubeInCentrifuge && !hasSpunThisStep}
-                        canSpin={tubeInCentrifuge && !isSpinning}
-                      />
-                    </div>
-                  )}
-
-                  <BenchInventoryVisuals inventory={inventory} status={status} />
                 </div>
 
-                <div className="space-y-6">
-                  {currentStep.options && protocolIndex === 0 && (
-                    <div className="bg-slate-800 border border-slate-700 p-6 rounded-2xl">
-                      <h3 className="text-sm font-bold text-white uppercase mb-4 text-center">Tissue Disruption Equipment</h3>
-                      <div className="flex justify-center gap-8 mb-4">
-                        <div className="flex flex-col items-center">
-                          <MortarPestleVisual />
-                          <p className="text-[9px] text-slate-400 font-bold uppercase mt-1">Mortar & Pestle</p>
-                        </div>
-                        <div className="flex flex-col items-center">
-                          <LiquidNitrogenVisual />
-                          <p className="text-[9px] text-slate-400 font-bold uppercase mt-1">Liquid Nitrogen</p>
+                {/* Column 2: Reagents (35%) */}
+                <div className="md:col-span-1 space-y-4">
+                  {currentStep.requiresBufferWarming && !elutionBufferPreWarmed && (
+                    <div className="bg-slate-800 border-2 border-amber-500 p-4 rounded-2xl">
+                      <h3 className="text-sm font-bold text-amber-400 uppercase mb-3 flex items-center gap-2">
+                        <Thermometer size={16} /> Pre-warm Elution Buffer
+                      </h3>
+                      <div
+                        className={`${!isWarmingBuffer && !elutionBufferPreWarmed ? 'cursor-pointer hover:opacity-80 transition-opacity' : ''}`}
+                        onClick={() => {
+                          if (!isWarmingBuffer && !elutionBufferPreWarmed) {
+                            setIsWarmingBuffer(true);
+                            setShowElutionWarmingStep(true);
+                            if (difficultyMode !== "challenge") {
+                              addLog("Placing elution buffer in heat block at 56°C...", "info");
+                            }
+                            setTimeout(() => {
+                              setIsWarmingBuffer(false);
+                              setElutionBufferPreWarmed(true);
+                              setUserPerformance(prev => ({ ...prev, hasWarmedElution: true }));
+                              if (difficultyMode !== "challenge") {
+                                addLog("✓ Elution buffer pre-warmed to 56°C. Ready to use.", "success");
+                              }
+                            }, 3000);
+                          }
+                        }}
+                      >
+                        <BufferWarmingVisual isWarming={isWarmingBuffer} temperature={isWarmingBuffer ? 56 : 25} />
+                      </div>
+                      {!isWarmingBuffer && !elutionBufferPreWarmed && (
+                        <p className="text-xs text-amber-300 text-center mt-2 animate-pulse">
+                          Click to place buffer in heat block
+                        </p>
+                      )}
+                    </div>
+                  )}
+                  {currentStep.requiresVortexing && volumeAddedThisStep > 0 && !tubeVortexed && (
+                    <div className="bg-slate-800 border-2 border-emerald-500 p-4 rounded-2xl">
+                      <h3 className="text-sm font-bold text-emerald-400 uppercase mb-3 flex items-center gap-2">
+                        <RefreshCw size={16} /> Vortex Mixer
+                      </h3>
+                      <div
+                        className={`relative ${!isVortexing ? 'cursor-pointer hover:scale-105 transition-transform' : ''}`}
+                        onClick={() => {
+                          if (!isVortexing && !tubeVortexed) {
+                            handleVortexTube();
+                          }
+                        }}
+                      >
+                        <div className={`bg-slate-700 border-2 border-slate-600 rounded-lg p-6 ${isVortexing ? 'animate-pulse' : ''}`}>
+                          <div className={`w-16 h-16 mx-auto bg-slate-800 rounded-full border-4 border-emerald-500 flex items-center justify-center ${isVortexing ? 'animate-spin' : ''}`}>
+                            <div className="w-8 h-8 bg-emerald-500 rounded-full"></div>
+                          </div>
+                          <p className="text-xs text-slate-300 text-center mt-3 font-bold">
+                            {isVortexing ? 'VORTEXING...' : 'VORTEX MIXER'}
+                          </p>
                         </div>
                       </div>
+                      {!isVortexing && !tubeVortexed && (
+                        <p className="text-xs text-emerald-300 text-center mt-2 animate-pulse">
+                          Click to vortex tube and mix
+                        </p>
+                      )}
+                      {!tubeVortexed && (
+                        <div className="mt-3 bg-emerald-900/20 border border-emerald-500/30 p-2 rounded">
+                          <p className="text-[10px] text-emerald-200">
+                            💡 Vortexing ensures lysis buffer saturates the powder
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  {currentStep.requiresVolume && (!currentStep.requiresBufferWarming || elutionBufferPreWarmed) && (!currentStep.requiresVortexing || tubeVortexed) && (
+                    <div className="bg-slate-800 border border-slate-700 p-4 rounded-2xl">
+                      <h3 className="text-sm font-bold text-white uppercase mb-3 flex items-center gap-2">
+                        <FlaskConical size={16} /> Available Reagents
+                      </h3>
+                      <EnhancedReagentContainers
+                        availableReagents={getAvailableReagents(currentStep).map(r => ({
+                          ...r,
+                          type: r.name.includes('Proteinase') ? 'tube' : 'bottle'
+                        }))}
+                        onContainerClick={(reagentId, color) => {
+                          if (pipetteVolume && activeTool === 'pipette' && !pipetteHasLiquid) {
+                            setPipetteHasLiquid(true);
+                            setPipetteLiquidColor(color);
+                            setCurrentReagentId(reagentId);
+
+                            const reagentName = currentStep.reagents?.find(r => r.id === reagentId)?.name || reagentId;
+                            if (difficultyMode !== "challenge") {
+                              addLog(`Aspirated ${pipetteVolume}µL of ${reagentName}. Press plunger to dispense.`, "success");
+                            }
+                          }
+                        }}
+                        canAspirate={pipetteVolume !== null && !hasDispensedThisStep && !pipetteHasLiquid}
+                        selectedPipette={activeTool === 'pipette'}
+                      />
+                    </div>
+                  )}
+
+                  {currentStep.requiresGrinding && protocolIndex === 0 && missionId === 'B' && (
+                    <div className="bg-slate-800 border border-slate-700 p-4 rounded-xl max-w-2xl mx-auto">
+                      <h3 className="text-sm font-bold text-white uppercase mb-2 text-center">Physical Disruption Station</h3>
+                      <p className="text-xs text-slate-400 text-center mb-4">Click items in order: Leaf → LN₂ → Pestle</p>
+
+                      {/* Horizontal Interactive Items */}
+                      <div className="flex justify-center items-center gap-4 mb-4">
+                        {/* Leaf - Step 1 */}
+                        <button
+                          onClick={() => {
+                            if (grindingStage === 'idle') {
+                              setGrindingStage('leaf_loaded');
+                              addLog("Placed cassava leaf into mortar", "success");
+                            }
+                          }}
+                          disabled={grindingStage !== 'idle'}
+                          className={`w-20 h-24 flex flex-col items-center justify-center rounded-lg border-2 transition-all ${
+                            grindingStage === 'idle'
+                              ? 'border-emerald-400 bg-emerald-500/20 cursor-pointer hover:scale-110 hover:bg-emerald-500/30 hover:shadow-lg hover:shadow-emerald-500/50'
+                              : 'border-slate-700 bg-slate-800/50 opacity-40 cursor-not-allowed'
+                          }`}
+                        >
+                          <div className="relative">
+                            <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+                              <ellipse cx="24" cy="24" rx="14" ry="9"
+                                fill={grindingStage === 'idle' ? '#4ade80' : '#22c55e'}
+                                opacity="0.9"/>
+                              <path d="M 10 24 Q 24 22, 38 24"
+                                stroke={grindingStage === 'idle' ? '#16a34a' : '#15803d'}
+                                strokeWidth="1.5"
+                                fill="none"/>
+                              <path d="M 16 20 Q 24 18, 32 20"
+                                stroke={grindingStage === 'idle' ? '#16a34a' : '#15803d'}
+                                strokeWidth="1"
+                                fill="none"/>
+                              <path d="M 18 28 Q 24 26, 30 28"
+                                stroke={grindingStage === 'idle' ? '#16a34a' : '#15803d'}
+                                strokeWidth="1"
+                                fill="none"/>
+                              <path d="M 24 14 L 24 34"
+                                stroke={grindingStage === 'idle' ? '#16a34a' : '#15803d'}
+                                strokeWidth="1.5"
+                                fill="none"/>
+                            </svg>
+                            {grindingStage === 'idle' && (
+                              <div className="absolute -top-2 -right-2 w-5 h-5 bg-emerald-500 rounded-full animate-pulse flex items-center justify-center border-2 border-white">
+                                <span className="text-xs font-bold text-white">1</span>
+                              </div>
+                            )}
+                          </div>
+                          <p className="text-[10px] text-emerald-400 mt-1 font-bold">Leaf</p>
+                        </button>
+
+                        {/* Mortar - Center Display */}
+                        <div className="flex flex-col items-center">
+                          <svg width="80" height="80" viewBox="0 0 80 80" fill="none">
+                            <ellipse cx="40" cy="68" rx="24" ry="6" fill="#1e293b"/>
+                            <path d="M20 42 Q 40 50 60 42 L 60 68 Q 40 72 20 68 Z"
+                              fill={(grindingStage !== 'idle') ? '#64748b' : '#475569'}
+                              stroke="#334155" strokeWidth="2"/>
+                            {grindingStage === 'leaf_loaded' && (
+                              <ellipse cx="40" cy="50" rx="10" ry="4" fill="#10b981" opacity="0.9"/>
+                            )}
+                            {grindingStage === 'frozen' && (
+                              <ellipse cx="40" cy="50" rx="10" ry="4" fill="#06b6d4" opacity="0.9"/>
+                            )}
+                            {grindingStage === 'grinding' && (
+                              <>
+                                <ellipse cx="40" cy="52" rx="8" ry="3" fill="#86efac" opacity="0.85"/>
+                                <circle cx="36" cy="53" r="1.5" fill="#10b981"/>
+                                <circle cx="40" cy="53" r="1.5" fill="#10b981"/>
+                                <circle cx="44" cy="53" r="1.5" fill="#10b981"/>
+                              </>
+                            )}
+                            {grindingStage === 'powder_ready' && (
+                              <>
+                                <ellipse cx="40" cy="54" rx="12" ry="5" fill="#86efac" opacity="0.95"/>
+                                <circle cx="34" cy="54" r="1.5" fill="#10b981"/>
+                                <circle cx="38" cy="54" r="1.5" fill="#10b981"/>
+                                <circle cx="40" cy="54" r="1.5" fill="#10b981"/>
+                                <circle cx="42" cy="54" r="1.5" fill="#10b981"/>
+                                <circle cx="46" cy="54" r="1.5" fill="#10b981"/>
+                              </>
+                            )}
+                          </svg>
+                          <p className="text-[9px] text-slate-400 mt-1 font-semibold">
+                            {grindingStage === 'idle' && "Empty"}
+                            {grindingStage === 'leaf_loaded' && "Loaded"}
+                            {grindingStage === 'frozen' && "Frozen"}
+                            {grindingStage === 'grinding' && "Grinding"}
+                            {grindingStage === 'powder_ready' && "Powder"}
+                          </p>
+                        </div>
+
+                        {/* LN2 - Step 2 */}
+                        <button
+                          onClick={() => {
+                            if (grindingStage === 'leaf_loaded') {
+                              setGrindingStage('frozen');
+                              addLog("Added liquid nitrogen - leaf frozen", "success");
+                            }
+                          }}
+                          disabled={grindingStage !== 'leaf_loaded'}
+                          className={`w-20 h-24 flex flex-col items-center justify-center rounded-lg border-2 transition-all ${
+                            grindingStage === 'leaf_loaded'
+                              ? 'border-cyan-400 bg-cyan-500/20 cursor-pointer hover:scale-110 hover:bg-cyan-500/30 hover:shadow-lg hover:shadow-cyan-500/50'
+                              : 'border-slate-700 bg-slate-800/50 opacity-40 cursor-not-allowed'
+                          }`}
+                        >
+                          <div className="relative">
+                            <LiquidNitrogenVisual />
+                            {grindingStage === 'leaf_loaded' && (
+                              <div className="absolute -top-2 -right-2 w-5 h-5 bg-cyan-500 rounded-full animate-pulse flex items-center justify-center border-2 border-white">
+                                <span className="text-xs font-bold text-white">2</span>
+                              </div>
+                            )}
+                          </div>
+                          <p className="text-[10px] text-cyan-400 mt-1 font-bold">LN₂</p>
+                        </button>
+
+                        {/* Pestle - Step 3 */}
+                        <button
+                          onClick={() => {
+                            if (grindingStage === 'frozen') {
+                              setGrindingStage('grinding');
+                              setGrindingProgress(0);
+                              addLog("Grinding with pestle...", "info");
+
+                              const grindInterval = setInterval(() => {
+                                setGrindingProgress(prev => {
+                                  if (prev >= 100) {
+                                    clearInterval(grindInterval);
+                                    setGrindingStage('powder_ready');
+                                    addLog("Pulverized into fine powder!", "success");
+                                    return 100;
+                                  }
+                                  return prev + 5;
+                                });
+                              }, 200);
+                            }
+                          }}
+                          disabled={grindingStage !== 'frozen' && grindingStage !== 'grinding'}
+                          className={`w-20 h-24 flex flex-col items-center justify-center rounded-lg border-2 transition-all ${
+                            grindingStage === 'frozen'
+                              ? 'border-blue-400 bg-blue-500/20 cursor-pointer hover:scale-110 hover:bg-blue-500/30 hover:shadow-lg hover:shadow-blue-500/50'
+                              : grindingStage === 'grinding'
+                              ? 'border-blue-400 bg-blue-500/30 animate-pulse cursor-wait'
+                              : 'border-slate-700 bg-slate-800/50 opacity-40 cursor-not-allowed'
+                          }`}
+                        >
+                          <div className="relative">
+                            <svg width="48" height="48" viewBox="0 0 60 60" fill="none" className={grindingStage === 'grinding' ? 'animate-spin' : ''}>
+                              <rect x="24" y="8" width="12" height="36" rx="3"
+                                fill={grindingStage === 'grinding' ? '#93c5fd' : grindingStage === 'frozen' ? '#60a5fa' : '#64748b'}
+                                transform="rotate(15 30 26)"
+                              />
+                              <ellipse cx="30" cy="8" rx="7" ry="5"
+                                fill={grindingStage === 'grinding' ? '#dbeafe' : grindingStage === 'frozen' ? '#93c5fd' : '#94a3b8'}
+                              />
+                            </svg>
+                            {grindingStage === 'frozen' && (
+                              <div className="absolute -top-2 -right-2 w-5 h-5 bg-blue-500 rounded-full animate-pulse flex items-center justify-center border-2 border-white">
+                                <span className="text-xs font-bold text-white">3</span>
+                              </div>
+                            )}
+                          </div>
+                          <p className="text-[10px] text-blue-400 mt-1 font-bold">Pestle</p>
+                        </button>
+                      </div>
+
+                      {/* Progress Bar */}
+                      {grindingStage === 'grinding' && (
+                        <div className="mb-4">
+                          <div className="w-full bg-slate-700 rounded-full h-2">
+                            <div
+                              className="bg-emerald-500 h-2 rounded-full transition-all duration-200"
+                              style={{ width: `${grindingProgress}%` }}
+                            ></div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Transfer Button */}
+                      {grindingStage === 'powder_ready' && (
+                        <button
+                          onClick={() => {
+                            addLog("Transferred powder to tube", "success");
+                            setStep1Method('manual');
+                            setGrindingStage('transferred');
+
+                            setTimeout(() => {
+                              setProtocolIndex(protocolIndex + 1);
+                              setHasDispensedThisStep(false);
+                              setHasSpunThisStep(false);
+                              setNeedsMixing(false);
+                              setIsMixing(false);
+                              setCurrentStepReagents({});
+                              setCurrentReagentId(null);
+                              setVolumeAddedThisStep(0);
+                              setGrindingStage('idle');
+                              setGrindingProgress(0);
+                              setTubeVortexed(false);
+                              setShowVortexPrompt(false);
+                            }, 500);
+                          }}
+                          className="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-2 px-4 rounded-lg font-bold uppercase text-sm transition-all animate-pulse"
+                        >
+                          Transfer to Tube
+                        </button>
+                      )}
                     </div>
                   )}
 
                   {currentStep.options && (
-                    <div className="bg-slate-800 border border-slate-700 p-6 rounded-2xl space-y-3">
-                      <h3 className="text-sm font-bold text-white uppercase mb-4">Select Action</h3>
-                      {currentStep.options.map((opt, idx) => (
-                        <button key={idx} onClick={() => {
-                          if (opt.ok === false) {
-                            addLog(`Cannot proceed: ${opt.label} - Missing required equipment.`, "error");
-                            return;
-                          }
-
-                          if (protocolIndex === 0) {
-                            setStep1Method(opt.method);
-                            if (missionId === 'A' && opt.method === 'manual') {
-                              setProtocolAdherenceCompromised(true);
-                              addLog("WARNING: For Mission A (biopsy), enzymatic digestion is required. Manual grinding compromises protocol adherence.", "error");
-                            }
-                            if (missionId === 'B' && opt.method === 'enzymatic') {
-                              setProtocolAdherenceCompromised(true);
-                              addLog("WARNING: For Mission B (cassava), manual grinding with mortar & pestle is required. Enzymatic digestion compromises protocol adherence.", "error");
-                            }
-                            if (opt.method === 'manual') {
-                              setShowGrindingSetup(true);
-                              setTimeout(() => {
-                                setIsGrinding(true);
-                                setTimeout(() => {
-                                  setIsGrinding(false);
-                                  setShowGrindingSetup(false);
-                                }, 3000);
-                              }, 1000);
-                            }
-                          }
-
-                          addLog(opt.log, "success");
-                          if (opt.triggerReset) {
-                            setBufferVolume(0);
-                            setVolumeAddedThisStep(0);
-                          }
-
-                          if (currentStep.requiresVolume && currentStep.requiresMixing) {
-                            setProtocolIndex(protocolIndex + 1);
-                            setHasDispensedThisStep(false);
-                            setHasSpunThisStep(false);
-                            setNeedsMixing(false);
-                            setIsMixing(false);
-                          } else {
-                            setProtocolIndex(protocolIndex + 1);
-                            setHasDispensedThisStep(false);
-                            setHasSpunThisStep(false);
-                            setNeedsMixing(false);
-                            setIsMixing(false);
-                          }
-                        }} className="w-full bg-indigo-600 hover:bg-indigo-500 text-white py-4 px-6 rounded-xl font-bold uppercase transition-all cursor-pointer border-0">
-                          {opt.label}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-
-                  {currentStep.requiresVolume && (
-                    <div className="bg-slate-800 border border-slate-700 p-6 rounded-2xl space-y-4">
-                      <h3 className="text-sm font-bold text-white uppercase flex items-center gap-2"><Pipette size={16} /> Pipette Control</h3>
-                      <div className="space-y-3">
-                        <div>
-                          <label className="text-xs text-slate-400 mb-2 block">Select Volume (µL)</label>
-                          <div className={`grid gap-2 ${currentStep.isElution ? 'grid-cols-3' : 'grid-cols-3'}`}>
-                            {(currentStep.title === "Proteinase K Digestion" ? [2, 5, 10] : currentStep.isElution ? [20, 30, 50] : [100, 500, 1000]).map(v => (
-                              <button
-                                key={v}
-                                onClick={() => {
-                                  if (!hasDispensedThisStep) {
-                                    const volumeToUse = v;
-                                    setPipetteVolume(volumeToUse);
-                                    setActiveTool('pipette');
-                                    addLog(`Pipette set to ${volumeToUse}µL. Click pipette above tube to dispense.`, "info");
-                                  }
-                                }}
-                                disabled={hasDispensedThisStep}
-                                className={`py-3 rounded-lg border-2 font-bold transition-all text-sm cursor-pointer ${
-                                  pipetteVolume === v && !hasDispensedThisStep
-                                    ? "bg-indigo-600 text-white border-indigo-400 shadow-lg"
-                                    : hasDispensedThisStep
-                                    ? "bg-slate-900 text-slate-600 border-slate-700 cursor-not-allowed"
-                                    : "bg-slate-900 text-slate-300 border-slate-700 hover:border-indigo-500"
-                                }`}
-                              >
-                                {v}µL
-                              </button>
-                            ))}
+                    <>
+                      {protocolIndex === 0 && (
+                        <div className="bg-slate-800 border border-slate-700 p-4 rounded-2xl">
+                          <h3 className="text-sm font-bold text-white uppercase mb-3 text-center">Tissue Disruption Equipment</h3>
+                          <div className="flex justify-center gap-8 mb-3">
+                            <div className="flex flex-col items-center">
+                              <MortarPestleVisual />
+                              <p className="text-[9px] text-slate-400 font-bold uppercase mt-1">Mortar & Pestle</p>
+                            </div>
+                            <div className="flex flex-col items-center">
+                              <LiquidNitrogenVisual />
+                              <p className="text-[9px] text-slate-400 font-bold uppercase mt-1">Liquid Nitrogen</p>
+                            </div>
                           </div>
-                          {activeTool === 'pipette' && pipetteVolume && !hasDispensedThisStep && (
-                            <p className="text-xs text-indigo-400 mt-3 animate-pulse font-bold text-center">
-                              Click the bouncing pipette above the tube to dispense {pipetteVolume}µL
-                            </p>
-                          )}
                         </div>
+                      )}
+
+                      <div className="bg-slate-800 border border-slate-700 p-4 rounded-2xl space-y-3">
+                        <h3 className="text-sm font-bold text-white uppercase mb-3">Select Action</h3>
+                        {currentStep.options.map((opt, idx) => (
+                          <button key={idx} onClick={() => {
+                            if (opt.ok === false) {
+                              addLog(`Cannot proceed: ${opt.label} - Missing required equipment.`, "error");
+                              return;
+                            }
+
+                            if (protocolIndex === 0) {
+                              setStep1Method(opt.method);
+                              if (missionId === 'A' && opt.method === 'manual') {
+                                setProtocolAdherenceCompromised(true);
+                                addLog("WARNING: For Mission A (biopsy), enzymatic digestion is required. Manual grinding compromises protocol adherence.", "error");
+                              }
+                              if (missionId === 'B' && opt.method === 'enzymatic') {
+                                setProtocolAdherenceCompromised(true);
+                                addLog("WARNING: For Mission B (cassava), manual grinding with mortar & pestle is required. Enzymatic digestion compromises protocol adherence.", "error");
+                              }
+                              if (opt.method === 'manual') {
+                                setShowGrindingSetup(true);
+                                setTimeout(() => {
+                                  setIsGrinding(true);
+                                  setTimeout(() => {
+                                    setIsGrinding(false);
+                                    setShowGrindingSetup(false);
+                                  }, 3000);
+                                }, 1000);
+                              }
+                            }
+
+                            addLog(opt.log, "success");
+                            if (opt.triggerReset) {
+                              setBufferVolume(0);
+                              setVolumeAddedThisStep(0);
+                            }
+
+                            if (currentStep.requiresVolume && currentStep.requiresMixing) {
+                              setProtocolIndex(protocolIndex + 1);
+                              setHasDispensedThisStep(false);
+                              setHasSpunThisStep(false);
+                              setNeedsMixing(false);
+                              setIsMixing(false);
+                              setCurrentStepReagents({});
+                              setCurrentReagentId(null);
+                              setVolumeAddedThisStep(0);
+                              setTubeVortexed(false);
+                              setShowVortexPrompt(false);
+                            } else {
+                              setProtocolIndex(protocolIndex + 1);
+                              setHasDispensedThisStep(false);
+                              setHasSpunThisStep(false);
+                              setNeedsMixing(false);
+                              setIsMixing(false);
+                              setCurrentStepReagents({});
+                              setCurrentReagentId(null);
+                              setVolumeAddedThisStep(0);
+                              setTubeVortexed(false);
+                              setShowVortexPrompt(false);
+                            }
+                          }} className="w-full bg-indigo-600 hover:bg-indigo-500 text-white py-3 px-4 rounded-xl font-bold uppercase transition-all cursor-pointer border-0">
+                            {opt.label}
+                          </button>
+                        ))}
+                      </div>
+                    </>
+                  )}
+                </div>
+
+                {/* Column 3: Pipettes (35%) */}
+                <div className="md:col-span-1">
+                  {currentStep.title === "Column Binding" ? (
+                    <div className="bg-slate-800 border border-slate-700 p-4 rounded-2xl">
+                      <h3 className="text-sm font-bold text-white uppercase flex items-center gap-2 mb-4">
+                        <Pipette size={16} /> Transfer Tool
+                      </h3>
+                      <div className="space-y-4">
+                        <div className="bg-slate-900/50 border border-slate-600 p-4 rounded-lg">
+                          <p className="text-xs text-slate-300 mb-3">Select 1000µL pipette to transfer sample:</p>
+                          <button
+                            onClick={() => {
+                              setSelectedPipetteForTransfer('1000uL');
+                              addLog("Selected 1000µL pipette for sample transfer", "info");
+                            }}
+                            className={`w-full px-4 py-3 rounded-lg font-bold transition-all ${
+                              selectedPipetteForTransfer === '1000uL'
+                                ? 'bg-sky-600 text-white ring-2 ring-sky-400'
+                                : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                            }`}
+                          >
+                            1000µL Pipette
+                          </button>
+                        </div>
+
+                        {selectedPipetteForTransfer && (
+                          <div className="bg-emerald-900/20 border border-emerald-500/30 p-3 rounded-lg">
+                            <p className="text-xs text-emerald-300">
+                              <strong>Instructions:</strong><br/>
+                              1. Click sample tube to aspirate<br/>
+                              2. Click spin column to dispense
+                            </p>
+                          </div>
+                        )}
+
+                        {liquidInColumn && (
+                          <div className="bg-sky-900/20 border border-sky-500/30 p-3 rounded-lg">
+                            <p className="text-xs text-sky-300">
+                              ✓ Sample loaded into column<br/>
+                              Ready to spin!
+                            </p>
+                          </div>
+                        )}
                       </div>
                     </div>
-                  )}
+                  ) : currentStep.requiresVolume && (
+                    <div className="bg-slate-800 border border-slate-700 p-4 rounded-2xl space-y-4">
+                      <h3 className="text-sm font-bold text-white uppercase flex items-center gap-2"><Pipette size={16} /> Pipettes</h3>
+                      <PipetteSelector
+                        requiredVolume={getTargetVolume()}
+                        tolerance={getCurrentTolerance()}
+                        onVolumeSet={(volume, pipetteSize) => {
+                          if (!hasDispensedThisStep || currentStep.multipleReagents) {
+                            setPipetteVolume(volume);
+                            setActiveTool('pipette');
 
-                  {((currentStep.requiresVolume && hasDispensedThisStep) || (currentStep.options)) && (currentStep.requiresSpin || currentStep.requiresIncubation ? hasSpunThisStep : true) && (currentStep.requiresMixing ? (currentStep.title === "Proteinase K Digestion" ? step2Mixed : currentStep.title === "Lysis Phase" ? step3Mixed : true) : true) && (
-                    <button onClick={() => {
-                      if (currentStep.requiresSpin && !hasSpunThisStep) {
-                        setMissedSpins(missedSpins + 1);
-                        addLog("Critical Error: Centrifugation step bypassed!", "error");
-                        setProtocolAdherenceCompromised(true);
-                      }
-                      if (currentStep.requiresVolume && !hasDispensedThisStep) {
-                        addLog("Error: No reagent added.", "error");
-                        setMissedReagents(missedReagents + 1);
-                        setProtocolAdherenceCompromised(true);
-                      }
-                      if (currentStep.requiresMixing) {
-                        let mixedThisStep = false;
-                        if (currentStep.title === "Proteinase K Digestion") mixedThisStep = step2Mixed;
-                        if (currentStep.title === "Lysis Phase") mixedThisStep = step3Mixed;
+                            if (difficultyMode !== "challenge") {
+                              const remaining = getRemainingReagentsText();
+                              addLog(`Pipette set to ${volume}µL. ${remaining || 'Click reagent container to aspirate.'}`, "info");
+                            }
+                          }
+                        }}
+                        onDispense={() => {
+                          if (currentStep.isElution) {
+                            setElutionVolume(pipetteVolume);
+                          }
 
-                        if (!mixedThisStep) {
-                          addLog("Critical Error: Mixing step bypassed! The sample must be mixed after adding reagent.", "error");
-                          setProtocolAdherenceCompromised(true);
+                          const reagentId = currentReagentId;
+                          setVolumeAddedThisStep(prev => prev + pipetteVolume);
+
+                          protocolTracker.logAction({
+                            stepIndex: protocolIndex,
+                            stepName: currentStep.title,
+                            action: 'add_reagent',
+                            reagentId: reagentId,
+                            volume: pipetteVolume,
+                            timestamp: Date.now()
+                          });
+
+                          if (currentStep.multipleReagents && reagentId) {
+                            setCurrentStepReagents(prev => ({
+                              ...prev,
+                              [reagentId]: pipetteVolume
+                            }));
+                            setStepVolumes(prev => ({ ...prev, [reagentId]: (prev[reagentId] || 0) + pipetteVolume }));
+                          } else {
+                            setStepVolumes(prev => {
+                              const title = currentStep?.title;
+                              if (title === "Lysis & Protein Digestion") return { ...prev, lysis: pipetteVolume };
+                              if (title === "Wash & Dry") return { ...prev, wash: (prev.wash || 0) + pipetteVolume };
+                              if (title === "Elution") return { ...prev, elution: pipetteVolume };
+                              return prev;
+                            });
+                          }
+
+                          const actualReagent = currentStep.reagents?.find(r => r.id === reagentId);
+                          if (actualReagent && pipetteVolume) {
+                            const targetVol = actualReagent.targetVolume;
+                            const tolerance = actualReagent.tolerance || 50;
+                            const minAcceptable = targetVol - tolerance;
+                            const maxAcceptable = targetVol + tolerance;
+
+                            if (pipetteVolume === targetVol) {
+                              if (difficultyMode !== "challenge") {
+                                addLog(`✓ Perfect volume: ${pipetteVolume}µL of ${actualReagent.name}`, "success");
+                              }
+                            } else if (pipetteVolume >= minAcceptable && pipetteVolume <= maxAcceptable) {
+                              if (difficultyMode !== "challenge") {
+                                addLog(`✓ Acceptable: ${pipetteVolume}µL of ${actualReagent.name} (target ${targetVol}µL)`, "success");
+                              }
+                            } else {
+                              trackMistake('wrong_volume', {
+                                expected: targetVol,
+                                actual: pipetteVolume,
+                                deviation: Math.abs(pipetteVolume - targetVol),
+                                reagent: actualReagent.name
+                              });
+                              if (difficultyMode !== "challenge") {
+                                addLog(`⚠️ Volume outside range: ${pipetteVolume}µL. Use ${minAcceptable}-${maxAcceptable}µL for ${actualReagent.name}`, "error");
+                              }
+                            }
+                          } else if (difficultyMode !== "challenge") {
+                            const reagentName = currentStep.reagents?.find(r => r.id === reagentId)?.name || 'reagent';
+                            addLog(`Dispensed ${pipetteVolume}µL of ${reagentName}`, "success");
+                          }
+
+                          console.log('[DISPENSE DEBUG]', {
+                            step: currentStep.title,
+                            reagentId,
+                            volume: pipetteVolume,
+                            currentStepReagents
+                          });
+
+                          const reagentName = currentStep.reagents?.find(r => r.id === reagentId)?.name || reagentId;
+
+                          if (currentStep.title === "Lysis & Protein Digestion") {
+                            if (reagentId === "lysis") {
+                              console.log('[STEP 1] Buffer ATL added: true');
+                              checkTaskOrder('Lysis & Protein Digestion', 'lysisBufferAdded');
+                              setStep1SubActions(prev => {
+                                const updated = { ...prev, lysisBufferAdded: true };
+                                console.log('[STEP 1] Updated step1SubActions:', updated);
+                                return updated;
+                              });
+                              showToastNotification(`✓ Added ${pipetteVolume}µL ${reagentName} to sample`);
+                            } else if (reagentId === "proteinase_k") {
+                              console.log('[STEP 1] Proteinase K added: true');
+                              checkTaskOrder('Lysis & Protein Digestion', 'proteinaseKAdded');
+                              setStep1SubActions(prev => {
+                                const updated = { ...prev, proteinaseKAdded: true };
+                                console.log('[STEP 1] Updated step1SubActions:', updated);
+                                return updated;
+                              });
+                              if (pipetteVolume === 20) {
+                                setUserPerformance(prev => ({ ...prev, hasCorrectProtK: true }));
+                              }
+                              showToastNotification(`✓ Added ${pipetteVolume}µL ${reagentName} to sample`);
+                            }
+                          } else if (currentStep.title === "Binding Preparation") {
+                            if (reagentId === "binding") {
+                              checkTaskOrder('Binding Preparation', 'bindingBufferAdded');
+                              setStep3SubActions(prev => ({ ...prev, bindingBufferAdded: true }));
+                              showToastNotification(`✓ Added ${pipetteVolume}µL ${reagentName} to sample`);
+                            } else if (reagentId === "ethanol") {
+                              checkTaskOrder('Binding Preparation', 'ethanolAdded');
+                              setStep3SubActions(prev => ({ ...prev, ethanolAdded: true }));
+                              setUserPerformance(prev => ({ ...prev, hasAddedEthanol: true }));
+                              showToastNotification(`✓ Added ${pipetteVolume}µL ${reagentName} to sample`);
+                            }
+                          } else if (currentStep.title === "Wash & Dry") {
+                            // For Wash & Dry, reset waste states so user can do multiple wash cycles
+                            setHasDiscardedWaste(false);
+                            setHasSpunThisStep(false);
+                            showToastNotification(`✓ Added ${pipetteVolume}µL ${reagentName} to column`);
+                          }
+
+                          if (currentStep.multipleReagents) {
+                            const allReagentsAdded = currentStep.reagents.every(r =>
+                              currentStepReagents[r.id] || r.id === reagentId
+                            );
+
+                            if (!allReagentsAdded) {
+                              const remaining = currentStep.reagents.filter(r =>
+                                !currentStepReagents[r.id] && r.id !== reagentId
+                              );
+                              if (difficultyMode !== "challenge") {
+                                addLog(`✓ ${reagentName} added. Next: ${remaining[0].name} (${remaining[0].targetVolume}µL)`, "info");
+                              }
+                              setPipetteVolume(null);
+                              setActiveTool(null);
+                              setPipetteHasLiquid(false);
+                              setCurrentReagentId(null);
+                              return;
+                            } else {
+                              setHasDispensedThisStep(true);
+                              if (currentStep.title === "Lysis & Protein Digestion" || currentStep.title === "Binding Preparation") {
+                                setShowMixPrompt(true);
+                                if (difficultyMode !== "challenge") {
+                                  addLog("✓ All reagents added. Click the tube to mix by inversion.", "info");
+                                }
+                              }
+                            }
+                          }
+
+                          setPipetteVolume(null);
+                          setActiveTool(null);
+                          setPipetteHasLiquid(false);
+                          setCurrentReagentId(null);
+
+                          if (currentStep.isElution) {
+                            if (difficultyMode !== "challenge") {
+                              addLog("Elution buffer added. Wait 1 minute for DNA to elute from the membrane.", "info");
+                            }
+                            setTimeout(() => {
+                              setHasDispensedThisStep(true);
+                              if (difficultyMode !== "challenge") {
+                                addLog("Elution wait complete. Proceed to centrifugation.", "success");
+                              }
+                            }, 1000);
+                          } else if (currentStep.requiresMixing) {
+                            setNeedsMixing(true);
+                            if (difficultyMode !== "challenge") {
+                              addLog("Click mix icon in sample tube to mix solution.", "info");
+                            }
+                          } else {
+                            setHasDispensedThisStep(true);
+                            if (difficultyMode !== "challenge") {
+                              addLog("Reagent added. Ready for next step.", "success");
+                            }
+                          }
+                        }}
+                        disabled={
+                          currentStep.multipleReagents
+                            ? currentStep.reagents.every(r => currentStepReagents[r.id])
+                            : hasDispensedThisStep
                         }
-                      }
-                      if (currentStep.targetVolume && Math.abs(volumeAddedThisStep - currentStep.targetVolume) > (currentStep.targetVolume < 10 ? 2 : 100)) {
-                        addLog(`Volume Error: Target is ${currentStep.targetVolume}µL but ${volumeAddedThisStep}µL was used. Significant deviation affects protocol.`, "error");
-                        setProtocolAdherenceCompromised(true);
-                      }
-
-                      if (protocolIndex === protocolSteps.length - 1) {
-                        setCanNanodropNow(true);
-                        setStatus("verification");
-                      } else {
-                        setBufferVolume(bufferVolume + volumeAddedThisStep);
-                        setVolumeAddedThisStep(0);
-                        setProtocolIndex(protocolIndex + 1);
-                        setHasDispensedThisStep(false);
-                        setHasSpunThisStep(false);
-                        setNeedsMixing(false);
-                        setIsMixing(false);
-                      }
-                    }} className="w-full bg-amber-600 hover:bg-amber-500 text-white py-4 px-6 rounded-xl font-black uppercase tracking-wider transition-all cursor-pointer border-0">
-                      Continue to Next Step
-                    </button>
+                        hasLiquid={pipetteHasLiquid}
+                        liquidColor={pipetteLiquidColor}
+                      />
+                    </div>
                   )}
                 </div>
               </div>
+
+              {/* Equipment Section - Full Width */}
+              <LabEquipment
+                inventory={inventory}
+                onEquipmentUse={handleEquipmentUse}
+                disabled={hasDispensedThisStep && !needsMixing && !(currentStep?.requiresSpin || currentStep?.requiresIncubation)}
+              />
+
+              {/* Continue Button - Full Width - DISABLED (now in header) */}
+              {false && (() => {
+                const cond1 = (currentStep.requiresVolume && hasDispensedThisStep) || (currentStep.options);
+                const cond2 = currentStep.requiresSpin || currentStep.requiresIncubation ? hasSpunThisStep : true;
+                const cond3 = currentStep.requiresMixing ? (currentStep.title === "Lysis & Protein Digestion" ? step2Mixed : currentStep.title === "Binding Preparation" ? step3Mixed : !needsMixing) : true;
+                const cond4 = currentStep.requiresVortexing ? tubeVortexed : true;
+                const showButton = cond1 && cond2 && cond3 && cond4;
+
+                console.log('[Continue Button Check]', {
+                  step: currentStep?.title || 'unknown',
+                  condition1: { requiresVolume: currentStep.requiresVolume, hasDispensedThisStep, hasOptions: !!currentStep.options, result: cond1 },
+                  condition2: { requiresSpin: currentStep.requiresSpin, requiresIncubation: currentStep.requiresIncubation, hasSpunThisStep, result: cond2 },
+                  condition3: { requiresMixing: currentStep.requiresMixing, step2Mixed, step3Mixed, needsMixing, result: cond3 },
+                  showButton,
+                  step1SubActions,
+                  step3SubActions
+                });
+
+                return showButton;
+              })() && (
+                <button onClick={() => {
+                  if (currentStep.requiresSpin && !hasSpunThisStep) {
+                    setMissedSpins(missedSpins + 1);
+                    addLog("Critical Error: Centrifugation step bypassed!", "error");
+                    setProtocolAdherenceCompromised(true);
+                  }
+                  if (currentStep.requiresVolume && !hasDispensedThisStep) {
+                    addLog("Error: No reagent added.", "error");
+                    setMissedReagents(missedReagents + 1);
+                    setProtocolAdherenceCompromised(true);
+                  }
+                  if (currentStep.requiresMixing) {
+                    let mixedThisStep = false;
+                    if (currentStep.title === "Lysis & Protein Digestion") mixedThisStep = step2Mixed;
+                    if (currentStep.title === "Binding Preparation") mixedThisStep = step3Mixed;
+
+                    if (!mixedThisStep && needsMixing) {
+                      addLog("Critical Error: Mixing step bypassed! The sample must be mixed after adding reagent.", "error");
+                      setProtocolAdherenceCompromised(true);
+                    }
+                  }
+                  if (currentStep.title === "Lysis & Protein Digestion") {
+                    if (!step1SubActions.lysisBufferAdded) {
+                      addLog("⚠️ Protocol Deviation: Lysis Buffer was not added. This will affect DNA yield.", "warning");
+                      setProtocolAdherenceCompromised(true);
+                      trackMistake('skipped_task', { step: 'Lysis & Protein Digestion', task: 'Add Lysis Buffer' });
+                    }
+                    if (!step1SubActions.proteinaseKAdded) {
+                      addLog("⚠️ Protocol Deviation: Proteinase K was not added. This will severely affect DNA yield.", "warning");
+                      setProtocolAdherenceCompromised(true);
+                      trackMistake('skipped_task', { step: 'Lysis & Protein Digestion', task: 'Add Proteinase K' });
+                    }
+                    if (!step1SubActions.mixed) {
+                      addLog("⚠️ Protocol Deviation: Sample was not mixed. This will affect DNA yield.", "warning");
+                      setProtocolAdherenceCompromised(true);
+                      trackMistake('skipped_task', { step: 'Lysis & Protein Digestion', task: 'Mix by inversion' });
+                    }
+                    if (!step1SubActions.incubated) {
+                      addLog("⚠️ Protocol Deviation: Incubation at 56°C was skipped. This will severely affect DNA yield.", "warning");
+                      setProtocolAdherenceCompromised(true);
+                      trackMistake('skipped_task', { step: 'Lysis & Protein Digestion', task: 'Incubate at 56°C' });
+                    }
+                  }
+
+                  if (currentStep.title === "Binding Preparation") {
+                    if (!step3SubActions.bindingBufferAdded) {
+                      addLog("⚠️ Protocol Deviation: Binding Buffer was not added. DNA will not bind properly.", "warning");
+                      setProtocolAdherenceCompromised(true);
+                      trackMistake('skipped_task', { step: 'Binding Preparation', task: 'Add Binding Buffer' });
+                    }
+                    if (!step3SubActions.ethanolAdded) {
+                      addLog("⚠️ Critical Deviation: Ethanol was not added. DNA will NOT bind without ethanol!", "warning");
+                      setProtocolAdherenceCompromised(true);
+                      trackMistake('skipped_task', { step: 'Binding Preparation', task: 'Add Ethanol' });
+                    }
+                    if (!step3SubActions.mixed) {
+                      addLog("⚠️ Protocol Deviation: Sample was not mixed. This will affect DNA binding.", "warning");
+                      setProtocolAdherenceCompromised(true);
+                      trackMistake('skipped_task', { step: 'Binding Preparation', task: 'Mix by inversion' });
+                    }
+                  }
+
+                  if (currentStep.multipleReagents && currentStep.reagents) {
+                    currentStep.reagents.forEach(reagent => {
+                      const addedVolume = currentStepReagents[reagent.id] || 0;
+                      const tolerance = reagent.tolerance || 50;
+                      const minAcceptable = reagent.targetVolume - tolerance;
+                      const maxAcceptable = reagent.targetVolume + tolerance;
+
+                      if (addedVolume === 0) {
+                        addLog(`Volume Error: ${reagent.name} was not added!`, "error");
+                        setProtocolAdherenceCompromised(true);
+                      } else if (addedVolume < minAcceptable || addedVolume > maxAcceptable) {
+                        addLog(`Volume Error: Use ${minAcceptable}-${maxAcceptable}µL of ${reagent.name}.`, "error");
+                        setProtocolAdherenceCompromised(true);
+                      }
+                    });
+                  } else if (currentStep.reagents && currentStep.reagents[0]) {
+                    const reagent = currentStep.reagents[0];
+                    const tolerance = reagent.tolerance || 50;
+                    const minAcceptable = reagent.targetVolume - tolerance;
+                    const maxAcceptable = reagent.targetVolume + tolerance;
+
+                    if (volumeAddedThisStep < minAcceptable || volumeAddedThisStep > maxAcceptable) {
+                      addLog(`Volume Error: Use ${minAcceptable}-${maxAcceptable}µL.`, "error");
+                      setProtocolAdherenceCompromised(true);
+                    }
+                  }
+
+                  if (protocolIndex === protocolSteps.length - 1) {
+                    setCanNanodropNow(true);
+                    setStatus("verification");
+                  } else {
+                    setBufferVolume(bufferVolume + volumeAddedThisStep);
+                    setVolumeAddedThisStep(0);
+                    setProtocolIndex(protocolIndex + 1);
+                    setHasDispensedThisStep(false);
+                    setHasSpunThisStep(false);
+                    setNeedsMixing(false);
+                    setIsMixing(false);
+                    setCurrentStepReagents({});
+                    setCurrentReagentId(null);
+                    setShowMixPrompt(false);
+                    setTubeVortexed(false);
+                    setShowVortexPrompt(false);
+                  }
+                }} className="w-full bg-amber-600 hover:bg-amber-500 text-white py-4 px-6 rounded-xl font-black uppercase tracking-wider transition-all cursor-pointer border-0">
+                  Continue to Next Step
+                </button>
+              )}
 
               <div className="bg-slate-800 border border-slate-700 p-4 rounded-2xl max-h-40 overflow-y-auto">
                 <h3 className="text-xs font-bold text-white uppercase mb-3 flex items-center gap-2"><Terminal size={14} /> Lab Log {difficultyMode === "challenge" && <span className="text-amber-400 text-[9px] font-normal">(Challenge Mode)</span>}</h3>
@@ -2915,7 +5339,7 @@ export default function App() {
                             )}
                             {ndStep === "blank" && (
                               <button onClick={() => setNdStep("load")} className="w-full bg-indigo-600 hover:bg-indigo-500 text-white py-3 rounded-lg font-bold uppercase border-0 cursor-pointer">
-                                Load 1µL DNA
+                                Load 1uL DNA
                               </button>
                             )}
                             {ndStep === "load" && (
@@ -3006,30 +5430,56 @@ export default function App() {
             <div className="min-h-screen bg-[#0f172a]">
               <SharedNavigation onShowManual={() => setShowManual(true)} />
               <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-6">
-              <div className={`bg-gradient-to-br ${status === "mastery" ? "from-emerald-900/20 to-slate-800 border-emerald-500/30" : "from-rose-900/20 to-slate-800 border-rose-500/30"} border p-6 rounded-3xl text-center space-y-5`}>
-                {status === "mastery" && <MasteryBadge />}
-                {status !== "mastery" && (
-                  <div className="flex flex-col items-center">
-                    <AlertCircle size={64} className="text-rose-500 mb-4" />
-                    <h3 className="text-2xl font-black text-slate-50 uppercase tracking-tight">Mission Failed</h3>
-                    <p className="text-sm text-slate-400 mt-2">{failReason}</p>
-                  </div>
-                )}
 
-                <div className="grid grid-cols-3 gap-3">
+              {showPostMissionSurvey && savedRecordId && (
+                <PostMissionSurvey
+                  missionName={MISSIONS_DATA[techniqueId][missionId]?.title || 'DNA Extraction'}
+                  resultId={savedRecordId}
+                  studentId={getOrCreateStudentId()}
+                  successCount={masteryProgress.successCount}
+                  onComplete={handleSurveyComplete}
+                />
+              )}
+
+              {!showPostMissionSurvey && enhancedResult && (
+                <>
+                  <MasteryBadge
+                    badge={enhancedResult.masteryBadge}
+                    concentration={enhancedResult.concentration}
+                    a260_280={enhancedResult.a260_280}
+                    successCount={masteryProgress.successCount}
+                  />
+
+                  <TimelineAnalysis
+                    comparisons={enhancedResult.comparisons}
+                    missionTitle={MISSIONS_DATA[techniqueId][missionId]?.title || 'DNA Extraction'}
+                  />
+
+                  <DiagnosticInsights insights={enhancedResult.insights} />
+                </>
+              )}
+
+              <div className={`bg-gradient-to-br ${status === "mastery" ? "from-emerald-900/20 to-slate-800 border-emerald-500/30" : "from-rose-900/20 to-slate-800 border-rose-500/30"} border p-6 rounded-3xl text-center space-y-5`}>
+
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                   <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-700">
                     <p className="text-[8px] text-slate-500 uppercase font-bold tracking-wider mb-1">Concentration</p>
                     <p className="text-2xl font-black text-white font-mono">{finalConc}</p>
                     <p className="text-[10px] text-slate-400 mt-0.5">ng/µL</p>
                   </div>
                   <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-700">
-                    <p className="text-[8px] text-slate-500 uppercase font-bold tracking-wider mb-1">Purity (260/280)</p>
+                    <p className="text-[8px] text-slate-500 uppercase font-bold tracking-wider mb-1">A260/A280</p>
                     <p className="text-2xl font-black text-white font-mono">{a260_280}</p>
-                    <p className="text-[10px] text-slate-400 mt-0.5">{parseFloat(a260_280) >= 1.7 ? "Acceptable" : "Contaminated"}</p>
+                    <p className="text-[10px] text-slate-400 mt-0.5">{parseFloat(a260_280) >= 1.7 ? "Pure" : "Protein"}</p>
+                  </div>
+                  <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-700">
+                    <p className="text-[8px] text-slate-500 uppercase font-bold tracking-wider mb-1">A260/A230</p>
+                    <p className="text-2xl font-black text-white font-mono">{enhancedResult?.a260_230.toFixed(2) || '2.20'}</p>
+                    <p className="text-[10px] text-slate-400 mt-0.5">{(enhancedResult?.a260_230 || 2.2) >= 2.0 ? "Pure" : "Ethanol"}</p>
                   </div>
                   <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-700">
                     <p className="text-[8px] text-slate-500 uppercase font-bold tracking-wider mb-1">Total Yield</p>
-                    <p className="text-2xl font-black text-white font-mono">{yieldUg}</p>
+                    <p className="text-2xl font-black text-white font-mono">{yieldUg.toFixed(2)}</p>
                     <p className="text-[10px] text-slate-400 mt-0.5">µg</p>
                   </div>
                 </div>
@@ -3039,10 +5489,56 @@ export default function App() {
                   <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-[11px] font-mono">
                     <div><span className="text-slate-500">Elution Volume:</span> <span className="text-white">{elutionVolume}µL</span></div>
                     <div><span className="text-slate-500">Missed Spins:</span> <span className={missedSpins > 0 ? "text-rose-400" : "text-emerald-400"}>{missedSpins}</span></div>
-                    <div><span className="text-slate-500">Missed Reagents:</span> <span className={missedReagents > 0 ? "text-rose-400" : "text-emerald-400"}>{missedReagents}</span></div>
+                    <div><span className="text-slate-500">Protocol Deviations:</span> <span className={mistakes.length > 0 ? "text-rose-400" : "text-emerald-400"}>{mistakes.length}</span></div>
                     <div><span className="text-slate-500">Stoichiometry:</span> <span className={stoichiometryError ? "text-rose-400" : "text-emerald-400"}>{stoichiometryError ? "Error" : "OK"}</span></div>
                   </div>
                 </div>
+
+                {mistakes.length > 0 && (() => {
+                  const { consequences } = calculateConsequences();
+                  return (
+                    <div className="bg-slate-900/50 p-4 rounded-xl border border-rose-500/30 text-left space-y-3">
+                      <div className="flex items-center gap-2 mb-2">
+                        <AlertCircle size={16} className="text-rose-400" />
+                        <h4 className="text-xs font-bold text-rose-400 uppercase">Protocol Deviations & Consequences</h4>
+                      </div>
+                      <p className="text-[10px] text-slate-400 mb-3">
+                        Your protocol had {mistakes.length} deviation{mistakes.length !== 1 ? 's' : ''}. Each mistake affects your final DNA quality and yield.
+                      </p>
+                      <div className="space-y-2 max-h-64 overflow-y-auto">
+                        {consequences.map((consequence, i) => (
+                          <div key={i} className={`p-3 rounded-lg border ${
+                            consequence.severity === 'critical' ? 'bg-rose-900/30 border-rose-500/50' :
+                            consequence.severity === 'major' ? 'bg-amber-900/30 border-amber-500/50' :
+                            'bg-slate-800/50 border-slate-600/50'
+                          }`}>
+                            <div className="flex items-start gap-2 mb-1">
+                              <span className={`text-xs font-black uppercase tracking-wider ${
+                                consequence.severity === 'critical' ? 'text-rose-400' :
+                                consequence.severity === 'major' ? 'text-amber-400' :
+                                'text-slate-400'
+                              }`}>
+                                {consequence.severity}
+                              </span>
+                            </div>
+                            <h5 className="text-xs font-bold text-white mb-1">{consequence.title}</h5>
+                            <p className="text-[10px] text-slate-300 mb-1.5">{consequence.description}</p>
+                            <div className="bg-slate-950/50 p-2 rounded border border-slate-700/50">
+                              <p className="text-[9px] text-slate-400">
+                                <span className="font-bold text-rose-300">Impact:</span> {consequence.impact}
+                              </p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="bg-slate-950/50 p-3 rounded-lg border border-slate-700/50 mt-3">
+                        <p className="text-[10px] text-slate-400">
+                          <span className="font-bold text-emerald-400">Learning Point:</span> In a real lab, these mistakes would compromise your experiment and waste valuable samples. Understanding WHY each step matters helps you become a better scientist.
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })()}
 
                 {difficultyMode === "challenge" && challengeModeErrors.length > 0 && (
                   <div className="bg-amber-900/20 border border-amber-500/30 p-4 rounded-xl text-left">
@@ -3063,6 +5559,8 @@ export default function App() {
                   </div>
                 )}
               </div>
+
+              {masteryReport && <MasteryResultsPanel report={masteryReport} />}
 
               <FeedbackModule userRating={userRating} setUserRating={setUserRating} feedbackSent={feedbackSent} setFeedbackSent={setFeedbackSent} />
 
@@ -3243,6 +5741,18 @@ export default function App() {
 
       {/* AI Lab Assistant temporarily disabled - needs API key configuration */}
       {/* <AILabAssistant /> */}
+
+      {/* Toast Notification */}
+      {showToast && toastMessage && (
+        <div className="fixed top-8 left-1/2 transform -translate-x-1/2 z-[200] animate-in slide-in-from-top duration-300">
+          <div className="bg-emerald-600 text-white px-6 py-4 rounded-xl shadow-2xl font-bold text-sm flex items-center gap-3">
+            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+            </svg>
+            {toastMessage}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

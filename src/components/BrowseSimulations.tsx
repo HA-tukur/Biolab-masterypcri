@@ -35,6 +35,9 @@ export function BrowseSimulations() {
     const simId = simMap[techniqueId];
     if (simId) {
       navigate(`/lab?sim=${simId}`);
+    } else {
+      // Safety check - should never reach here with proper UI state
+      alert('⏳ This simulation is not yet available. Only DNA Extraction and PCR are currently accessible.');
     }
   };
 
@@ -48,10 +51,10 @@ export function BrowseSimulations() {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="mb-12">
-          <h1 className="text-4xl font-bold text-slate-900 mb-3">
+          <h1 className="text-2xl md:text-4xl font-bold text-slate-900 mb-3">
             Browse All Simulations
           </h1>
-          <p className="text-lg text-slate-600">
+          <p className="text-base md:text-lg text-slate-600">
             Explore techniques and choose what to practice
           </p>
         </div>
@@ -71,7 +74,7 @@ export function BrowseSimulations() {
                     {getCategoryIcon(category.category)}
                   </div>
                   <div className="text-left">
-                    <h3 className="text-lg font-semibold text-slate-900">
+                    <h3 className="text-base md:text-lg font-semibold text-slate-900">
                       {category.category}
                     </h3>
                     <p className="text-sm text-slate-500">
@@ -99,7 +102,7 @@ export function BrowseSimulations() {
                             {technique.icon}
                           </div>
                           <div>
-                            <h4 className="font-medium text-slate-900 mb-1">
+                            <h4 className="text-base font-medium text-slate-900 mb-1">
                               {technique.title}
                             </h4>
                             <span className={`inline-block px-2 py-1 rounded text-xs font-medium ${getDifficultyColor(technique.level)}`}>
@@ -118,9 +121,14 @@ export function BrowseSimulations() {
                           Start Practicing
                         </button>
                       ) : (
-                        <div className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-slate-100 text-slate-400 rounded-lg font-medium cursor-not-allowed">
+                        <button
+                          onClick={() => {
+                            alert('⏳ This simulation is under development and will be available soon. Only DNA Extraction and PCR are currently accessible.');
+                          }}
+                          className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-slate-100 text-slate-400 rounded-lg font-medium cursor-not-allowed"
+                        >
                           Coming Soon
-                        </div>
+                        </button>
                       )}
                     </div>
                   ))}

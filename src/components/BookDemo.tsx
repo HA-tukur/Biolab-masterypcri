@@ -79,10 +79,10 @@ export function BookDemo() {
           </button>
 
           <div className="bg-white rounded-lg border border-slate-200 p-8">
-            <h1 className="text-3xl font-bold text-slate-900 mb-2">
+            <h1 className="text-2xl md:text-3xl font-bold text-slate-900 mb-2">
               Book a demo for your institution
             </h1>
-            <p className="text-slate-600 mb-8">
+            <p className="text-base text-slate-600 mb-8">
               Fill out the form below and we'll contact you shortly to schedule a personalized demo.
             </p>
 
