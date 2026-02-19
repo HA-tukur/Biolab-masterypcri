@@ -16,6 +16,7 @@ export function SignupForm() {
   const [programDepartment, setProgramDepartment] = useState('');
   const [yearOfStudy, setYearOfStudy] = useState('');
   const [referralSource, setReferralSource] = useState('');
+  const [referralSourceOther, setReferralSourceOther] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -43,9 +44,15 @@ export function SignupForm() {
       return;
     }
 
+    if (referralSource === 'Other' && !referralSourceOther.trim()) {
+      setError('Please specify how you heard about us');
+      return;
+    }
+
     setLoading(true);
 
     const finalUniversity = university === 'Other' ? universityOther : university;
+    const finalReferralSource = referralSource === 'Other' ? referralSourceOther : referralSource;
 
     const { error } = await signUp({
       email,
@@ -55,7 +62,7 @@ export function SignupForm() {
       university: finalUniversity,
       programDepartment,
       yearOfStudy,
-      referralSource,
+      referralSource: finalReferralSource,
     });
 
     if (error) {
@@ -296,6 +303,26 @@ export function SignupForm() {
                   <option value="Other">Other</option>
                 </select>
               </div>
+
+              {referralSource === 'Other' && (
+                <div>
+                  <label htmlFor="referralSourceOther" className="block text-sm font-medium text-gray-700 mb-2">
+                    Please specify how you heard about us <span className="text-red-500">*</span>
+                  </label>
+                  <div className="relative">
+                    <Lightbulb className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                    <input
+                      id="referralSourceOther"
+                      type="text"
+                      value={referralSourceOther}
+                      onChange={(e) => setReferralSourceOther(e.target.value)}
+                      required
+                      className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 outline-none transition-colors"
+                      placeholder="Enter how you found us"
+                    />
+                  </div>
+                </div>
+              )}
 
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex items-start gap-3">
                 <Lightbulb className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />

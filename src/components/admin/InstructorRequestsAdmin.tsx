@@ -62,7 +62,7 @@ export function InstructorRequestsAdmin() {
       console.log('Querying instructor_requests table with profiles join...');
       const { data: directRequests, error: directError } = await supabase
         .from('instructor_requests')
-        .select('*, profiles(email)')
+        .select('*, profiles!instructor_requests_user_id_fkey(email)')
         .eq('status', 'pending')
         .order('created_at', { ascending: false });
 
