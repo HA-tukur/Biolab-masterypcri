@@ -1302,7 +1302,7 @@ const ProtocolGuideOverlay = ({ onClose, missionId }) => {
   const protocolContent = {
     A: {
       title: "Clinical Tissue Biopsy Protocol",
-      subtitle: "Human/Animal DNA Extraction - Select silica-column kit (e.g., Qiagen) for soft tissues (3-25mg). Standard Volumes: 20/200/200/50 µl.",
+      subtitle: "Human/Animal DNA Extraction - Use silica-column kit (e.g., Qiagen) for soft tissues (3-25mg). Standard Volumes: 20/200/200/50 µl. Select: centrifuge, nanodrop, incubator, Ethanol, & safety kit",
       steps: [
         {
           title: "1. Lysis & Digestion (Combined Step)",
@@ -1328,7 +1328,7 @@ const ProtocolGuideOverlay = ({ onClose, missionId }) => {
     },
     B: {
       title: "Cassava Extraction Protocol",
-      subtitle: "Plant DNA Extraction - Select the Zymo kit for tough plant tissues (e.g., 20-100mg cassava). Volumes: 500/500/50 µl.",
+      subtitle: "Plant DNA Extraction - Use Zymo kit for tough plant tissues (e.g., 20-100mg). Volumes: 500/500/50 µl. Equipment: Centrifuge, nanodrop, vortex, Mortal, LN, Ethanol, & safety kit",
       steps: [
         {
           title: "Step 1: Tissue Disruption (Manual Grinding + Liquid N₂)",
