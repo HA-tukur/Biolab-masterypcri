@@ -193,7 +193,7 @@ function SimulationPreview() {
   const y280 = yScale(absorbanceData[wavelengths.indexOf(280)]);
 
   return (
-    <div className="bg-white border-2 border-slate-200 rounded-lg shadow-xl p-4 space-y-4 max-w-sm ml-auto">
+    <div className="bg-white border-2 border-slate-200 rounded-lg shadow-xl p-4 space-y-4 w-full max-w-sm lg:ml-auto">
       <div className="space-y-1">
         <h3 className="text-sm font-bold text-slate-800">NanoDrop Spectrophotometer</h3>
         <p className="text-xs text-slate-600">A260/A280 Purity Analysis</p>
