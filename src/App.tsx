@@ -2479,7 +2479,7 @@ export default function App() {
       requiresSpin: true,
       spinDuration: 3,
       successCriteria: "Supernatant is clear",
-      educationalNote: "⚠️ Carefully pipette only the clear supernatant in the next step. Avoid disturbing the pellet - it contains debris, not DNA."
+      educationalNote: "⚠️ After spinning, gently pipette the clear supernatant in the next step. Avoid disturbing the pellet - it contains debris, not DNA."
     };
 
     const step2_Plant = {
