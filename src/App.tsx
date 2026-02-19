@@ -4328,7 +4328,7 @@ export default function App() {
                         ) : (currentStep.title === "Binding/Column Load" || currentStep.title === "Wash Stage" || currentStep.title === "Wash & Dry") ? (
                           <div className="flex flex-col items-center">
                             <FilterColumnVisual
-                              volume={bufferVolume + volumeAddedThisStep}
+                              volume={currentStep.title === "Wash & Dry" ? volumeAddedThisStep : (bufferVolume + volumeAddedThisStep)}
                               hasDNA={currentStep.title === "Wash Stage" || currentStep.title === "Wash & Dry"}
                               showSeparation={showPhaseSeparation}
                               wasteInTube={wasteInCollectionTube}
