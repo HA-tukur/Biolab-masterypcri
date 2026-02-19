@@ -3756,148 +3756,158 @@ export default function App() {
                       const buttonText = canContinue
                         ? `CONTINUE TO STEP ${nextStepNumber} →`
                         : remainingTasks > 0
-                          ? `Complete ${remainingTasks} remaining ${remainingTasks === 1 ? 'task' : 'tasks'}`
-                          : 'Complete step to continue';
+                          ? `SKIP TO STEP ${nextStepNumber} (${remainingTasks} task${remainingTasks === 1 ? '' : 's'} incomplete) →`
+                          : `CONTINUE TO STEP ${nextStepNumber} →`;
 
                       return (
                         <button
                           onClick={() => {
-                            if (canContinue) {
-                              console.log('Moving to step', protocolIndex + 2);
+                            console.log('Moving to step', protocolIndex + 2);
 
-                              // Validation checks
-                              if (currentStep.requiresSpin && !hasSpunThisStep) {
-                                setMissedSpins(missedSpins + 1);
-                                addLog("Critical Error: Centrifugation step bypassed!", "error");
+                            // Track incomplete tasks for Sandbox learning model
+                            const incompleteTasks = [];
+
+                            // Validation checks - now just tracking, not blocking
+                            if (currentStep.requiresSpin && !hasSpunThisStep) {
+                              setMissedSpins(missedSpins + 1);
+                              addLog("Note: Centrifugation step skipped.", "error");
+                              setProtocolAdherenceCompromised(true);
+                              incompleteTasks.push('centrifugation');
+                            }
+
+                            if (currentStep.requiresVolume && !hasDispensedThisStep) {
+                              addLog("Note: No reagent added.", "error");
+                              setMissedReagents(missedReagents + 1);
+                              setProtocolAdherenceCompromised(true);
+                              incompleteTasks.push('reagent_addition');
+                            }
+
+                            if (currentStep.title === "Lysis & Protein Digestion") {
+                              if (!step1SubActions.lysisBufferAdded) {
+                                addLog("Note: Lysis Buffer was not added.", "error");
                                 setProtocolAdherenceCompromised(true);
+                                incompleteTasks.push('lysis_buffer');
                               }
-
-                              if (currentStep.requiresVolume && !hasDispensedThisStep) {
-                                addLog("Error: No reagent added.", "error");
-                                setMissedReagents(missedReagents + 1);
+                              if (!step1SubActions.proteinaseKAdded) {
+                                addLog("Note: Proteinase K was not added.", "error");
                                 setProtocolAdherenceCompromised(true);
+                                incompleteTasks.push('proteinase_k');
                               }
-
-                              if (currentStep.title === "Lysis & Protein Digestion") {
-                                if (!step1SubActions.lysisBufferAdded) {
-                                  addLog("Error: Add Lysis Buffer before proceeding", "error");
-                                  setProtocolAdherenceCompromised(true);
-                                  return;
-                                }
-                                if (!step1SubActions.proteinaseKAdded) {
-                                  addLog("Error: Add Proteinase K before proceeding", "error");
-                                  setProtocolAdherenceCompromised(true);
-                                  return;
-                                }
-                                if (!step1SubActions.mixed) {
-                                  addLog("Error: Mix the tube by inversion before incubating", "error");
-                                  setProtocolAdherenceCompromised(true);
-                                  return;
-                                }
-                                if (!step1SubActions.incubated) {
-                                  addLog("Error: Incubate at 56°C before proceeding", "error");
-                                  setProtocolAdherenceCompromised(true);
-                                  return;
-                                }
+                              if (!step1SubActions.mixed) {
+                                addLog("Note: Tube was not mixed by inversion.", "error");
+                                setProtocolAdherenceCompromised(true);
+                                incompleteTasks.push('mixing');
                               }
-
-                              if (currentStep.title === "Binding Preparation") {
-                                if (!step3SubActions.bindingBufferAdded) {
-                                  addLog("Error: Add Binding Buffer before proceeding", "error");
-                                  setProtocolAdherenceCompromised(true);
-                                  return;
-                                }
-                                if (!step3SubActions.ethanolAdded) {
-                                  addLog("Error: Add Ethanol before proceeding. DNA will NOT bind without ethanol!", "error");
-                                  setProtocolAdherenceCompromised(true);
-                                  return;
-                                }
-                                if (!step3SubActions.mixed) {
-                                  addLog("Error: Mix the tube by inversion before loading onto column", "error");
-                                  setProtocolAdherenceCompromised(true);
-                                  return;
-                                }
-                              }
-
-                              // Volume validation
-                              if (currentStep.multipleReagents && currentStep.reagents) {
-                                currentStep.reagents.forEach(reagent => {
-                                  const addedVolume = currentStepReagents[reagent.id] || 0;
-                                  if (addedVolume === 0) {
-                                    addLog(`Volume Error: ${reagent.name} was not added!`, "error");
-                                    setProtocolAdherenceCompromised(true);
-                                  } else if (addedVolume !== reagent.targetVolume) {
-                                    addLog(`Volume Error: Use exactly ${reagent.targetVolume}µL of ${reagent.name}.`, "error");
-                                    setProtocolAdherenceCompromised(true);
-                                  }
-                                });
-                              } else if (currentStep.reagents && currentStep.reagents[0]) {
-                                const reagent = currentStep.reagents[0];
-                                if (volumeAddedThisStep !== reagent.targetVolume) {
-                                  addLog(`Volume Error: Use exactly ${reagent.targetVolume}µL.`, "error");
-                                  setProtocolAdherenceCompromised(true);
-                                }
-                              }
-
-                              console.log('[NAVIGATE] Moving to Step', protocolIndex + 2);
-
-                              // Check if this is the last step
-                              if (protocolIndex === protocolSteps.length - 1) {
-                                setCanNanodropNow(true);
-                                setStatus("verification");
-                              } else {
-                                const nextStep = protocolSteps[protocolIndex + 1];
-
-                                // For Binding Preparation step (Step 3), reset volume to ~200µL (supernatant only)
-                                if (nextStep?.title === "Binding Preparation") {
-                                  setBufferVolume(200);
-                                  addLog("Transferred ~200µL clear supernatant to fresh tube. Pellet discarded.", "info");
-                                }
-                                // For Elution step, reset buffer volume to show fresh, empty tube
-                                else if (nextStep?.isElution) {
-                                  setBufferVolume(0);
-                                  addLog("Column transferred to fresh, empty collection tube.", "info");
-                                } else {
-                                  setBufferVolume(bufferVolume + volumeAddedThisStep);
-                                }
-
-                                setVolumeAddedThisStep(0);
-                                setProtocolIndex(protocolIndex + 1);
-                                setHasDispensedThisStep(false);
-                                setHasSpunThisStep(false);
-                                setNeedsMixing(false);
-                                setIsMixing(false);
-                                setStep2Mixed(false);
-                                setStep3Mixed(false);
-                                setCurrentStepReagents({});
-                                setCurrentReagentId(null);
-                                setShowMixPrompt(false);
-                                setTubeVortexed(false);
-                                setShowVortexPrompt(false);
-                                setSelectedPipetteForTransfer(null);
-                                setHasAspiratedFromTube(false);
-                                setLiquidInColumn(false);
-                                setShowPipetteAnimation(false);
-                                setPipetteAnimationPosition('tube');
-                                setHasDiscardedWaste(false);
-                                setIsDiscardingWaste(false);
-                                setWasteInCollectionTube(false);
-                                window.scrollTo({ top: 0, behavior: 'smooth' });
+                              if (!step1SubActions.incubated) {
+                                addLog("Note: Incubation at 56°C was skipped.", "error");
+                                setProtocolAdherenceCompromised(true);
+                                incompleteTasks.push('incubation');
                               }
                             }
+
+                            if (currentStep.title === "Binding Preparation") {
+                              if (!step3SubActions.bindingBufferAdded) {
+                                addLog("Note: Binding Buffer was not added.", "error");
+                                setProtocolAdherenceCompromised(true);
+                                incompleteTasks.push('binding_buffer');
+                              }
+                              if (!step3SubActions.ethanolAdded) {
+                                addLog("Note: Ethanol was not added. DNA will NOT bind without ethanol!", "error");
+                                setProtocolAdherenceCompromised(true);
+                                incompleteTasks.push('ethanol');
+                              }
+                              if (!step3SubActions.mixed) {
+                                addLog("Note: Tube was not mixed by inversion.", "error");
+                                setProtocolAdherenceCompromised(true);
+                                incompleteTasks.push('mixing');
+                              }
+                            }
+
+                            // Volume validation
+                            if (currentStep.multipleReagents && currentStep.reagents) {
+                              currentStep.reagents.forEach(reagent => {
+                                const addedVolume = currentStepReagents[reagent.id] || 0;
+                                if (addedVolume === 0) {
+                                  addLog(`Note: ${reagent.name} was not added.`, "error");
+                                  setProtocolAdherenceCompromised(true);
+                                  incompleteTasks.push(`volume_${reagent.id}`);
+                                } else if (addedVolume !== reagent.targetVolume) {
+                                  addLog(`Note: ${reagent.name} volume was ${addedVolume}µL instead of ${reagent.targetVolume}µL.`, "error");
+                                  setProtocolAdherenceCompromised(true);
+                                  incompleteTasks.push(`volume_incorrect_${reagent.id}`);
+                                }
+                              });
+                            } else if (currentStep.reagents && currentStep.reagents[0]) {
+                              const reagent = currentStep.reagents[0];
+                              if (volumeAddedThisStep !== reagent.targetVolume && volumeAddedThisStep > 0) {
+                                addLog(`Note: Volume was ${volumeAddedThisStep}µL instead of ${reagent.targetVolume}µL.`, "error");
+                                setProtocolAdherenceCompromised(true);
+                                incompleteTasks.push('volume_incorrect');
+                              }
+                            }
+
+                            // Record incomplete tasks in userPerformance for sandbox learning model
+                            if (incompleteTasks.length > 0) {
+                              setUserPerformance(prev => ({
+                                ...prev,
+                                [`step${protocolIndex + 1}_incomplete`]: incompleteTasks
+                              }));
+                              console.log('[SANDBOX MODE] Incomplete tasks recorded:', incompleteTasks);
+                            }
+
+                            console.log('[NAVIGATE] Moving to Step', protocolIndex + 2);
+
+                            // Check if this is the last step
+                            if (protocolIndex === protocolSteps.length - 1) {
+                              setCanNanodropNow(true);
+                              setStatus("verification");
+                            } else {
+                              const nextStep = protocolSteps[protocolIndex + 1];
+
+                              // For Binding Preparation step (Step 3), reset volume to ~200µL (supernatant only)
+                              if (nextStep?.title === "Binding Preparation") {
+                                setBufferVolume(200);
+                                addLog("Transferred ~200µL clear supernatant to fresh tube. Pellet discarded.", "info");
+                              }
+                              // For Elution step, reset buffer volume to show fresh, empty tube
+                              else if (nextStep?.isElution) {
+                                setBufferVolume(0);
+                                addLog("Column transferred to fresh, empty collection tube.", "info");
+                              } else {
+                                setBufferVolume(bufferVolume + volumeAddedThisStep);
+                              }
+
+                              setVolumeAddedThisStep(0);
+                              setProtocolIndex(protocolIndex + 1);
+                              setHasDispensedThisStep(false);
+                              setHasSpunThisStep(false);
+                              setNeedsMixing(false);
+                              setIsMixing(false);
+                              setStep2Mixed(false);
+                              setStep3Mixed(false);
+                              setCurrentStepReagents({});
+                              setCurrentReagentId(null);
+                              setShowMixPrompt(false);
+                              setTubeVortexed(false);
+                              setShowVortexPrompt(false);
+                              setSelectedPipetteForTransfer(null);
+                              setHasAspiratedFromTube(false);
+                              setLiquidInColumn(false);
+                              setShowPipetteAnimation(false);
+                              setPipetteAnimationPosition('tube');
+                              setHasDiscardedWaste(false);
+                              setIsDiscardingWaste(false);
+                              setWasteInCollectionTube(false);
+                              window.scrollTo({ top: 0, behavior: 'smooth' });
+                            }
                           }}
-                          disabled={!canContinue}
                           className={`
-                            w-full lg:w-auto px-6 py-3 rounded-lg font-bold text-sm transition-all border-0 whitespace-nowrap
+                            w-full lg:w-auto px-6 py-3 rounded-lg font-bold text-sm transition-all border-0 whitespace-nowrap cursor-pointer
                             ${canContinue
-                              ? 'bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-500 hover:to-orange-400 text-white cursor-pointer hover:scale-105 hover:shadow-lg hover:shadow-orange-500/40 animate-continue-pulse'
-                              : 'cursor-not-allowed'
+                              ? 'bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-500 hover:to-orange-400 text-white hover:scale-105 hover:shadow-lg hover:shadow-orange-500/40 animate-continue-pulse'
+                              : 'bg-gradient-to-r from-amber-700 to-amber-600 hover:from-amber-600 hover:to-amber-500 text-white hover:scale-105'
                             }
                           `}
-                          style={canContinue ? {} : {
-                            backgroundColor: '#2a2a2a',
-                            color: '#666',
-                          }}
                         >
                           {buttonText}
                         </button>
