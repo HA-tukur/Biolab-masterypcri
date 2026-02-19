@@ -1809,6 +1809,11 @@ export default function App() {
     incubated: false
   });
   const [step1ActionOrder, setStep1ActionOrder] = useState([]);
+  const [step2SubActions, setStep2SubActions] = useState({
+    lysisBufferAdded: false,
+    vortexed: false,
+    spun: false
+  });
   const [step3SubActions, setStep3SubActions] = useState({
     bindingBufferAdded: false,
     ethanolAdded: false,
@@ -2046,6 +2051,10 @@ export default function App() {
       const completed = Object.values(step1SubActions).filter(Boolean).length;
       return { completed, total: 4, actions: step1SubActions };
     }
+    if (currentStep?.title === "Lysis") {
+      const completed = Object.values(step2SubActions).filter(Boolean).length;
+      return { completed, total: 3, actions: step2SubActions };
+    }
     if (currentStep?.title === "Binding Preparation") {
       const completed = Object.values(step3SubActions).filter(Boolean).length;
       return { completed, total: 3, actions: step3SubActions };
@@ -2096,6 +2105,17 @@ export default function App() {
           setShowPhaseSeparation(true);
           addLog("Spin complete. Supernatant and pellet separated.", "success");
           setUserPerformance(prev => ({ ...prev, hasClarifiedLysate: true }));
+        }
+
+        // For Mission B Lysis step, mark spin complete
+        if (currentStep?.title === "Lysis") {
+          setStep2SubActions(prev => {
+            const updated = { ...prev, spun: true };
+            console.log('[STEP 2 - Mission B] Updated step2SubActions after spin:', updated);
+            return updated;
+          });
+          setShowPhaseSeparation(true);
+          addLog("Spin complete. Large green debris pellet formed.", "success");
         }
 
         // For Column Binding and Wash steps, liquid goes to collection tube as waste
@@ -2601,6 +2621,7 @@ export default function App() {
     setCurrentReagentId(null);
     setStep1SubActions({ lysisBufferAdded: false, proteinaseKAdded: false, mixed: false, incubated: false });
     setStep1ActionOrder([]);
+    setStep2SubActions({ lysisBufferAdded: false, vortexed: false, spun: false });
     setStep3SubActions({ bindingBufferAdded: false, ethanolAdded: false, mixed: false });
     setStep3ActionOrder([]);
     setShowMixPrompt(false);
@@ -2729,6 +2750,13 @@ export default function App() {
       setIsVortexing(false);
       setTubeVortexed(true);
       setShowVortexPrompt(false);
+      if (currentStep?.title === "Lysis") {
+        setStep2SubActions(prev => {
+          const updated = { ...prev, vortexed: true };
+          console.log('[STEP 2 - Mission B] Updated step2SubActions after vortex:', updated);
+          return updated;
+        });
+      }
       if (difficultyMode !== "challenge") {
         addLog("✓ Tube vortexed - lysis buffer fully saturated into powder. Uniform cloudy green suspension formed.", "success");
       }
@@ -4158,6 +4186,25 @@ export default function App() {
                         </>
                         );
                       })()}
+                      {currentStep.title === "Lysis" && (() => {
+                        console.log('[RENDER CHECKLIST] step2SubActions:', step2SubActions);
+                        return (
+                        <>
+                          <div className={`flex items-center gap-2 text-xs ${step2SubActions.lysisBufferAdded ? 'text-emerald-400' : 'text-slate-500'}`}>
+                            <span>{step2SubActions.lysisBufferAdded ? '☑' : '☐'}</span>
+                            <span>Add Lysis Buffer (500 µL)</span>
+                          </div>
+                          <div className={`flex items-center gap-2 text-xs ${step2SubActions.vortexed ? 'text-emerald-400' : 'text-slate-500'}`}>
+                            <span>{step2SubActions.vortexed ? '☑' : '☐'}</span>
+                            <span>Vortex to mix thoroughly</span>
+                          </div>
+                          <div className={`flex items-center gap-2 text-xs ${step2SubActions.spun ? 'text-emerald-400' : 'text-slate-500'}`}>
+                            <span>{step2SubActions.spun ? '☑' : '☐'}</span>
+                            <span>Spin at 12,000 g for 3 min</span>
+                          </div>
+                        </>
+                        );
+                      })()}
                       {currentStep.title === "Binding Preparation" && (
                         <>
                           <div className={`flex items-center gap-2 text-xs ${step3SubActions.bindingBufferAdded ? 'text-emerald-400' : 'text-slate-500'}`}>
@@ -5049,6 +5096,16 @@ export default function App() {
                               if (pipetteVolume === 20) {
                                 setUserPerformance(prev => ({ ...prev, hasCorrectProtK: true }));
                               }
+                              showToastNotification(`✓ Added ${pipetteVolume}µL ${reagentName} to sample`);
+                            }
+                          } else if (currentStep.title === "Lysis") {
+                            if (reagentId === "lysis") {
+                              console.log('[STEP 2 - Mission B] Lysis Buffer added: true');
+                              setStep2SubActions(prev => {
+                                const updated = { ...prev, lysisBufferAdded: true };
+                                console.log('[STEP 2 - Mission B] Updated step2SubActions:', updated);
+                                return updated;
+                              });
                               showToastNotification(`✓ Added ${pipetteVolume}µL ${reagentName} to sample`);
                             }
                           } else if (currentStep.title === "Binding Preparation") {
