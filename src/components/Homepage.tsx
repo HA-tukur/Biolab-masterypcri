@@ -83,10 +83,10 @@ function HeroSection({ onStartFree }: { onStartFree: () => void }) {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center relative z-10">
         <div className="text-center lg:text-left">
           <h1 className="text-3xl md:text-5xl font-bold text-gray-900 mb-4 md:mb-6 leading-tight">
-            Learn Biotech Skills Without a Physical Lab
+            Master Molecular Biology Techniques Through High-Fidelity Simulations
           </h1>
           <p className="text-base md:text-xl text-gray-600 mb-6 md:mb-8 leading-relaxed">
-            Practice with industry-standard micropipettes (P2.5–P1000), centrifuges, and thermocyclers in photo-realistic simulations. Make mistakes safely, learn faster, and build confidence before real lab sessions.
+          Practice DNA Extraction, PCR, and Western Blot in realistic simulations. Master the protocols and make mistakes safely before your real lab sessions, saving you from wasting expensive reagents or your one shot at a successful experiment.
           </p>
 
           <div className="flex flex-col gap-4 mb-6">
