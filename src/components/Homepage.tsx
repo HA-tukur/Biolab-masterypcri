@@ -55,18 +55,25 @@ function NonAuthenticatedView({ onStartFree, onRequestInstructorAccess }: { onSt
 function HeroSection({ onStartFree }: { onStartFree: () => void }) {
   return (
     <section className="max-w-7xl mx-auto px-4 md:px-6 pt-12 md:pt-16 pb-16 md:pb-24 relative">
-      <div className="absolute inset-0 opacity-[0.08] pointer-events-none overflow-hidden">
+      <div className="absolute inset-0 opacity-[0.10] pointer-events-none overflow-hidden">
         <svg className="w-full h-full" viewBox="0 0 800 600" xmlns="http://www.w3.org/2000/svg">
           <defs>
-            <pattern id="dnaHelix" x="0" y="0" width="120" height="200" patternUnits="userSpaceOnUse">
-              <path d="M40,0 Q50,25 60,50 Q70,75 60,100 Q50,125 40,150 Q30,175 40,200"
-                    stroke="#e5e7eb" strokeWidth="1.5" fill="none"/>
-              <path d="M80,0 Q70,25 60,50 Q50,75 60,100 Q70,125 80,150 Q90,175 80,200"
-                    stroke="#e5e7eb" strokeWidth="1.5" fill="none"/>
-              <line x1="40" y1="25" x2="80" y2="25" stroke="#e5e7eb" strokeWidth="1"/>
-              <line x1="40" y1="75" x2="80" y2="75" stroke="#e5e7eb" strokeWidth="1"/>
-              <line x1="40" y1="125" x2="80" y2="125" stroke="#e5e7eb" strokeWidth="1"/>
-              <line x1="40" y1="175" x2="80" y2="175" stroke="#e5e7eb" strokeWidth="1"/>
+            <pattern id="dnaHelix" x="0" y="0" width="100" height="180" patternUnits="userSpaceOnUse">
+              <path d="M30,0 Q35,22.5 40,45 Q45,67.5 40,90 Q35,112.5 30,135 Q25,157.5 30,180"
+                    stroke="#e5e7eb" strokeWidth="2" fill="none" strokeLinecap="round"/>
+              <path d="M70,0 Q65,22.5 60,45 Q55,67.5 60,90 Q65,112.5 70,135 Q75,157.5 70,180"
+                    stroke="#e5e7eb" strokeWidth="2" fill="none" strokeLinecap="round"/>
+              <line x1="30" y1="15" x2="70" y2="15" stroke="#e5e7eb" strokeWidth="1.2"/>
+              <line x1="32" y1="30" x2="68" y2="30" stroke="#e5e7eb" strokeWidth="1.2"/>
+              <line x1="35" y1="45" x2="65" y2="45" stroke="#e5e7eb" strokeWidth="1.2"/>
+              <line x1="37" y1="60" x2="63" y2="60" stroke="#e5e7eb" strokeWidth="1.2"/>
+              <line x1="38" y1="75" x2="62" y2="75" stroke="#e5e7eb" strokeWidth="1.2"/>
+              <line x1="37" y1="90" x2="63" y2="90" stroke="#e5e7eb" strokeWidth="1.2"/>
+              <line x1="35" y1="105" x2="65" y2="105" stroke="#e5e7eb" strokeWidth="1.2"/>
+              <line x1="32" y1="120" x2="68" y2="120" stroke="#e5e7eb" strokeWidth="1.2"/>
+              <line x1="30" y1="135" x2="70" y2="135" stroke="#e5e7eb" strokeWidth="1.2"/>
+              <line x1="32" y1="150" x2="68" y2="150" stroke="#e5e7eb" strokeWidth="1.2"/>
+              <line x1="35" y1="165" x2="65" y2="165" stroke="#e5e7eb" strokeWidth="1.2"/>
             </pattern>
           </defs>
           <rect width="100%" height="100%" fill="url(#dnaHelix)"/>
@@ -140,6 +147,10 @@ function HeroSection({ onStartFree }: { onStartFree: () => void }) {
 }
 
 function SimulationPreview() {
+  const peak260 = 30;
+  const valley230 = peak260 * 0.35;
+  const shoulder280 = peak260 * 0.55;
+
   return (
     <div className="bg-white border-2 border-slate-200 rounded-lg shadow-xl p-4 space-y-4 max-w-md">
       <div className="space-y-1">
@@ -148,28 +159,64 @@ function SimulationPreview() {
       </div>
 
       <div className="bg-white border border-slate-200 rounded-lg p-3">
-        <div className="relative h-36">
-          <svg className="w-full h-full" viewBox="0 0 300 160" xmlns="http://www.w3.org/2000/svg">
-            <line x1="30" y1="140" x2="270" y2="140" stroke="#94a3b8" strokeWidth="1.5"/>
-            <line x1="30" y1="140" x2="30" y2="20" stroke="#94a3b8" strokeWidth="1.5"/>
+        <div className="relative h-40">
+          <svg className="w-full h-full" viewBox="0 0 320 180" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="curveGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stopColor="#0d9488" stopOpacity="0.15"/>
+                <stop offset="100%" stopColor="#0d9488" stopOpacity="0"/>
+              </linearGradient>
+            </defs>
 
-            <text x="150" y="155" fontSize="10" fill="#64748b" textAnchor="middle">Wavelength (nm)</text>
-            <text x="15" y="80" fontSize="10" fill="#64748b" textAnchor="middle" transform="rotate(-90 15 80)">Abs</text>
+            <line x1="40" y1="150" x2="290" y2="150" stroke="#94a3b8" strokeWidth="1.5"/>
+            <line x1="40" y1="150" x2="40" y2="20" stroke="#94a3b8" strokeWidth="1.5"/>
 
-            <text x="50" y="152" fontSize="9" fill="#94a3b8" textAnchor="middle">230</text>
-            <text x="110" y="152" fontSize="9" fill="#94a3b8" textAnchor="middle">260</text>
-            <text x="170" y="152" fontSize="9" fill="#94a3b8" textAnchor="middle">280</text>
-            <text x="230" y="152" fontSize="9" fill="#94a3b8" textAnchor="middle">320</text>
+            <text x="165" y="170" fontSize="10" fill="#64748b" textAnchor="middle" fontWeight="500">Wavelength (nm)</text>
+            <text x="20" y="85" fontSize="10" fill="#64748b" textAnchor="middle" transform="rotate(-90 20 85)" fontWeight="500">Absorbance</text>
 
-            <path d="M 40,120 Q 50,100 60,80 Q 70,50 80,35 Q 90,25 100,23 Q 110,22 120,30 Q 130,40 140,55 Q 150,75 160,95 Q 170,110 180,118 Q 200,128 230,132"
-                  stroke="#dc2626" strokeWidth="2" fill="none" strokeLinecap="round"/>
+            <text x="60" y="163" fontSize="9" fill="#94a3b8" textAnchor="middle">220</text>
+            <text x="85" y="163" fontSize="9" fill="#94a3b8" textAnchor="middle">230</text>
+            <text x="135" y="163" fontSize="9" fill="#94a3b8" textAnchor="middle">260</text>
+            <text x="185" y="163" fontSize="9" fill="#94a3b8" textAnchor="middle">280</text>
+            <text x="235" y="163" fontSize="9" fill="#94a3b8" textAnchor="middle">300</text>
+            <text x="270" y="163" fontSize="9" fill="#94a3b8" textAnchor="middle">320</text>
 
-            <circle cx="110" cy="22" r="3" fill="#dc2626"/>
-            <text x="110" y="15" fontSize="8" fill="#dc2626" textAnchor="middle" fontWeight="bold">260nm</text>
+            <path d={`M 50,${150 - 15}
+                     C 60,${150 - 20} 70,${150 - valley230} 85,${150 - valley230}
+                     C 100,${150 - valley230} 110,${150 - peak260 + 5} 120,${150 - peak260}
+                     C 125,${150 - peak260} 130,${150 - peak260} 135,${150 - peak260}
+                     C 140,${150 - peak260} 145,${150 - peak260} 150,${150 - peak260 + 3}
+                     C 160,${150 - shoulder280 - 8} 170,${150 - shoulder280} 185,${150 - shoulder280}
+                     C 200,${150 - shoulder280 + 5} 215,${150 - 30} 230,${150 - 20}
+                     C 245,${150 - 15} 260,${150 - 10} 275,${150 - 5}`}
+                  stroke="#0d9488" strokeWidth="2.5" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
+
+            <path d={`M 50,${150 - 15}
+                     C 60,${150 - 20} 70,${150 - valley230} 85,${150 - valley230}
+                     C 100,${150 - valley230} 110,${150 - peak260 + 5} 120,${150 - peak260}
+                     C 125,${150 - peak260} 130,${150 - peak260} 135,${150 - peak260}
+                     C 140,${150 - peak260} 145,${150 - peak260} 150,${150 - peak260 + 3}
+                     C 160,${150 - shoulder280 - 8} 170,${150 - shoulder280} 185,${150 - shoulder280}
+                     C 200,${150 - shoulder280 + 5} 215,${150 - 30} 230,${150 - 20}
+                     C 245,${150 - 15} 260,${150 - 10} 275,${150 - 5}
+                     L 275,150 L 50,150 Z`}
+                  fill="url(#curveGradient)"/>
+
+            <line x1="85" y1={150 - valley230 - 5} x2="85" y2="150" stroke="#f59e0b" strokeWidth="1" strokeDasharray="3,3" opacity="0.6"/>
+            <circle cx="85" cy={150 - valley230} r="3" fill="#f59e0b"/>
+            <text x="85" y={150 - valley230 - 10} fontSize="7" fill="#f59e0b" textAnchor="middle" fontWeight="bold">Salt/Solvent</text>
+
+            <line x1="135" y1={150 - peak260 - 5} x2="135" y2="150" stroke="#dc2626" strokeWidth="1.5" strokeDasharray="3,3" opacity="0.7"/>
+            <circle cx="135" cy={150 - peak260} r="4" fill="#dc2626"/>
+            <text x="135" y={150 - peak260 - 10} fontSize="8" fill="#dc2626" textAnchor="middle" fontWeight="bold">DNA & RNA</text>
+
+            <line x1="185" y1={150 - shoulder280 - 5} x2="185" y2="150" stroke="#2563eb" strokeWidth="1" strokeDasharray="3,3" opacity="0.6"/>
+            <circle cx="185" cy={150 - shoulder280} r="3" fill="#2563eb"/>
+            <text x="185" y={150 - shoulder280 - 10} fontSize="7" fill="#2563eb" textAnchor="middle" fontWeight="bold">Protein</text>
           </svg>
         </div>
 
-        <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
+        <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
           <div className="bg-slate-50 border border-slate-200 rounded p-2">
             <div className="text-[10px] text-slate-500 mb-0.5">A260/A280</div>
             <div className="text-base font-bold text-slate-700">1.82</div>
