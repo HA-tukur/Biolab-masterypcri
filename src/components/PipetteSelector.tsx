@@ -177,15 +177,6 @@ export const PipetteSelector: React.FC<PipetteSelectorProps> = ({
                 <ChevronUp size={24} className="mx-auto" />
               </button>
             </div>
-
-            {volume !== requiredVolume && (
-              <p className="text-xs text-amber-400 text-center mt-2">
-                {tolerance === 0
-                  ? `⚠ Use exactly ${requiredVolume}µL`
-                  : `⚠ Target: ${requiredVolume}µL (±${tolerance}µL acceptable)`
-                }
-              </p>
-            )}
           </div>
 
           {hasLiquid && (
