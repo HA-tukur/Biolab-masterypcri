@@ -5339,7 +5339,7 @@ export default function App() {
                             )}
                             {ndStep === "blank" && (
                               <button onClick={() => setNdStep("load")} className="w-full bg-indigo-600 hover:bg-indigo-500 text-white py-3 rounded-lg font-bold uppercase border-0 cursor-pointer">
-                                Load 1µL DNA
+                                Load 1{'\u00B5'}L DNA
                               </button>
                             )}
                             {ndStep === "load" && (
