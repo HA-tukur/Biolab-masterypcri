@@ -2001,6 +2001,23 @@ export default function App() {
     return 500;
   };
 
+  const getCurrentTolerance = () => {
+    // If user has selected a specific reagent, use that reagent's tolerance
+    if (currentReagentId && currentStep?.reagents) {
+      const selectedReagent = currentStep.reagents.find(r => r.id === currentReagentId);
+      if (selectedReagent) {
+        return selectedReagent.tolerance || 0;
+      }
+    }
+
+    // Otherwise, use the next reagent to be added
+    const reagent = getCurrentReagent();
+    if (reagent) {
+      return reagent.tolerance || 0;
+    }
+    return 50;
+  };
+
   const getRemainingReagentsText = () => {
     if (!currentStep || !currentStep.multipleReagents || !currentStep.reagents) return null;
     const remaining = currentStep.reagents.filter(r => !currentStepReagents[r.id]);
@@ -2374,8 +2391,8 @@ export default function App() {
       requiresMixing: true,
       multipleReagents: true,
       reagents: [
-        { id: "lysis", name: "Lysis Buffer", targetVolume: 200, tolerance: 0, color: "#ec4899" },
-        { id: "proteinase_k", name: "Proteinase K", targetVolume: 20, tolerance: 0, color: "#f59e0b" }
+        { id: "lysis", name: "Lysis Buffer", targetVolume: 200, tolerance: 20, color: "#ec4899" },
+        { id: "proteinase_k", name: "Proteinase K", targetVolume: 20, tolerance: 5, color: "#f59e0b" }
       ],
       successCriteria: "Lysate should be clear with no visible tissue chunks",
       educationalNote: "🔬 Why 20 µL? This is the standard amount for ~25 mg tissue. Insufficient Proteinase K leads to protein contamination and poor yields."
@@ -4879,6 +4896,7 @@ export default function App() {
                       <h3 className="text-sm font-bold text-white uppercase flex items-center gap-2"><Pipette size={16} /> Pipettes</h3>
                       <PipetteSelector
                         requiredVolume={getTargetVolume()}
+                        tolerance={getCurrentTolerance()}
                         onVolumeSet={(volume, pipetteSize) => {
                           if (!hasDispensedThisStep || currentStep.multipleReagents) {
                             setPipetteVolume(volume);

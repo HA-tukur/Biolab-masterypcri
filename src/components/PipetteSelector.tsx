@@ -3,6 +3,7 @@ import { ChevronUp, ChevronDown, Droplet } from 'lucide-react';
 
 interface PipetteSelectorProps {
   requiredVolume: number;
+  tolerance?: number;
   onVolumeSet: (volume: number, pipetteSize: string) => void;
   disabled: boolean;
   hasLiquid: boolean;
@@ -19,6 +20,7 @@ const PIPETTES = [
 
 export const PipetteSelector: React.FC<PipetteSelectorProps> = ({
   requiredVolume,
+  tolerance = 0,
   onVolumeSet,
   disabled,
   hasLiquid,
@@ -178,7 +180,10 @@ export const PipetteSelector: React.FC<PipetteSelectorProps> = ({
 
             {volume !== requiredVolume && (
               <p className="text-xs text-amber-400 text-center mt-2">
-                ⚠ Use exactly {requiredVolume}µL
+                {tolerance === 0
+                  ? `⚠ Use exactly ${requiredVolume}µL`
+                  : `⚠ Target: ${requiredVolume}µL (±${tolerance}µL acceptable)`
+                }
               </p>
             )}
           </div>
