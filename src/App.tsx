@@ -3094,7 +3094,21 @@ export default function App() {
       if (data) {
         setSavedRecordId(data.id);
 
-        const isSuccess = enhanced.concentration >= 200 && enhanced.a260_280 >= 1.7;
+        const report = analyzeProtocolExecution(
+          protocolTracker.getProtocolLog(),
+          protocolTracker.getSafetyLog(),
+          {
+            concentration: enhanced.concentration,
+            ratio260_280: enhanced.a260_280,
+            ratio260_230: 2.1,
+            gelQuality: 'excellent',
+            yieldMicrograms: enhanced.yield
+          },
+          missionId || 'A'
+        );
+
+        const criticalDevs = report.deviations.filter(d => d.severity === 'critical');
+        const isSuccess = enhanced.yield > 0 && criticalDevs.length === 0;
         const newTotalAttempts = masteryProgress.totalAttempts + 1;
         const newSuccessCount = isSuccess ? masteryProgress.successCount + 1 : masteryProgress.successCount;
         const newBestPurity = Math.max(masteryProgress.bestPurity, enhanced.a260_280);
@@ -3199,6 +3213,8 @@ export default function App() {
     }
   }, [status, finalConc, missionId, step1Method, step2Mixed, protKIncubationOK, step3Mixed, stepVolumes, elutionVolume, missedSpins, protocolAdherenceCompromised, sampleMass, protocolTracker]);
 
+  const criticalDeviations = masteryReport?.deviations?.filter(d => d.severity === 'critical') || [];
+  const hasCriticalDeviations = criticalDeviations.length > 0;
   const isFail = status === "fail" || !finalConc || finalConc <= 0;
   const isSheared = missedSpins > 0;
   const isFaint = !finalConc || finalConc < 100;
