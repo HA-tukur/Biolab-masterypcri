@@ -2122,8 +2122,7 @@ export default function App() {
         setIsSpinning(false);
         setHasSpunThisStep(true);
         setPelletVisible(currentStep?.requiresSpin || false);
-        // After spin completes, tube automatically returns to desk
-        setTubeInCentrifuge(false);
+        // Tube stays in centrifuge after spin completes - must be manually retrieved
 
         // For Clarification step, show phase separation after spinning
         if (currentStep?.title === "Clarification") {
@@ -2223,8 +2222,8 @@ export default function App() {
       setTimeout(() => {
         setIsIncubating(false);
         setHasSpunThisStep(true);
-        setTubeInCentrifuge(false);
-        addLog("Incubation complete. Tube removed from thermocycler.", "success");
+        // Tube stays in thermocycler after incubation completes - must be manually retrieved
+        addLog("Incubation complete. Ready to remove tube.", "success");
         if (tempOK) {
           addLog("Proteinase K successfully digested proteins at correct temperature.", "success");
           if (currentStep?.title === "Lysis & Protein Digestion") {
@@ -2867,11 +2866,11 @@ export default function App() {
     setTimeout(() => {
       setIsSpinning(false);
       setHasSpunThisStep(true);
-      setTubeInCentrifuge(false);
+      // Tube stays in centrifuge after spin - must be manually retrieved
 
       // FIX: Standardize residual volume to 15µL after discarding supernatant
       setBufferVolume(15);
-      addLog("Spin complete. Supernatant discarded.", "success");
+      addLog("Spin complete. Ready to remove tube.", "success");
 
       if (protocolIndex === 1) setCurrentSolidMass(0);
 
@@ -2926,8 +2925,8 @@ export default function App() {
     setTimeout(() => {
       setIsIncubating(false);
       setHasSpunThisStep(true);
-      setTubeInCentrifuge(false);
-      addLog("Incubation complete. Tube removed from thermocycler.", "success");
+      // Tube stays in thermocycler after incubation - must be manually retrieved
+      addLog("Incubation complete. Ready to remove tube.", "success");
       if (tempOK) {
         addLog("Proteinase K successfully digested proteins at correct temperature.", "success");
         if (currentStep?.title === "Lysis & Protein Digestion") {
