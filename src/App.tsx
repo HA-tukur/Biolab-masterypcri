@@ -2132,7 +2132,7 @@ export default function App() {
         // For Column Binding and Wash steps, liquid goes to collection tube as waste
         if (currentStep?.title === "Column Binding" || currentStep?.title === "Wash & Dry") {
           if (currentStep?.title === "Wash & Dry") {
-            if (liquidInColumn === 0) {
+            if (volumeAddedThisStep === 0) {
               // Dry spin (no liquid in column)
               const spinDuration = (settings.duration || spinDuration || 5) * 60;
               setUserPerformance(prev => ({ ...prev, hasPerformedDrySpin: true, drySpinDuration: spinDuration }));
@@ -2163,7 +2163,7 @@ export default function App() {
           }
           setWasteInCollectionTube(true);
           setHasDiscardedWaste(false);
-          if (currentStep?.title !== "Wash & Dry" || liquidInColumn > 0) {
+          if (currentStep?.title !== "Wash & Dry" || volumeAddedThisStep > 0) {
             addLog("Spin complete. Flow-through collected at bottom of tube.", "success");
           }
         }
@@ -4719,7 +4719,7 @@ export default function App() {
                             }
                           }
                         }}
-                        canAspirate={pipetteVolume !== null && !hasDispensedThisStep && !pipetteHasLiquid}
+                        canAspirate={pipetteVolume !== null && (!hasDispensedThisStep || currentStep.title === "Wash & Dry") && !pipetteHasLiquid}
                         selectedPipette={activeTool === 'pipette'}
                       />
                     </div>
@@ -5077,7 +5077,7 @@ export default function App() {
                         requiredVolume={getTargetVolume()}
                         tolerance={getCurrentTolerance()}
                         onVolumeSet={(volume, pipetteSize) => {
-                          if (!hasDispensedThisStep || currentStep.multipleReagents) {
+                          if (!hasDispensedThisStep || currentStep.multipleReagents || currentStep.title === "Wash & Dry") {
                             setPipetteVolume(volume);
                             setActiveTool('pipette');
 
@@ -5238,7 +5238,9 @@ export default function App() {
                               setCurrentReagentId(null);
                               return;
                             } else {
-                              setHasDispensedThisStep(true);
+                              if (currentStep.title !== "Wash & Dry") {
+                                setHasDispensedThisStep(true);
+                              }
                               if (currentStep.title === "Lysis & Protein Digestion" || currentStep.title === "Binding Preparation") {
                                 setShowMixPrompt(true);
                                 if (difficultyMode !== "challenge") {
@@ -5269,7 +5271,9 @@ export default function App() {
                               addLog("Click mix icon in sample tube to mix solution.", "info");
                             }
                           } else {
-                            setHasDispensedThisStep(true);
+                            if (currentStep.title !== "Wash & Dry") {
+                              setHasDispensedThisStep(true);
+                            }
                             if (difficultyMode !== "challenge") {
                               addLog("Reagent added. Ready for next step.", "success");
                             }
@@ -5278,7 +5282,7 @@ export default function App() {
                         disabled={
                           currentStep.multipleReagents
                             ? currentStep.reagents.every(r => currentStepReagents[r.id])
-                            : hasDispensedThisStep
+                            : (hasDispensedThisStep && currentStep.title !== "Wash & Dry")
                         }
                         hasLiquid={pipetteHasLiquid}
                         liquidColor={pipetteLiquidColor}
@@ -5292,7 +5296,7 @@ export default function App() {
               <LabEquipment
                 inventory={inventory}
                 onEquipmentUse={handleEquipmentUse}
-                disabled={hasDispensedThisStep && !needsMixing && !(currentStep?.requiresSpin || currentStep?.requiresIncubation)}
+                disabled={hasDispensedThisStep && !needsMixing && !(currentStep?.requiresSpin || currentStep?.requiresIncubation) && currentStep?.title !== "Wash & Dry"}
               />
 
               {/* Continue Button - Full Width - DISABLED (now in header) */}
