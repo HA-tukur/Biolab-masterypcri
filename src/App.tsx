@@ -2133,40 +2133,56 @@ export default function App() {
         // For Column Binding and Wash steps, liquid goes to collection tube as waste
         if (currentStep?.title === "Column Binding" || currentStep?.title === "Wash & Dry") {
           if (currentStep?.title === "Wash & Dry") {
-            // Dry spin logic: if both washes are done and we're spinning again, it's a dry spin
-            const bothWashesDone = step5SubActions.wash1Spun && step5SubActions.wash2Spun;
-            const isDrySpin = bothWashesDone && !step5SubActions.drySpun;
+            // Use functional setState to get current state at callback execution time
+            setStep5SubActions(prev => {
+              const bothWashesDone = prev.wash1Spun && prev.wash2Spun;
+              const isDrySpin = bothWashesDone && !prev.drySpun;
 
-            if (isDrySpin) {
-              // Dry spin: tube is loaded, no liquid in column, and no new wash buffer since previous spin
-              const spinDuration = (settings.duration || spinDuration || 5) * 60;
-              setUserPerformance(prev => ({ ...prev, hasPerformedDrySpin: true, drySpinDuration: spinDuration }));
-              setWashTracking(prev => ({ ...prev, drySpin: true, drySpinDuration: spinDuration }));
-              setStep5SubActions(prev => ({ ...prev, drySpun: true }));
-
-              protocolTracker.logAction({
-                stepIndex: protocolIndex,
-                stepName: currentStep?.title || 'Wash & Dry',
-                action: 'dry_spin',
-                duration: spinDuration,
-                timestamp: Date.now()
+              console.log('[WASH & DRY SPIN] State check:', {
+                wash1Spun: prev.wash1Spun,
+                wash2Spun: prev.wash2Spun,
+                drySpun: prev.drySpun,
+                bothWashesDone,
+                isDrySpin
               });
 
-              addLog(`Dry spin complete (${Math.floor(spinDuration / 60)} min). Column is dry.`, "success");
-            } else {
-              // Wash spin (liquid present in column)
-              if (!step5SubActions.wash1Spun) {
-                setWashTracking(prev => ({ ...prev, wash1: true }));
-                setStep5SubActions(prev => ({ ...prev, wash1Spun: true }));
+              if (isDrySpin) {
+                // Dry spin detected
+                const spinDuration = (settings.duration || settings.time || 5) * 60;
+                console.log('[DRY SPIN] Marking dry spin as complete!');
+
+                setUserPerformance(p => ({ ...p, hasPerformedDrySpin: true, drySpinDuration: spinDuration }));
+                setWashTracking(p => ({ ...p, drySpin: true, drySpinDuration: spinDuration }));
+
+                protocolTracker.logAction({
+                  stepIndex: protocolIndex,
+                  stepName: currentStep?.title || 'Wash & Dry',
+                  action: 'dry_spin',
+                  duration: spinDuration,
+                  timestamp: Date.now()
+                });
+
+                addLog(`Dry spin complete (${Math.floor(spinDuration / 60)} min). Column is dry.`, "success");
+                return { ...prev, drySpun: true };
+              } else if (!prev.wash1Spun) {
+                // First wash
+                console.log('[WASH 1] Marking wash 1 as complete');
+                setWashTracking(p => ({ ...p, wash1: true }));
                 setWashBufferAddedSinceLastSpin(false);
                 addLog("First wash complete. Salts removed.", "success");
-              } else if (!step5SubActions.wash2Spun) {
-                setWashTracking(prev => ({ ...prev, wash2: true }));
-                setStep5SubActions(prev => ({ ...prev, wash2Spun: true }));
+                return { ...prev, wash1Spun: true };
+              } else if (!prev.wash2Spun) {
+                // Second wash
+                console.log('[WASH 2] Marking wash 2 as complete');
+                setWashTracking(p => ({ ...p, wash2: true }));
                 setWashBufferAddedSinceLastSpin(false);
                 addLog("Second wash complete. Ethanol residue removed.", "success");
+                return { ...prev, wash2Spun: true };
+              } else {
+                console.log('[UNEXPECTED] Both washes done but not detected as dry spin!');
+                return prev;
               }
-            }
+            });
           }
           setWasteInCollectionTube(true);
           setHasDiscardedWaste(false);
