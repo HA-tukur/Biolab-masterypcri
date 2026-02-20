@@ -2133,8 +2133,13 @@ export default function App() {
         // For Column Binding and Wash steps, liquid goes to collection tube as waste
         if (currentStep?.title === "Column Binding" || currentStep?.title === "Wash & Dry") {
           if (currentStep?.title === "Wash & Dry") {
-            if (!washBufferAddedSinceLastSpin && (step5SubActions.wash2Spun || step5SubActions.wash1Spun)) {
-              // Dry spin: tube is loaded, but NO new wash buffer has been added since previous spin
+            // Check if this is a dry spin: no liquid added AND at least one wash completed AND no new buffer since last spin
+            const isAfterWash = step5SubActions.wash1Spun || step5SubActions.wash2Spun;
+            const isEmptyColumn = volumeAddedThisStep === 0;
+            const isDrySpin = isEmptyColumn && isAfterWash && !washBufferAddedSinceLastSpin;
+
+            if (isDrySpin) {
+              // Dry spin: tube is loaded, no liquid in column, and no new wash buffer since previous spin
               const spinDuration = (settings.duration || spinDuration || 5) * 60;
               setUserPerformance(prev => ({ ...prev, hasPerformedDrySpin: true, drySpinDuration: spinDuration }));
               setWashTracking(prev => ({ ...prev, drySpin: true, drySpinDuration: spinDuration }));
