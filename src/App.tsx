@@ -2104,13 +2104,26 @@ export default function App() {
     };
     setEquipmentUsageLog(prev => [...prev, usageRecord]);
 
-    if (action === 'spin' && equipment === 'centrifuge') {
-      setIsSpinning(true);
+    if (action === 'load' && equipment === 'centrifuge') {
+      setTubeAnimating(true);
+      addLog("Loading tube into centrifuge...", "info");
+      setTimeout(() => {
+        setTubeAnimating(false);
+        setTubeInCentrifuge(true);
+        addLog("Tube loaded into centrifuge.", "success");
+      }, 800);
+    } else if (action === 'remove' && equipment === 'centrifuge') {
       setTubeInCentrifuge(false);
+      addLog("Tube removed from centrifuge.", "info");
+    } else if (action === 'spin' && equipment === 'centrifuge') {
+      setIsSpinning(true);
+      // Keep tubeInCentrifuge true during spin - it's still loaded in the equipment
       setTimeout(() => {
         setIsSpinning(false);
         setHasSpunThisStep(true);
         setPelletVisible(currentStep?.requiresSpin || false);
+        // After spin completes, tube automatically returns to desk
+        setTubeInCentrifuge(false);
 
         // For Clarification step, show phase separation after spinning
         if (currentStep?.title === "Clarification") {
@@ -2229,8 +2242,13 @@ export default function App() {
         }
       }, 3500);
     } else if (action === 'load' && equipment === 'thermocycler') {
-      setTubeInCentrifuge(true);
-      addLog("Tube loaded into thermocycler.", "success");
+      setTubeAnimating(true);
+      addLog("Loading tube into thermocycler...", "info");
+      setTimeout(() => {
+        setTubeAnimating(false);
+        setTubeInCentrifuge(true);
+        addLog("Tube loaded into thermocycler.", "success");
+      }, 800);
     } else if (action === 'remove' && equipment === 'thermocycler') {
       setTubeInCentrifuge(false);
       addLog("Tube removed from thermocycler.", "info");
@@ -4384,7 +4402,7 @@ export default function App() {
                         />
                       </div>
                     ) : (
-                      <div className={`flex justify-center transition-all duration-500 ${tubeAnimating ? 'opacity-20 scale-75' : 'opacity-100 scale-100'} ${isMixing ? 'animate-[wiggle_0.5s_ease-in-out_4]' : ''}`}>
+                      <div className={`flex justify-center transition-all duration-500 ${tubeInCentrifuge || tubeAnimating ? 'opacity-0 scale-75 pointer-events-none' : 'opacity-100 scale-100'} ${isMixing ? 'animate-[wiggle_0.5s_ease-in-out_4]' : ''}`}>
                         {currentStep.title === "Column Binding" ? (
                           <div className="flex items-center justify-center gap-6">
                             <div className="flex flex-col items-center relative">
