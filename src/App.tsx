@@ -1820,6 +1820,13 @@ export default function App() {
     mixed: false
   });
   const [step3ActionOrder, setStep3ActionOrder] = useState([]);
+  const [step5SubActions, setStep5SubActions] = useState({
+    wash1Added: false,
+    wash1Spun: false,
+    wash2Added: false,
+    wash2Spun: false,
+    drySpun: false
+  });
   const [showMixPrompt, setShowMixPrompt] = useState(false);
   const [protKIncubationOK, setProtKIncubationOK] = useState(false);
   const [yieldQuality, setYieldQuality] = useState(null);
@@ -2059,6 +2066,10 @@ export default function App() {
       const completed = Object.values(step3SubActions).filter(Boolean).length;
       return { completed, total: 3, actions: step3SubActions };
     }
+    if (currentStep?.title === "Wash & Dry") {
+      const completed = Object.values(step5SubActions).filter(Boolean).length;
+      return { completed, total: 5, actions: step5SubActions };
+    }
     return null;
   };
 
@@ -2122,9 +2133,11 @@ export default function App() {
         if (currentStep?.title === "Column Binding" || currentStep?.title === "Wash & Dry") {
           if (currentStep?.title === "Wash & Dry") {
             if (liquidInColumn === 0) {
+              // Dry spin (no liquid in column)
               const spinDuration = (settings.duration || spinDuration || 5) * 60;
               setUserPerformance(prev => ({ ...prev, hasPerformedDrySpin: true, drySpinDuration: spinDuration }));
               setWashTracking(prev => ({ ...prev, drySpin: true, drySpinDuration: spinDuration }));
+              setStep5SubActions(prev => ({ ...prev, drySpun: true }));
 
               protocolTracker.logAction({
                 stepIndex: protocolIndex,
@@ -2136,11 +2149,14 @@ export default function App() {
 
               addLog(`Dry spin complete (${Math.floor(spinDuration / 60)} min). Column is dry.`, "success");
             } else {
-              if (!washTracking.wash1) {
+              // Wash spin (liquid present in column)
+              if (!step5SubActions.wash1Spun) {
                 setWashTracking(prev => ({ ...prev, wash1: true }));
+                setStep5SubActions(prev => ({ ...prev, wash1Spun: true }));
                 addLog("First wash complete. Salts removed.", "success");
-              } else if (!washTracking.wash2) {
+              } else if (!step5SubActions.wash2Spun) {
                 setWashTracking(prev => ({ ...prev, wash2: true }));
+                setStep5SubActions(prev => ({ ...prev, wash2Spun: true }));
                 addLog("Second wash complete. Ethanol residue removed.", "success");
               }
             }
@@ -2624,6 +2640,7 @@ export default function App() {
     setStep2SubActions({ lysisBufferAdded: false, vortexed: false, spun: false });
     setStep3SubActions({ bindingBufferAdded: false, ethanolAdded: false, mixed: false });
     setStep3ActionOrder([]);
+    setStep5SubActions({ wash1Added: false, wash1Spun: false, wash2Added: false, wash2Spun: false, drySpun: false });
     setShowMixPrompt(false);
     setProtKIncubationOK(false);
     setTubeAnimating(false);
@@ -4058,6 +4075,34 @@ export default function App() {
                               }
                             }
 
+                            if (currentStep.title === "Wash & Dry") {
+                              if (!step5SubActions.wash1Added) {
+                                addLog("Note: First wash buffer was not added.", "error");
+                                setProtocolAdherenceCompromised(true);
+                                incompleteTasks.push('wash1_buffer');
+                              }
+                              if (!step5SubActions.wash1Spun) {
+                                addLog("Note: First wash spin was skipped.", "error");
+                                setProtocolAdherenceCompromised(true);
+                                incompleteTasks.push('wash1_spin');
+                              }
+                              if (!step5SubActions.wash2Added) {
+                                addLog("Note: Second wash buffer was not added.", "error");
+                                setProtocolAdherenceCompromised(true);
+                                incompleteTasks.push('wash2_buffer');
+                              }
+                              if (!step5SubActions.wash2Spun) {
+                                addLog("Note: Second wash spin was skipped.", "error");
+                                setProtocolAdherenceCompromised(true);
+                                incompleteTasks.push('wash2_spin');
+                              }
+                              if (!step5SubActions.drySpun) {
+                                addLog("Note: Dry spin was skipped. Residual ethanol will inhibit downstream PCR!", "error");
+                                setProtocolAdherenceCompromised(true);
+                                incompleteTasks.push('dry_spin');
+                              }
+                            }
+
                             // Volume validation
                             if (currentStep.multipleReagents && currentStep.reagents) {
                               currentStep.reagents.forEach(reagent => {
@@ -4234,6 +4279,30 @@ export default function App() {
                           <div className={`flex items-center gap-2 text-xs ${step3SubActions.mixed ? 'text-emerald-400' : 'text-slate-500'}`}>
                             <span>{step3SubActions.mixed ? '☑' : '☐'}</span>
                             <span>Mix by inverting tube</span>
+                          </div>
+                        </>
+                      )}
+                      {currentStep.title === "Wash & Dry" && (
+                        <>
+                          <div className={`flex items-center gap-2 text-xs ${step5SubActions.wash1Added ? 'text-emerald-400' : 'text-slate-500'}`}>
+                            <span>{step5SubActions.wash1Added ? '☑' : '☐'}</span>
+                            <span>Add Wash Buffer - 1st wash (500 µL)</span>
+                          </div>
+                          <div className={`flex items-center gap-2 text-xs ${step5SubActions.wash1Spun ? 'text-emerald-400' : 'text-slate-500'}`}>
+                            <span>{step5SubActions.wash1Spun ? '☑' : '☐'}</span>
+                            <span>Spin - 1st wash</span>
+                          </div>
+                          <div className={`flex items-center gap-2 text-xs ${step5SubActions.wash2Added ? 'text-emerald-400' : 'text-slate-500'}`}>
+                            <span>{step5SubActions.wash2Added ? '☑' : '☐'}</span>
+                            <span>Add Wash Buffer - 2nd wash (500 µL)</span>
+                          </div>
+                          <div className={`flex items-center gap-2 text-xs ${step5SubActions.wash2Spun ? 'text-emerald-400' : 'text-slate-500'}`}>
+                            <span>{step5SubActions.wash2Spun ? '☑' : '☐'}</span>
+                            <span>Spin - 2nd wash</span>
+                          </div>
+                          <div className={`flex items-center gap-2 text-xs ${step5SubActions.drySpun ? 'text-emerald-400' : 'text-slate-500'}`}>
+                            <span>{step5SubActions.drySpun ? '☑' : '☐'}</span>
+                            <span>Dry Spin (3 min, max speed)</span>
                           </div>
                         </>
                       )}
@@ -5136,10 +5205,19 @@ export default function App() {
                               showToastNotification(`✓ Added ${pipetteVolume}µL ${reagentName} to sample`);
                             }
                           } else if (currentStep.title === "Wash & Dry") {
-                            // For Wash & Dry, reset waste states so user can do multiple wash cycles
+                            // For Wash & Dry, track wash buffer additions
+                            if (!step5SubActions.wash1Added) {
+                              setStep5SubActions(prev => ({ ...prev, wash1Added: true }));
+                              showToastNotification(`✓ Added ${pipetteVolume}µL ${reagentName} - 1st wash`);
+                            } else if (!step5SubActions.wash2Added) {
+                              setStep5SubActions(prev => ({ ...prev, wash2Added: true }));
+                              showToastNotification(`✓ Added ${pipetteVolume}µL ${reagentName} - 2nd wash`);
+                            } else {
+                              showToastNotification(`✓ Added ${pipetteVolume}µL ${reagentName} to column`);
+                            }
+                            // Reset waste states so user can do multiple wash cycles
                             setHasDiscardedWaste(false);
                             setHasSpunThisStep(false);
-                            showToastNotification(`✓ Added ${pipetteVolume}µL ${reagentName} to column`);
                           }
 
                           if (currentStep.multipleReagents) {
