@@ -1827,6 +1827,7 @@ export default function App() {
     wash2Spun: false,
     drySpun: false
   });
+  const [washBufferAddedSinceLastSpin, setWashBufferAddedSinceLastSpin] = useState(false);
   const [showMixPrompt, setShowMixPrompt] = useState(false);
   const [protKIncubationOK, setProtKIncubationOK] = useState(false);
   const [yieldQuality, setYieldQuality] = useState(null);
@@ -2132,8 +2133,8 @@ export default function App() {
         // For Column Binding and Wash steps, liquid goes to collection tube as waste
         if (currentStep?.title === "Column Binding" || currentStep?.title === "Wash & Dry") {
           if (currentStep?.title === "Wash & Dry") {
-            if (volumeAddedThisStep === 0) {
-              // Dry spin (no liquid in column)
+            if (!washBufferAddedSinceLastSpin && (step5SubActions.wash2Spun || step5SubActions.wash1Spun)) {
+              // Dry spin: tube is loaded, but NO new wash buffer has been added since previous spin
               const spinDuration = (settings.duration || spinDuration || 5) * 60;
               setUserPerformance(prev => ({ ...prev, hasPerformedDrySpin: true, drySpinDuration: spinDuration }));
               setWashTracking(prev => ({ ...prev, drySpin: true, drySpinDuration: spinDuration }));
@@ -2153,10 +2154,12 @@ export default function App() {
               if (!step5SubActions.wash1Spun) {
                 setWashTracking(prev => ({ ...prev, wash1: true }));
                 setStep5SubActions(prev => ({ ...prev, wash1Spun: true }));
+                setWashBufferAddedSinceLastSpin(false);
                 addLog("First wash complete. Salts removed.", "success");
               } else if (!step5SubActions.wash2Spun) {
                 setWashTracking(prev => ({ ...prev, wash2: true }));
                 setStep5SubActions(prev => ({ ...prev, wash2Spun: true }));
+                setWashBufferAddedSinceLastSpin(false);
                 addLog("Second wash complete. Ethanol residue removed.", "success");
               }
             }
@@ -2641,6 +2644,7 @@ export default function App() {
     setStep3SubActions({ bindingBufferAdded: false, ethanolAdded: false, mixed: false });
     setStep3ActionOrder([]);
     setStep5SubActions({ wash1Added: false, wash1Spun: false, wash2Added: false, wash2Spun: false, drySpun: false });
+    setWashBufferAddedSinceLastSpin(false);
     setShowMixPrompt(false);
     setProtKIncubationOK(false);
     setTubeAnimating(false);
@@ -5208,11 +5212,14 @@ export default function App() {
                             // For Wash & Dry, track wash buffer additions
                             if (!step5SubActions.wash1Added) {
                               setStep5SubActions(prev => ({ ...prev, wash1Added: true }));
+                              setWashBufferAddedSinceLastSpin(true);
                               showToastNotification(`✓ Added ${pipetteVolume}µL ${reagentName} - 1st wash`);
                             } else if (!step5SubActions.wash2Added) {
                               setStep5SubActions(prev => ({ ...prev, wash2Added: true }));
+                              setWashBufferAddedSinceLastSpin(true);
                               showToastNotification(`✓ Added ${pipetteVolume}µL ${reagentName} - 2nd wash`);
                             } else {
+                              setWashBufferAddedSinceLastSpin(true);
                               showToastNotification(`✓ Added ${pipetteVolume}µL ${reagentName} to column`);
                             }
                             // Reset waste states so user can do multiple wash cycles
