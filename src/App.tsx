@@ -2174,7 +2174,7 @@ export default function App() {
       addLog("Tube removed from centrifuge.", "info");
     } else if (action === 'spin' && equipment === 'centrifuge') {
       setIsSpinning(true);
-      // Keep tubeInCentrifuge true during spin - it's still loaded in the equipment
+      // Tube stays in centrifuge during spin - location doesn't change
       setTimeout(() => {
         setIsSpinning(false);
         setHasSpunThisStep(true);
@@ -2714,7 +2714,7 @@ export default function App() {
     setStatus("idle");
     setHasDispensedThisStep(false);
     setHasSpunThisStep(false);
-    setTubeInCentrifuge(false);
+    setTubeLocation('desk');
     setNeedsMixing(false);
     setIsMixing(false);
     setPipetteHasLiquid(false);
@@ -4481,7 +4481,7 @@ export default function App() {
                         />
                       </div>
                     ) : (
-                      <div className={`flex justify-center transition-all duration-500 ${tubeInCentrifuge || tubeAnimating ? 'opacity-0 scale-75 pointer-events-none' : 'opacity-100 scale-100'} ${isMixing ? 'animate-[wiggle_0.5s_ease-in-out_4]' : ''}`}>
+                      <div className={`flex justify-center transition-all duration-500 ${tubeLocation !== 'desk' || tubeAnimating ? 'opacity-0 scale-75 pointer-events-none' : 'opacity-100 scale-100'} ${isMixing ? 'animate-[wiggle_0.5s_ease-in-out_4]' : ''}`}>
                         {currentStep.title === "Column Binding" ? (
                           <div className="flex items-center justify-center gap-6">
                             <div className="flex flex-col items-center relative">
