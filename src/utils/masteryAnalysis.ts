@@ -242,22 +242,31 @@ export function analyzeProtocolExecution(
 }
 
 function calculateTechnicalGrade(deviations: ProtocolDeviation[], result: LabResult | null): 'A' | 'B' | 'C' | 'D' | 'F' {
-  if (!result || result.concentration === 0) return 'F';
+  // Check for zero yield first - F grade if no DNA recovered
+  if (!result || result.concentration === 0 || result.yieldMicrograms === 0) return 'F';
 
   const criticalCount = deviations.filter(d => d.severity === 'critical').length;
   const majorCount = deviations.filter(d => d.severity === 'major').length;
 
+  // Critical deviations = automatic F
   if (criticalCount > 0) return 'F';
+  // 2+ major deviations = D
   if (majorCount >= 2) return 'D';
+  // 1 major deviation = C
   if (majorCount === 1) return 'C';
 
+  // Grade based on actual results quality
   const goodConcentration = result.concentration >= 100 && result.concentration <= 500;
+  const goodYield = result.yieldMicrograms >= 5; // Minimum acceptable yield
   const goodPurity = result.ratio260_280 >= 1.8 && result.ratio260_280 <= 2.0;
   const goodSaltRemoval = result.ratio260_230 >= 2.0 && result.ratio260_230 <= 2.2;
   const excellentGel = result.gelQuality === 'excellent';
 
-  if (goodConcentration && goodPurity && goodSaltRemoval && excellentGel) return 'A';
-  if (goodConcentration && goodPurity) return 'B';
+  // A grade requires everything to be excellent
+  if (goodConcentration && goodYield && goodPurity && goodSaltRemoval && excellentGel) return 'A';
+  // B grade requires good concentration, yield, and purity
+  if (goodConcentration && goodYield && goodPurity) return 'B';
+  // Otherwise C (got some DNA but suboptimal)
   return 'C';
 }
 

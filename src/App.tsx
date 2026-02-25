@@ -196,7 +196,7 @@ const TubeVisual = ({ volume, solidMass, hasPellet, showSeparation, onSupernatan
   );
 };
 
-const DualTubeVisual = ({ oldTubeHasSupernatant, freshTubeVolume, freshTubeColor = "#E6F3FF" }) => {
+const DualTubeVisual = ({ oldTubeHasSupernatant, freshTubeVolume, freshTubeColor = "#E6F3FF", onTransfer, transferComplete }) => {
   const supernatantFill = oldTubeHasSupernatant ? 30 : 0;
   const freshFill = Math.min((freshTubeVolume / 2000) * 85, 85);
 
@@ -205,32 +205,50 @@ const DualTubeVisual = ({ oldTubeHasSupernatant, freshTubeVolume, freshTubeColor
       {/* LEFT TUBE - Old tube with pellet */}
       <div className="flex flex-col items-center">
         <p className="text-[9px] text-slate-400 font-bold uppercase mb-2">Step 2 Tube (Waste)</p>
-        <svg width="60" height="120" viewBox="0 0 100 180" fill="none" xmlns="http://www.w3.org/2000/svg">
-          {/* Original Eppendorf tube shape */}
-          <path d="M20 10C20 10 20 150 50 170C80 150 80 10 80 10" stroke="#475569" strokeWidth="4" strokeLinecap="round"/>
-          <line x1="15" y1="10" x2="85" y2="10" stroke="#475569" strokeWidth="4" strokeLinecap="round"/>
+        <button
+          onClick={onTransfer}
+          disabled={transferComplete}
+          className={`${transferComplete ? 'cursor-default' : 'cursor-pointer hover:scale-105 transition-transform'}`}
+        >
+          <svg width="60" height="120" viewBox="0 0 100 180" fill="none" xmlns="http://www.w3.org/2000/svg">
+            {/* Original Eppendorf tube shape */}
+            <path d="M20 10C20 10 20 150 50 170C80 150 80 10 80 10" stroke="#475569" strokeWidth="4" strokeLinecap="round"/>
+            <line x1="15" y1="10" x2="85" y2="10" stroke="#475569" strokeWidth="4" strokeLinecap="round"/>
 
-          {/* Remaining supernatant (if any) */}
-          {supernatantFill > 0 && (
-            <path
-              d={`M25 ${150 - supernatantFill}C25 ${150 - supernatantFill} 25 150 50 165C75 150 75 ${150 - supernatantFill} 75 ${150 - supernatantFill}`}
-              fill="#F5DEB3"
-              fillOpacity="0.5"
-            />
-          )}
+            {/* Remaining supernatant (if any) - only show if transfer NOT complete */}
+            {supernatantFill > 0 && !transferComplete && (
+              <path
+                d={`M25 ${150 - supernatantFill}C25 ${150 - supernatantFill} 25 150 50 165C75 150 75 ${150 - supernatantFill} 75 ${150 - supernatantFill}`}
+                fill="#F5DEB3"
+                fillOpacity="0.5"
+              />
+            )}
 
-          {/* Brown pellet at bottom */}
-          <ellipse cx="50" cy="166" rx="10" ry="3" fill="#654321" fillOpacity="0.9" />
-          <text x="50" y="169" textAnchor="middle" fontSize="7" fill="#fbbf24" fontWeight="600">Pellet</text>
-        </svg>
+            {/* Brown pellet at bottom - always visible */}
+            <ellipse cx="50" cy="166" rx="10" ry="3" fill="#654321" fillOpacity="0.9" />
+            <text x="50" y="169" textAnchor="middle" fontSize="7" fill="#fbbf24" fontWeight="600">Pellet</text>
+          </svg>
+        </button>
       </div>
 
-      {/* ARROW */}
+      {/* ARROW / TRANSFER BUTTON */}
       <div className="flex flex-col items-center">
-        <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M5 20 L30 20 M30 20 L23 13 M30 20 L23 27" stroke="#10b981" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
-        </svg>
-        <p className="text-[8px] text-emerald-500 font-semibold mt-1">Transfer</p>
+        <button
+          onClick={onTransfer}
+          disabled={transferComplete}
+          className={`flex flex-col items-center px-3 py-2 rounded-lg transition-all ${
+            transferComplete
+              ? 'bg-emerald-900/20 cursor-default'
+              : 'bg-emerald-600 hover:bg-emerald-700 cursor-pointer'
+          }`}
+        >
+          <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M5 20 L30 20 M30 20 L23 13 M30 20 L23 27" stroke={transferComplete ? "#34d399" : "#ffffff"} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+          <p className={`text-[8px] font-semibold mt-1 ${transferComplete ? 'text-emerald-400' : 'text-white'}`}>
+            {transferComplete ? '✓ Transferred' : 'Transfer'}
+          </p>
+        </button>
       </div>
 
       {/* RIGHT TUBE - Fresh tube */}
@@ -859,14 +877,30 @@ const IncubatorVisual = ({ isIncubating, hasTube, temperature, onLoadTube, onSta
       </svg>
 
       <div className="mt-2 space-y-2 w-full flex flex-col items-center">
-        {!hasTube && canLoad && (
-          <button onClick={onLoadTube} className="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-lg text-xs font-bold uppercase transition-all border-0 cursor-pointer animate-pulse">
+        {!hasTube && (
+          <button
+            onClick={onLoadTube}
+            disabled={!canLoad}
+            className={`px-4 py-2 rounded-lg text-xs font-bold uppercase transition-all border-0 ${
+              canLoad
+                ? 'bg-indigo-600 hover:bg-indigo-500 text-white cursor-pointer animate-pulse'
+                : 'bg-slate-700 text-slate-400 cursor-not-allowed opacity-50'
+            }`}
+          >
             Load Tube
           </button>
         )}
 
-        {hasTube && !isIncubating && canStart && (
-          <button onClick={onStartIncubation} className="bg-red-600 hover:bg-red-500 text-white px-4 py-2 rounded-lg text-xs font-bold uppercase transition-all border-0 cursor-pointer animate-bounce">
+        {hasTube && !isIncubating && (
+          <button
+            onClick={onStartIncubation}
+            disabled={!canStart}
+            className={`px-4 py-2 rounded-lg text-xs font-bold uppercase transition-all border-0 ${
+              canStart
+                ? 'bg-red-600 hover:bg-red-500 text-white cursor-pointer animate-bounce'
+                : 'bg-slate-700 text-slate-400 cursor-not-allowed opacity-50'
+            }`}
+          >
             Start Incubation
           </button>
         )}
@@ -957,14 +991,30 @@ const ThermocyclerVisual = ({ isIncubating, hasTube, temperature, duration, onLo
           </div>
         )}
 
-        {!hasTube && canLoad && (
-          <button onClick={onLoadTube} className="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-lg text-xs font-bold uppercase transition-all border-0 cursor-pointer animate-pulse">
+        {!hasTube && (
+          <button
+            onClick={onLoadTube}
+            disabled={!canLoad}
+            className={`px-4 py-2 rounded-lg text-xs font-bold uppercase transition-all border-0 ${
+              canLoad
+                ? 'bg-indigo-600 hover:bg-indigo-500 text-white cursor-pointer animate-pulse'
+                : 'bg-slate-700 text-slate-400 cursor-not-allowed opacity-50'
+            }`}
+          >
             Load Tube
           </button>
         )}
 
-        {hasTube && !isIncubating && canStart && (
-          <button onClick={onStartIncubation} className="bg-red-600 hover:bg-red-500 text-white px-4 py-2 rounded-lg text-xs font-bold uppercase transition-all border-0 cursor-pointer animate-bounce">
+        {hasTube && !isIncubating && (
+          <button
+            onClick={onStartIncubation}
+            disabled={!canStart}
+            className={`px-4 py-2 rounded-lg text-xs font-bold uppercase transition-all border-0 ${
+              canStart
+                ? 'bg-red-600 hover:bg-red-500 text-white cursor-pointer animate-bounce'
+                : 'bg-slate-700 text-slate-400 cursor-not-allowed opacity-50'
+            }`}
+          >
             Start Incubation
           </button>
         )}
@@ -1029,19 +1079,29 @@ const CentrifugeVisual = ({ isSpinning, hasTube, onLoadTube, onStartSpin, canLoa
       </svg>
 
       <div className="mt-2 space-y-2 w-full flex flex-col items-center">
-        {!hasTube && canLoad && (
+        {!hasTube && (
           <button
             onClick={onLoadTube}
-            className="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-lg text-xs font-bold uppercase transition-all border-0 cursor-pointer animate-pulse"
+            disabled={!canLoad}
+            className={`px-4 py-2 rounded-lg text-xs font-bold uppercase transition-all border-0 ${
+              canLoad
+                ? 'bg-indigo-600 hover:bg-indigo-500 text-white cursor-pointer animate-pulse'
+                : 'bg-slate-700 text-slate-400 cursor-not-allowed opacity-50'
+            }`}
           >
             Load Tube
           </button>
         )}
 
-        {hasTube && !isSpinning && canSpin && (
+        {hasTube && !isSpinning && (
           <button
             onClick={onStartSpin}
-            className="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg text-xs font-bold uppercase transition-all border-0 cursor-pointer animate-bounce"
+            disabled={!canSpin}
+            className={`px-4 py-2 rounded-lg text-xs font-bold uppercase transition-all border-0 ${
+              canSpin
+                ? 'bg-emerald-600 hover:bg-emerald-500 text-white cursor-pointer animate-bounce'
+                : 'bg-slate-700 text-slate-400 cursor-not-allowed opacity-50'
+            }`}
           >
             Start Spin
           </button>
@@ -1170,11 +1230,7 @@ const ReadinessOverlay = ({ onClose, onCancel }) => (
       </h3>
 
       {/* Main disclaimer box */}
-      <div className="bg-indigo-900/20 border border-indigo-500/30 p-5 rounded-xl text-left space-y-3">
-        <h4 className="text-indigo-300 font-bold text-sm flex items-center gap-2">
-          <Lightbulb size={16} /> What You're Learning
-        </h4>
-
+      <div className="bg-indigo-900/20 border border-indigo-500/30 p-4 rounded-xl text-left space-y-3">
         <p className="text-sm text-slate-200 leading-relaxed">
           <span className="font-bold text-white">BioSim Lab teaches universal principles,</span>{' '}
           not brand-specific protocols.
@@ -1302,7 +1358,7 @@ const ProtocolGuideOverlay = ({ onClose, missionId }) => {
   const protocolContent = {
     A: {
       title: "Clinical Tissue Biopsy Protocol",
-      subtitle: "Human/Animal DNA Extraction - Select silica-column kit (e.g., Qiagen) for soft tissues (3-25mg). Standard Volumes: 20/200/200/50 µl.",
+      subtitle: "Human/Animal DNA Extraction - Use silica-column kit (e.g., Qiagen) for soft tissues (3-25mg). Equipment: centrifuge, nanodrop, incubator, Ethanol, & safety kit",
       steps: [
         {
           title: "1. Lysis & Digestion (Combined Step)",
@@ -1328,7 +1384,7 @@ const ProtocolGuideOverlay = ({ onClose, missionId }) => {
     },
     B: {
       title: "Cassava Extraction Protocol",
-      subtitle: "Plant DNA Extraction - Select the Zymo kit for tough plant tissues (e.g., 20-100mg cassava). Volumes: 500/500/50 µl.",
+      subtitle: "Plant DNA Extraction - Use Zymo kit for tough plant tissues (e.g., 20-100mg). Equipment: Centrifuge, nanodrop, vortex, Mortal, LN, Ethanol, & safety kit",
       steps: [
         {
           title: "Step 1: Tissue Disruption (Manual Grinding + Liquid N₂)",
@@ -1599,9 +1655,11 @@ export default function App() {
   const [user, setUser] = useState(null);
   const [historyRecords, setHistoryRecords] = useState([]);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [loggedInModalIsSuccess, setLoggedInModalIsSuccess] = useState(true);
   const [savedRecordId, setSavedRecordId] = useState(null);
   const [showClassCodePrompt, setShowClassCodePrompt] = useState(false);
   const [showGuestSignupModal, setShowGuestSignupModal] = useState(false);
+  const [guestModalIsSuccess, setGuestModalIsSuccess] = useState(true);
   const [screen, setScreen] = useState("welcome");
   const [selectedCategory, setSelectedCategory] = useState(null);
 
@@ -1751,7 +1809,7 @@ export default function App() {
   const [hasDispensedThisStep, setHasDispensedThisStep] = useState(false);
   const [isSpinning, setIsSpinning] = useState(false);
   const [hasSpunThisStep, setHasSpunThisStep] = useState(false);
-  const [tubeInCentrifuge, setTubeInCentrifuge] = useState(false);
+  const [tubeLocation, setTubeLocation] = useState<'desk' | 'centrifuge' | 'thermocycler' | 'hidden'>('desk');
   const [selectedPipetteForTransfer, setSelectedPipetteForTransfer] = useState(null);
   const [hasAspiratedFromTube, setHasAspiratedFromTube] = useState(false);
   const [liquidInColumn, setLiquidInColumn] = useState(false);
@@ -1815,11 +1873,20 @@ export default function App() {
     spun: false
   });
   const [step3SubActions, setStep3SubActions] = useState({
+    supernatantTransferred: false,
     bindingBufferAdded: false,
     ethanolAdded: false,
     mixed: false
   });
   const [step3ActionOrder, setStep3ActionOrder] = useState([]);
+  const [step5SubActions, setStep5SubActions] = useState({
+    wash1Added: false,
+    wash1Spun: false,
+    wash2Added: false,
+    wash2Spun: false,
+    drySpun: false
+  });
+  const [washBufferAddedSinceLastSpin, setWashBufferAddedSinceLastSpin] = useState(false);
   const [showMixPrompt, setShowMixPrompt] = useState(false);
   const [protKIncubationOK, setProtKIncubationOK] = useState(false);
   const [yieldQuality, setYieldQuality] = useState(null);
@@ -2057,7 +2124,11 @@ export default function App() {
     }
     if (currentStep?.title === "Binding Preparation") {
       const completed = Object.values(step3SubActions).filter(Boolean).length;
-      return { completed, total: 3, actions: step3SubActions };
+      return { completed, total: 4, actions: step3SubActions };
+    }
+    if (currentStep?.title === "Wash & Dry") {
+      const completed = Object.values(step5SubActions).filter(Boolean).length;
+      return { completed, total: 5, actions: step5SubActions };
     }
     return null;
   };
@@ -2092,13 +2163,25 @@ export default function App() {
     };
     setEquipmentUsageLog(prev => [...prev, usageRecord]);
 
-    if (action === 'spin' && equipment === 'centrifuge') {
+    if (action === 'load' && equipment === 'centrifuge') {
+      setTubeAnimating(true);
+      addLog("Loading tube into centrifuge...", "info");
+      setTimeout(() => {
+        setTubeAnimating(false);
+        setTubeLocation('centrifuge');
+        addLog("Tube loaded into centrifuge.", "success");
+      }, 800);
+    } else if (action === 'remove' && equipment === 'centrifuge') {
+      setTubeLocation('desk');
+      addLog("Tube removed from centrifuge.", "info");
+    } else if (action === 'spin' && equipment === 'centrifuge') {
       setIsSpinning(true);
-      setTubeInCentrifuge(false);
+      // Tube stays in centrifuge during spin - location doesn't change
       setTimeout(() => {
         setIsSpinning(false);
         setHasSpunThisStep(true);
         setPelletVisible(currentStep?.requiresSpin || false);
+        // Tube stays in centrifuge after spin completes - must be manually retrieved
 
         // For Clarification step, show phase separation after spinning
         if (currentStep?.title === "Clarification") {
@@ -2121,33 +2204,60 @@ export default function App() {
         // For Column Binding and Wash steps, liquid goes to collection tube as waste
         if (currentStep?.title === "Column Binding" || currentStep?.title === "Wash & Dry") {
           if (currentStep?.title === "Wash & Dry") {
-            if (liquidInColumn === 0) {
-              const spinDuration = (settings.duration || spinDuration || 5) * 60;
-              setUserPerformance(prev => ({ ...prev, hasPerformedDrySpin: true, drySpinDuration: spinDuration }));
-              setWashTracking(prev => ({ ...prev, drySpin: true, drySpinDuration: spinDuration }));
+            // Use functional setState to get current state at callback execution time
+            setStep5SubActions(prev => {
+              const bothWashesDone = prev.wash1Spun && prev.wash2Spun;
+              const isDrySpin = bothWashesDone && !prev.drySpun;
 
-              protocolTracker.logAction({
-                stepIndex: protocolIndex,
-                stepName: currentStep?.title || 'Wash & Dry',
-                action: 'dry_spin',
-                duration: spinDuration,
-                timestamp: Date.now()
+              console.log('[WASH & DRY SPIN] State check:', {
+                wash1Spun: prev.wash1Spun,
+                wash2Spun: prev.wash2Spun,
+                drySpun: prev.drySpun,
+                bothWashesDone,
+                isDrySpin
               });
 
-              addLog(`Dry spin complete (${Math.floor(spinDuration / 60)} min). Column is dry.`, "success");
-            } else {
-              if (!washTracking.wash1) {
-                setWashTracking(prev => ({ ...prev, wash1: true }));
+              if (isDrySpin) {
+                // Dry spin detected
+                const spinDuration = (settings.duration || settings.time || 5) * 60;
+                console.log('[DRY SPIN] Marking dry spin as complete!');
+
+                setUserPerformance(p => ({ ...p, hasPerformedDrySpin: true, drySpinDuration: spinDuration }));
+                setWashTracking(p => ({ ...p, drySpin: true, drySpinDuration: spinDuration }));
+
+                protocolTracker.logAction({
+                  stepIndex: protocolIndex,
+                  stepName: currentStep?.title || 'Wash & Dry',
+                  action: 'dry_spin',
+                  duration: spinDuration,
+                  timestamp: Date.now()
+                });
+
+                addLog(`Dry spin complete (${Math.floor(spinDuration / 60)} min). Column is dry.`, "success");
+                return { ...prev, drySpun: true };
+              } else if (!prev.wash1Spun) {
+                // First wash
+                console.log('[WASH 1] Marking wash 1 as complete');
+                setWashTracking(p => ({ ...p, wash1: true }));
+                setWashBufferAddedSinceLastSpin(false);
                 addLog("First wash complete. Salts removed.", "success");
-              } else if (!washTracking.wash2) {
-                setWashTracking(prev => ({ ...prev, wash2: true }));
+                return { ...prev, wash1Spun: true };
+              } else if (!prev.wash2Spun) {
+                // Second wash
+                console.log('[WASH 2] Marking wash 2 as complete');
+                setWashTracking(p => ({ ...p, wash2: true }));
+                setWashBufferAddedSinceLastSpin(false);
                 addLog("Second wash complete. Ethanol residue removed.", "success");
+                return { ...prev, wash2Spun: true };
+              } else {
+                console.log('[UNEXPECTED] Both washes done but not detected as dry spin!');
+                return prev;
               }
-            }
+            });
           }
           setWasteInCollectionTube(true);
           setHasDiscardedWaste(false);
-          if (currentStep?.title !== "Wash & Dry" || liquidInColumn > 0) {
+          if (currentStep?.title !== "Wash & Dry" || volumeAddedThisStep > 0) {
             addLog("Spin complete. Flow-through collected at bottom of tube.", "success");
           }
         }
@@ -2156,7 +2266,6 @@ export default function App() {
       if (settings.temp !== undefined) {
         setIncubationTemp(settings.temp);
       }
-      setTubeInCentrifuge(true);
 
       const tempOK = (settings.temp || incubationTemp) >= 50 && (settings.temp || incubationTemp) <= 60;
       if (!tempOK) {
@@ -2171,8 +2280,8 @@ export default function App() {
       setTimeout(() => {
         setIsIncubating(false);
         setHasSpunThisStep(true);
-        setTubeInCentrifuge(false);
-        addLog("Incubation complete. Tube removed from thermocycler.", "success");
+        // Tube stays in thermocycler after incubation completes - must be manually retrieved
+        addLog("Incubation complete. Ready to remove tube.", "success");
         if (tempOK) {
           addLog("Proteinase K successfully digested proteins at correct temperature.", "success");
           if (currentStep?.title === "Lysis & Protein Digestion") {
@@ -2190,18 +2299,50 @@ export default function App() {
         }
       }, 3500);
     } else if (action === 'load' && equipment === 'thermocycler') {
-      setTubeInCentrifuge(true);
-      addLog("Tube loaded into thermocycler.", "success");
+      setTubeAnimating(true);
+      addLog("Loading tube into thermocycler...", "info");
+      setTimeout(() => {
+        setTubeAnimating(false);
+        setTubeLocation('thermocycler');
+        addLog("Tube loaded into thermocycler.", "success");
+      }, 800);
     } else if (action === 'remove' && equipment === 'thermocycler') {
-      setTubeInCentrifuge(false);
+      setTubeLocation('desk');
       addLog("Tube removed from thermocycler.", "info");
+    } else if (action === 'load' && equipment === 'vortex') {
+      setTubeAnimating(true);
+      addLog("Placing tube in vortex mixer...", "info");
+      setTimeout(() => {
+        setTubeAnimating(false);
+        setTubeLocation('vortex');
+        addLog("Tube placed in vortex mixer.", "success");
+      }, 800);
+    } else if (action === 'remove' && equipment === 'vortex') {
+      setTubeLocation('desk');
+      addLog("Tube removed from vortex mixer.", "info");
+    } else if (action === 'start' && equipment === 'vortex') {
+      addLog(`Vortexing at high speed for ${settings.time || 10} seconds...`, "info");
+      setTimeout(() => {
+        addLog("Vortexing complete. Sample is well mixed.", "success");
+      }, 2000);
+    } else if (action === 'place' && equipment === 'ice_bucket') {
+      setTubeAnimating(true);
+      addLog("Placing tube on ice...", "info");
+      setTimeout(() => {
+        setTubeAnimating(false);
+        setTubeLocation('ice_bucket');
+        addLog("Tube placed on ice (0-4°C).", "success");
+      }, 800);
+    } else if (action === 'remove' && equipment === 'ice_bucket') {
+      setTubeLocation('desk');
+      addLog("Tube removed from ice.", "info");
     }
   };
 
   const checkTaskOrder = (step, action) => {
     const correctOrder = {
       'Lysis & Protein Digestion': ['lysisBufferAdded', 'proteinaseKAdded', 'mixed', 'incubated'],
-      'Binding Preparation': ['bindingBufferAdded', 'ethanolAdded', 'mixed']
+      'Binding Preparation': ['supernatantTransferred', 'bindingBufferAdded', 'ethanolAdded', 'mixed']
     };
 
     if (step === 'Lysis & Protein Digestion') {
@@ -2247,6 +2388,7 @@ export default function App() {
 
       if (outOfOrder) {
         const actionNames = {
+          supernatantTransferred: 'Transferring supernatant to fresh tube',
           bindingBufferAdded: 'Adding Binding Buffer',
           ethanolAdded: 'Adding Ethanol',
           mixed: 'Mixing by inversion'
@@ -2479,7 +2621,7 @@ export default function App() {
       requiresSpin: true,
       spinDuration: 3,
       successCriteria: "Supernatant is clear",
-      educationalNote: "⚠️ Carefully pipette only the clear supernatant in the next step. Avoid disturbing the pellet - it contains debris, not DNA."
+      educationalNote: "⚠️ After spinning, gently pipette the clear supernatant in the next step. Avoid disturbing the pellet - it contains debris, not DNA."
     };
 
     const step2_Plant = {
@@ -2601,7 +2743,7 @@ export default function App() {
     setStatus("idle");
     setHasDispensedThisStep(false);
     setHasSpunThisStep(false);
-    setTubeInCentrifuge(false);
+    setTubeLocation('desk');
     setNeedsMixing(false);
     setIsMixing(false);
     setPipetteHasLiquid(false);
@@ -2622,8 +2764,10 @@ export default function App() {
     setStep1SubActions({ lysisBufferAdded: false, proteinaseKAdded: false, mixed: false, incubated: false });
     setStep1ActionOrder([]);
     setStep2SubActions({ lysisBufferAdded: false, vortexed: false, spun: false });
-    setStep3SubActions({ bindingBufferAdded: false, ethanolAdded: false, mixed: false });
+    setStep3SubActions({ supernatantTransferred: false, bindingBufferAdded: false, ethanolAdded: false, mixed: false });
     setStep3ActionOrder([]);
+    setStep5SubActions({ wash1Added: false, wash1Spun: false, wash2Added: false, wash2Spun: false, drySpun: false });
+    setWashBufferAddedSinceLastSpin(false);
     setShowMixPrompt(false);
     setProtKIncubationOK(false);
     setTubeAnimating(false);
@@ -2724,8 +2868,10 @@ export default function App() {
 
       if (!user && techniqueId === 'DNA_EXT') {
         localStorage.removeItem('guestTrial');
+        setGuestModalIsSuccess(true);
         setShowGuestSignupModal(true);
       } else {
+        setLoggedInModalIsSuccess(true);
         setShowSuccessModal(true);
       }
     } catch (error) {
@@ -2768,6 +2914,10 @@ export default function App() {
       addLog("Hardware Error: Centrifuge required.", "error");
       return;
     }
+    if (tubeLocation !== 'desk') {
+      addLog("Error: Tube is currently in another piece of equipment. Remove it first.", "error");
+      return;
+    }
     if (currentStep?.requiresVortexing && !tubeVortexed) {
       addLog("Error: Must vortex tube before centrifuging.", "error");
       return;
@@ -2776,7 +2926,7 @@ export default function App() {
     addLog("Loading tube into centrifuge...", "info");
     setTimeout(() => {
       setTubeAnimating(false);
-      setTubeInCentrifuge(true);
+      setTubeLocation('centrifuge');
       addLog("Tube loaded with balance tube.", "success");
       if (!hasSeenBalancingTip) {
         setShowBioPopup("balance");
@@ -2790,8 +2940,8 @@ export default function App() {
       addLog("Hardware Error: Centrifuge required.", "error");
       return;
     }
-    if (!tubeInCentrifuge) {
-      addLog("Error: Load tube first.", "error");
+    if (tubeLocation !== 'centrifuge') {
+      addLog("Error: Load tube into centrifuge first.", "error");
       return;
     }
     setIsSpinning(true);
@@ -2808,11 +2958,11 @@ export default function App() {
     setTimeout(() => {
       setIsSpinning(false);
       setHasSpunThisStep(true);
-      setTubeInCentrifuge(false);
+      // Tube stays in centrifuge after spin - must be manually retrieved
 
       // FIX: Standardize residual volume to 15µL after discarding supernatant
       setBufferVolume(15);
-      addLog("Spin complete. Supernatant discarded.", "success");
+      addLog("Spin complete. Ready to remove tube.", "success");
 
       if (protocolIndex === 1) setCurrentSolidMass(0);
 
@@ -2829,18 +2979,22 @@ export default function App() {
   };
 
   const handleLoadTubeThermocycler = () => {
+    if (tubeLocation !== 'desk') {
+      addLog("Error: Tube is currently in another piece of equipment. Remove it first.", "error");
+      return;
+    }
     setTubeAnimating(true);
     addLog("Loading tube into thermocycler...", "info");
     setTimeout(() => {
       setTubeAnimating(false);
-      setTubeInCentrifuge(true);
+      setTubeLocation('thermocycler');
       addLog("Tube loaded into thermocycler.", "success");
     }, 800);
   };
 
   const handleStartIncubation = () => {
-    if (!tubeInCentrifuge) {
-      addLog("Error: Load tube first.", "error");
+    if (tubeLocation !== 'thermocycler') {
+      addLog("Error: Load tube into thermocycler first.", "error");
       return;
     }
 
@@ -2867,8 +3021,8 @@ export default function App() {
     setTimeout(() => {
       setIsIncubating(false);
       setHasSpunThisStep(true);
-      setTubeInCentrifuge(false);
-      addLog("Incubation complete. Tube removed from thermocycler.", "success");
+      // Tube stays in thermocycler after incubation - must be manually retrieved
+      addLog("Incubation complete. Ready to remove tube.", "success");
       if (tempOK) {
         addLog("Proteinase K successfully digested proteins at correct temperature.", "success");
         if (currentStep?.title === "Lysis & Protein Digestion") {
@@ -3045,6 +3199,16 @@ export default function App() {
     setA260_280(enhanced.a260_280.toString());
     setStatus(enhanced.status === 'mastery' ? 'mastery' : 'fail');
     setFailReason(enhanced.masteryBadge.blockReason || '');
+
+    // Debug logging to verify state updates
+    console.log('[FINALIZE] Enhanced Result:', {
+      yield: enhanced.yield,
+      concentration: enhanced.concentration,
+      a260_280: enhanced.a260_280,
+      status: enhanced.status,
+      masteryBadge: enhanced.masteryBadge
+    });
+
     if (localStatus !== "unverified") {
       setShowQuant(true);
     }
@@ -3094,7 +3258,21 @@ export default function App() {
       if (data) {
         setSavedRecordId(data.id);
 
-        const isSuccess = enhanced.concentration >= 200 && enhanced.a260_280 >= 1.7;
+        const report = analyzeProtocolExecution(
+          protocolTracker.getProtocolLog(),
+          protocolTracker.getSafetyLog(),
+          {
+            concentration: enhanced.concentration,
+            ratio260_280: enhanced.a260_280,
+            ratio260_230: 2.1,
+            gelQuality: 'excellent',
+            yieldMicrograms: enhanced.yield
+          },
+          missionId || 'A'
+        );
+
+        const criticalDevs = report.deviations.filter(d => d.severity === 'critical');
+        const isSuccess = enhanced.yield > 0 && criticalDevs.length === 0;
         const newTotalAttempts = masteryProgress.totalAttempts + 1;
         const newSuccessCount = isSuccess ? masteryProgress.successCount + 1 : masteryProgress.successCount;
         const newBestPurity = Math.max(masteryProgress.bestPurity, enhanced.a260_280);
@@ -3127,8 +3305,11 @@ export default function App() {
         } else {
           if (!user && techniqueId === 'DNA_EXT') {
             localStorage.removeItem('guestTrial');
+            // Determine if this is a success (yield > 0) or failure (yield = 0)
+            setGuestModalIsSuccess(localYield > 0);
             setShowGuestSignupModal(true);
           } else {
+            setLoggedInModalIsSuccess(localYield > 0);
             setShowSuccessModal(true);
           }
         }
@@ -3199,9 +3380,41 @@ export default function App() {
     }
   }, [status, finalConc, missionId, step1Method, step2Mixed, protKIncubationOK, step3Mixed, stepVolumes, elutionVolume, missedSpins, protocolAdherenceCompromised, sampleMass, protocolTracker]);
 
-  const isFail = status === "fail" || !finalConc || finalConc <= 0;
-  const isSheared = missedSpins > 0;
-  const isFaint = !finalConc || finalConc < 100;
+  const criticalDeviations = masteryReport?.deviations?.filter(d => d.severity === 'critical') || [];
+  const hasCriticalDeviations = criticalDeviations.length > 0;
+
+  // Derive gel visualization from enhanced result if available, otherwise fall back to state
+  const effectiveYield = enhancedResult?.yield ?? yieldUg ?? 0;
+  const effectiveConc = enhancedResult?.concentration ?? finalConc ?? 0;
+  const effectiveStatus = enhancedResult?.status ?? status;
+
+  // Debug: Log visual component values
+  if (status === "verification" && screen === "lab") {
+    console.log('[VISUAL] Effective values for display:', {
+      effectiveYield,
+      effectiveConc,
+      effectiveStatus,
+      yieldUg,
+      finalConc,
+      status,
+      enhancedResult
+    });
+  }
+
+  // Use enhanced result status for determination - if it shows technical success or mastery, DNA exists
+  const isFail = (effectiveStatus === 'critical_failure') ||
+                 (status === "fail" && effectiveYield <= 0 && effectiveConc <= 0);
+
+  // Check for contamination that causes smearing (salt/ethanol issues from missing dry spin or wash)
+  const hasContaminationIssues = masteryReport?.deviations?.some(d =>
+    d.step === 'Wash & Dry' && (d.description.includes('Dry spin') || d.description.includes('wash'))
+  ) || false;
+
+  // Degradation from safety violations (no gloves = DNase contamination) or excessive mechanical stress
+  const hasDegradation = masteryReport?.safetyViolations?.some(v => v.type === 'no_gloves') || missedSpins > 0;
+
+  const isSheared = hasDegradation || hasContaminationIssues;
+  const isFaint = !isFail && effectiveConc > 0 && effectiveConc < 100;
 
   return (
     <div className="min-h-screen text-slate-100 font-sans bg-[#0f172a]" style={screen === "welcome" ? {background: '#f9fafb'} : {}}>
@@ -4042,6 +4255,34 @@ export default function App() {
                               }
                             }
 
+                            if (currentStep.title === "Wash & Dry") {
+                              if (!step5SubActions.wash1Added) {
+                                addLog("Note: First wash buffer was not added.", "error");
+                                setProtocolAdherenceCompromised(true);
+                                incompleteTasks.push('wash1_buffer');
+                              }
+                              if (!step5SubActions.wash1Spun) {
+                                addLog("Note: First wash spin was skipped.", "error");
+                                setProtocolAdherenceCompromised(true);
+                                incompleteTasks.push('wash1_spin');
+                              }
+                              if (!step5SubActions.wash2Added) {
+                                addLog("Note: Second wash buffer was not added.", "error");
+                                setProtocolAdherenceCompromised(true);
+                                incompleteTasks.push('wash2_buffer');
+                              }
+                              if (!step5SubActions.wash2Spun) {
+                                addLog("Note: Second wash spin was skipped.", "error");
+                                setProtocolAdherenceCompromised(true);
+                                incompleteTasks.push('wash2_spin');
+                              }
+                              if (!step5SubActions.drySpun) {
+                                addLog("Note: Dry spin was skipped. Residual ethanol will inhibit downstream PCR!", "error");
+                                setProtocolAdherenceCompromised(true);
+                                incompleteTasks.push('dry_spin');
+                              }
+                            }
+
                             // Volume validation
                             if (currentStep.multipleReagents && currentStep.reagents) {
                               currentStep.reagents.forEach(reagent => {
@@ -4080,13 +4321,43 @@ export default function App() {
                             if (protocolIndex === protocolSteps.length - 1) {
                               setCanNanodropNow(true);
                               setStatus("verification");
+
+                              // Pre-calculate enhanced results for verification screen display
+                              const hasGoggles = has("safety_goggles");
+                              const hasGloves = has("gloves");
+                              const hasLabCoat = has("lab_coat");
+
+                              const previewEnhanced = calculateEnhancedResults(
+                                userPerformance,
+                                stepVolumes,
+                                missionId,
+                                sampleMass,
+                                elutionBufferPreWarmed,
+                                {
+                                  goggles: hasGoggles,
+                                  gloves: hasGloves,
+                                  labCoat: hasLabCoat
+                                },
+                                showPhaseSeparation
+                              );
+
+                              setEnhancedResult(previewEnhanced);
+                              setYieldUg(previewEnhanced.yield);
+                              setFinalConc(previewEnhanced.concentration);
+                              setA260_280(previewEnhanced.a260_280.toString());
+
+                              console.log('[PRE-CALC] Preview results for verification screen:', {
+                                yield: previewEnhanced.yield,
+                                concentration: previewEnhanced.concentration,
+                                status: previewEnhanced.status
+                              });
                             } else {
                               const nextStep = protocolSteps[protocolIndex + 1];
 
-                              // For Binding Preparation step (Step 3), reset volume to ~200µL (supernatant only)
+                              // For Binding Preparation step (Step 3), start with empty fresh tube (0µL)
                               if (nextStep?.title === "Binding Preparation") {
-                                setBufferVolume(200);
-                                addLog("Transferred ~200µL clear supernatant to fresh tube. Pellet discarded.", "info");
+                                setBufferVolume(0);
+                                addLog("Fresh tube is ready. Transfer the clear supernatant from Step 2 tube.", "info");
                               }
                               // For Elution step, reset buffer volume to show fresh, empty tube
                               else if (nextStep?.isElution) {
@@ -4207,6 +4478,10 @@ export default function App() {
                       })()}
                       {currentStep.title === "Binding Preparation" && (
                         <>
+                          <div className={`flex items-center gap-2 text-xs ${step3SubActions.supernatantTransferred ? 'text-emerald-400' : 'text-slate-500'}`}>
+                            <span>{step3SubActions.supernatantTransferred ? '☑' : '☐'}</span>
+                            <span>Transfer supernatant to Fresh Tube</span>
+                          </div>
                           <div className={`flex items-center gap-2 text-xs ${step3SubActions.bindingBufferAdded ? 'text-emerald-400' : 'text-slate-500'}`}>
                             <span>{step3SubActions.bindingBufferAdded ? '☑' : '☐'}</span>
                             <span>Add Binding Buffer (200 µL)</span>
@@ -4218,6 +4493,30 @@ export default function App() {
                           <div className={`flex items-center gap-2 text-xs ${step3SubActions.mixed ? 'text-emerald-400' : 'text-slate-500'}`}>
                             <span>{step3SubActions.mixed ? '☑' : '☐'}</span>
                             <span>Mix by inverting tube</span>
+                          </div>
+                        </>
+                      )}
+                      {currentStep.title === "Wash & Dry" && (
+                        <>
+                          <div className={`flex items-center gap-2 text-xs ${step5SubActions.wash1Added ? 'text-emerald-400' : 'text-slate-500'}`}>
+                            <span>{step5SubActions.wash1Added ? '☑' : '☐'}</span>
+                            <span>Add Wash Buffer - 1st wash (500 µL)</span>
+                          </div>
+                          <div className={`flex items-center gap-2 text-xs ${step5SubActions.wash1Spun ? 'text-emerald-400' : 'text-slate-500'}`}>
+                            <span>{step5SubActions.wash1Spun ? '☑' : '☐'}</span>
+                            <span>Spin - 1st wash</span>
+                          </div>
+                          <div className={`flex items-center gap-2 text-xs ${step5SubActions.wash2Added ? 'text-emerald-400' : 'text-slate-500'}`}>
+                            <span>{step5SubActions.wash2Added ? '☑' : '☐'}</span>
+                            <span>Add Wash Buffer - 2nd wash (500 µL)</span>
+                          </div>
+                          <div className={`flex items-center gap-2 text-xs ${step5SubActions.wash2Spun ? 'text-emerald-400' : 'text-slate-500'}`}>
+                            <span>{step5SubActions.wash2Spun ? '☑' : '☐'}</span>
+                            <span>Spin - 2nd wash</span>
+                          </div>
+                          <div className={`flex items-center gap-2 text-xs ${step5SubActions.drySpun ? 'text-emerald-400' : 'text-slate-500'}`}>
+                            <span>{step5SubActions.drySpun ? '☑' : '☐'}</span>
+                            <span>Dry Spin (3 min, max speed)</span>
                           </div>
                         </>
                       )}
@@ -4275,7 +4574,7 @@ export default function App() {
                         />
                       </div>
                     ) : (
-                      <div className={`flex justify-center transition-all duration-500 ${tubeAnimating ? 'opacity-20 scale-75' : 'opacity-100 scale-100'} ${isMixing ? 'animate-[wiggle_0.5s_ease-in-out_4]' : ''}`}>
+                      <div className={`flex justify-center transition-all duration-500 ${tubeLocation !== 'desk' || tubeAnimating ? 'opacity-0 scale-75 pointer-events-none' : 'opacity-100 scale-100'} ${isMixing ? 'animate-[wiggle_0.5s_ease-in-out_4]' : ''}`}>
                         {currentStep.title === "Column Binding" ? (
                           <div className="flex items-center justify-center gap-6">
                             <div className="flex flex-col items-center relative">
@@ -4446,34 +4745,47 @@ export default function App() {
                               oldTubeHasSupernatant={showPhaseSeparation}
                               freshTubeVolume={bufferVolume + volumeAddedThisStep}
                               freshTubeColor="#E6F3FF"
+                              transferComplete={step3SubActions.supernatantTransferred}
+                              onTransfer={() => {
+                                if (!step3SubActions.supernatantTransferred) {
+                                  checkTaskOrder('Binding Preparation', 'supernatantTransferred');
+                                  setStep3SubActions(prev => ({ ...prev, supernatantTransferred: true }));
+                                  setBufferVolume(200);
+                                  setShowPhaseSeparation(false);
+                                  addLog("Transferred 200µL clear supernatant to fresh tube. Pellet remains in waste tube.", "success");
+                                  showToastNotification("✓ Supernatant transferred to fresh tube");
+                                }
+                              }}
                             />
-                            {showMixPrompt && (
+                            {showMixPrompt && step3SubActions.supernatantTransferred && (
                               <div className="absolute top-0 left-1/2 transform -translate-x-1/2 bg-emerald-600 text-white text-xs font-bold px-3 py-1 rounded-lg animate-pulse whitespace-nowrap z-10">
                                 👆 Click fresh tube to mix
                               </div>
                             )}
-                            <div
-                              className={`${showMixPrompt ? 'cursor-pointer hover:opacity-80 transition-opacity' : ''} absolute inset-0`}
-                              onClick={() => {
-                                if (showMixPrompt && !isMixing) {
-                                  setIsMixing(true);
-                                  if (difficultyMode !== "challenge") {
-                                    addLog("Mixing by inversion...", "info");
-                                  }
-                                  setTimeout(() => {
-                                    setIsMixing(false);
-                                    setShowMixPrompt(false);
-                                    setNeedsMixing(false);
-                                    checkTaskOrder('Binding Preparation', 'mixed');
-                                    setStep3SubActions(prev => ({ ...prev, mixed: true }));
-                                    setStep3Mixed(true);
+                            {step3SubActions.supernatantTransferred && (
+                              <div
+                                className={`${showMixPrompt ? 'cursor-pointer hover:opacity-80 transition-opacity' : 'pointer-events-none'} absolute inset-0`}
+                                onClick={() => {
+                                  if (showMixPrompt && !isMixing) {
+                                    setIsMixing(true);
                                     if (difficultyMode !== "challenge") {
-                                      addLog("✓ Mixed. Ready for column binding.", "success");
+                                      addLog("Mixing by inversion...", "info");
                                     }
-                                  }, 2000);
-                                }
-                              }}
-                            />
+                                    setTimeout(() => {
+                                      setIsMixing(false);
+                                      setShowMixPrompt(false);
+                                      setNeedsMixing(false);
+                                      checkTaskOrder('Binding Preparation', 'mixed');
+                                      setStep3SubActions(prev => ({ ...prev, mixed: true }));
+                                      setStep3Mixed(true);
+                                      if (difficultyMode !== "challenge") {
+                                        addLog("✓ Mixed. Ready for column binding.", "success");
+                                      }
+                                    }, 2000);
+                                  }
+                                }}
+                              />
+                            )}
                           </div>
                         ) : (
                           <div className="relative">
@@ -4634,9 +4946,16 @@ export default function App() {
                             }
                           }
                         }}
-                        canAspirate={pipetteVolume !== null && !hasDispensedThisStep && !pipetteHasLiquid}
+                        canAspirate={pipetteVolume !== null && (!hasDispensedThisStep || currentStep.title === "Wash & Dry") && !pipetteHasLiquid && (currentStep.title !== "Binding Preparation" || step3SubActions.supernatantTransferred)}
                         selectedPipette={activeTool === 'pipette'}
                       />
+                      {currentStep.title === "Binding Preparation" && !step3SubActions.supernatantTransferred && (
+                        <div className="mt-3 p-2 bg-amber-900/20 border border-amber-500/30 rounded-lg">
+                          <p className="text-xs text-amber-300 text-center">
+                            Transfer the clear supernatant to the Fresh Tube first
+                          </p>
+                        </div>
+                      )}
                     </div>
                   )}
 
@@ -4992,7 +5311,7 @@ export default function App() {
                         requiredVolume={getTargetVolume()}
                         tolerance={getCurrentTolerance()}
                         onVolumeSet={(volume, pipetteSize) => {
-                          if (!hasDispensedThisStep || currentStep.multipleReagents) {
+                          if (!hasDispensedThisStep || currentStep.multipleReagents || currentStep.title === "Wash & Dry") {
                             setPipetteVolume(volume);
                             setActiveTool('pipette');
 
@@ -5120,10 +5439,22 @@ export default function App() {
                               showToastNotification(`✓ Added ${pipetteVolume}µL ${reagentName} to sample`);
                             }
                           } else if (currentStep.title === "Wash & Dry") {
-                            // For Wash & Dry, reset waste states so user can do multiple wash cycles
+                            // For Wash & Dry, track wash buffer additions
+                            if (!step5SubActions.wash1Added) {
+                              setStep5SubActions(prev => ({ ...prev, wash1Added: true }));
+                              setWashBufferAddedSinceLastSpin(true);
+                              showToastNotification(`✓ Added ${pipetteVolume}µL ${reagentName} - 1st wash`);
+                            } else if (!step5SubActions.wash2Added) {
+                              setStep5SubActions(prev => ({ ...prev, wash2Added: true }));
+                              setWashBufferAddedSinceLastSpin(true);
+                              showToastNotification(`✓ Added ${pipetteVolume}µL ${reagentName} - 2nd wash`);
+                            } else {
+                              setWashBufferAddedSinceLastSpin(true);
+                              showToastNotification(`✓ Added ${pipetteVolume}µL ${reagentName} to column`);
+                            }
+                            // Reset waste states so user can do multiple wash cycles
                             setHasDiscardedWaste(false);
                             setHasSpunThisStep(false);
-                            showToastNotification(`✓ Added ${pipetteVolume}µL ${reagentName} to column`);
                           }
 
                           if (currentStep.multipleReagents) {
@@ -5144,7 +5475,9 @@ export default function App() {
                               setCurrentReagentId(null);
                               return;
                             } else {
-                              setHasDispensedThisStep(true);
+                              if (currentStep.title !== "Wash & Dry") {
+                                setHasDispensedThisStep(true);
+                              }
                               if (currentStep.title === "Lysis & Protein Digestion" || currentStep.title === "Binding Preparation") {
                                 setShowMixPrompt(true);
                                 if (difficultyMode !== "challenge") {
@@ -5175,16 +5508,19 @@ export default function App() {
                               addLog("Click mix icon in sample tube to mix solution.", "info");
                             }
                           } else {
-                            setHasDispensedThisStep(true);
+                            if (currentStep.title !== "Wash & Dry") {
+                              setHasDispensedThisStep(true);
+                            }
                             if (difficultyMode !== "challenge") {
                               addLog("Reagent added. Ready for next step.", "success");
                             }
                           }
                         }}
                         disabled={
-                          currentStep.multipleReagents
+                          (currentStep.multipleReagents
                             ? currentStep.reagents.every(r => currentStepReagents[r.id])
-                            : hasDispensedThisStep
+                            : (hasDispensedThisStep && currentStep.title !== "Wash & Dry")) ||
+                          (currentStep.title === "Binding Preparation" && !step3SubActions.supernatantTransferred)
                         }
                         hasLiquid={pipetteHasLiquid}
                         liquidColor={pipetteLiquidColor}
@@ -5198,7 +5534,8 @@ export default function App() {
               <LabEquipment
                 inventory={inventory}
                 onEquipmentUse={handleEquipmentUse}
-                disabled={hasDispensedThisStep && !needsMixing && !(currentStep?.requiresSpin || currentStep?.requiresIncubation)}
+                disabled={hasDispensedThisStep && !needsMixing && !(currentStep?.requiresSpin || currentStep?.requiresIncubation) && currentStep?.title !== "Wash & Dry"}
+                tubeLocation={tubeLocation}
               />
 
               {/* Continue Button - Full Width - DISABLED (now in header) */}
@@ -5266,6 +5603,11 @@ export default function App() {
                   }
 
                   if (currentStep.title === "Binding Preparation") {
+                    if (!step3SubActions.supernatantTransferred) {
+                      addLog("⚠️ Critical Deviation: Supernatant was not transferred to fresh tube!", "warning");
+                      setProtocolAdherenceCompromised(true);
+                      trackMistake('skipped_task', { step: 'Binding Preparation', task: 'Transfer supernatant' });
+                    }
                     if (!step3SubActions.bindingBufferAdded) {
                       addLog("⚠️ Protocol Deviation: Binding Buffer was not added. DNA will not bind properly.", "warning");
                       setProtocolAdherenceCompromised(true);
@@ -5378,7 +5720,7 @@ export default function App() {
                     {missionVerification.options.includes(VERIFICATION.NANODROP) && (
                       <div className={`border ${verificationDone.nanodrop ? "border-emerald-500/50 bg-emerald-900/20" : "border-slate-700 bg-slate-900"} p-6 rounded-2xl`}>
                         <div className="text-center mb-4">
-                          <NanodropVisualComp step={ndStep} measured={verificationDone.nanodrop} hasDNA={finalConc > 0} purityScore={a260_280} />
+                          <NanodropVisualComp step={ndStep} measured={verificationDone.nanodrop} hasDNA={effectiveYield > 0 && effectiveConc > 0} purityScore={enhancedResult?.a260_280?.toString() ?? a260_280} />
                         </div>
                         {!verificationDone.nanodrop ? (
                           <div className="space-y-3">
@@ -5513,6 +5855,8 @@ export default function App() {
                     concentration={enhancedResult.concentration}
                     a260_280={enhancedResult.a260_280}
                     successCount={masteryProgress.successCount}
+                    yield={enhancedResult.yield}
+                    protocolDeviations={mistakes.length}
                   />
 
                   <TimelineAnalysis
@@ -5534,7 +5878,7 @@ export default function App() {
                   </div>
                   <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-700">
                     <p className="text-[8px] text-slate-500 uppercase font-bold tracking-wider mb-1">A260/A280</p>
-                    <p className="text-2xl font-black text-white font-mono">{a260_280}</p>
+                    <p className="text-2xl font-black text-white font-mono">{parseFloat(a260_280).toFixed(2)}</p>
                     <p className="text-[10px] text-slate-400 mt-0.5">{parseFloat(a260_280) >= 1.7 ? "Pure" : "Protein"}</p>
                   </div>
                   <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-700">
@@ -5659,7 +6003,7 @@ export default function App() {
 
                 <button
                   onClick={() => {
-                    const shareText = `I just ${status === "mastery" ? "achieved mastery" : "completed"} DNA Extraction on BioSim! 🧬\n\nPurity: ${a260_280} | Concentration: ${finalConc} ng/µL`;
+                    const shareText = `I just ${status === "mastery" ? "achieved mastery" : "completed"} DNA Extraction on BioSim! 🧬\n\nPurity: ${parseFloat(a260_280).toFixed(2)} | Concentration: ${finalConc} ng/µL`;
                     if (navigator.share) {
                       navigator.share({ text: shareText }).catch(() => {});
                     } else {
@@ -5689,7 +6033,7 @@ export default function App() {
 
       {showSuccessModal && (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-          <div className="bg-gradient-to-br from-slate-900 to-slate-800 border-2 border-emerald-500/50 rounded-3xl shadow-2xl max-w-md w-full p-8 relative animate-in fade-in duration-300">
+          <div className={`bg-gradient-to-br from-slate-900 to-slate-800 border-2 rounded-3xl shadow-2xl max-w-md w-full p-8 relative animate-in fade-in duration-300 ${loggedInModalIsSuccess ? 'border-emerald-500/50' : 'border-amber-500/50'}`}>
             <button
               onClick={() => setShowSuccessModal(false)}
               className="absolute top-4 right-4 text-slate-400 hover:text-white transition-colors"
@@ -5698,28 +6042,31 @@ export default function App() {
             </button>
 
             <div className="text-center space-y-6">
-              <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-emerald-500/20 border-2 border-emerald-500/50 mb-4">
-                <Dna size={40} className="text-emerald-400" />
+              <div className={`inline-flex items-center justify-center w-20 h-20 rounded-full border-2 mb-4 ${loggedInModalIsSuccess ? 'bg-emerald-500/20 border-emerald-500/50' : 'bg-amber-500/20 border-amber-500/50'}`}>
+                <Dna size={40} className={loggedInModalIsSuccess ? 'text-emerald-400' : 'text-amber-400'} />
               </div>
 
               <div>
-                <h2 className="text-2xl font-black text-emerald-400 mb-2 flex items-center justify-center gap-2">
-                  <span>Protocol Logged</span>
+                <h2 className={`text-2xl font-black mb-2 flex items-center justify-center gap-2 ${loggedInModalIsSuccess ? 'text-emerald-400' : 'text-amber-400'}`}>
+                  <span>{loggedInModalIsSuccess ? 'Achievement Saved!' : 'Trial Logged'}</span>
                 </h2>
                 <p className="text-slate-400 text-sm font-mono">
                   ID: {savedRecordId?.substring(0, 8)}...
                 </p>
               </div>
 
-              <div className="bg-slate-800/50 border border-emerald-500/30 rounded-xl p-6 space-y-3">
+              <div className={`bg-slate-800/50 border rounded-xl p-6 space-y-3 ${loggedInModalIsSuccess ? 'border-emerald-500/30' : 'border-amber-500/30'}`}>
                 <p className="text-slate-300 text-sm leading-relaxed">
-                  Your mastery has been verified and synced to the BioSim Research Cloud for instructor review.
+                  {loggedInModalIsSuccess
+                    ? 'You have earned 1 Mastery Point for this protocol. Your achievement has been synced to the BioSim Research Cloud.'
+                    : 'Review the Diagnostic Feedback to understand why the yield was zero before your next attempt.'
+                  }
                 </p>
 
                 <div className="pt-4 border-t border-slate-700">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-slate-400 text-xs uppercase tracking-wider">Final Purity</span>
-                    <span className="text-emerald-400 text-2xl font-black">{a260_280}</span>
+                    <span className={`text-2xl font-black ${loggedInModalIsSuccess ? 'text-emerald-400' : 'text-amber-400'}`}>{parseFloat(a260_280).toFixed(2)}</span>
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-slate-400 text-xs uppercase tracking-wider">Concentration</span>
@@ -5730,7 +6077,7 @@ export default function App() {
 
               <button
                 onClick={() => setShowSuccessModal(false)}
-                className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-4 rounded-xl transition-all uppercase tracking-wider text-sm"
+                className={`w-full font-bold py-4 rounded-xl transition-all uppercase tracking-wider text-sm ${loggedInModalIsSuccess ? 'bg-emerald-600 hover:bg-emerald-500' : 'bg-amber-600 hover:bg-amber-500'} text-white`}
               >
                 Continue
               </button>
@@ -5743,16 +6090,19 @@ export default function App() {
         <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
           <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 relative animate-in fade-in duration-300">
             <div className="text-center space-y-6">
-              <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-green-100 mb-4">
-                <Trophy size={40} className="text-green-600" />
+              <div className={`inline-flex items-center justify-center w-20 h-20 rounded-full mb-4 ${guestModalIsSuccess ? 'bg-green-100' : 'bg-amber-100'}`}>
+                <Trophy size={40} className={guestModalIsSuccess ? 'text-green-600' : 'text-amber-600'} />
               </div>
 
               <div>
                 <h2 className="text-2xl font-bold text-gray-900 mb-2">
-                  Nice work!
+                  {guestModalIsSuccess ? 'Nice work!' : 'Lab Review Required'}
                 </h2>
                 <p className="text-gray-600 text-base">
-                  You've completed the DNA Extraction trial. Sign up free to unlock all simulations and track your progress.
+                  {guestModalIsSuccess
+                    ? "You've mastered the DNA Extraction protocol! Sign up free to save your achievement and unlock advanced simulations."
+                    : "Your extraction resulted in no yield. Create a free account to access detailed protocol guides and try again to improve your skills."
+                  }
                 </p>
               </div>
 
@@ -5774,12 +6124,6 @@ export default function App() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
                   <span className="text-sm text-gray-700">Join your class</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <svg className="w-5 h-5 text-green-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                  <span className="text-sm text-gray-700">100% free forever</span>
                 </div>
               </div>
 
