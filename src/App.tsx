@@ -3289,9 +3289,20 @@ export default function App() {
 
   const criticalDeviations = masteryReport?.deviations?.filter(d => d.severity === 'critical') || [];
   const hasCriticalDeviations = criticalDeviations.length > 0;
-  const isFail = status === "fail" || !finalConc || finalConc <= 0;
-  const isSheared = missedSpins > 0;
-  const isFaint = !finalConc || finalConc < 100;
+
+  // Derive gel visualization from actual yield and protocol deviations
+  const isFail = status === "fail" || !yieldUg || yieldUg <= 0 || !finalConc || finalConc <= 0;
+
+  // Check for contamination that causes smearing (salt/ethanol issues from missing dry spin or wash)
+  const hasContaminationIssues = masteryReport?.deviations?.some(d =>
+    d.step === 'Wash & Dry' && (d.description.includes('Dry spin') || d.description.includes('wash'))
+  ) || false;
+
+  // Degradation from safety violations (no gloves = DNase contamination) or excessive mechanical stress
+  const hasDegradation = masteryReport?.safetyViolations?.some(v => v.type === 'no_gloves') || missedSpins > 0;
+
+  const isSheared = hasDegradation || hasContaminationIssues;
+  const isFaint = !isFail && finalConc > 0 && finalConc < 100;
 
   return (
     <div className="min-h-screen text-slate-100 font-sans bg-[#0f172a]" style={screen === "welcome" ? {background: '#f9fafb'} : {}}>
@@ -5566,7 +5577,7 @@ export default function App() {
                     {missionVerification.options.includes(VERIFICATION.NANODROP) && (
                       <div className={`border ${verificationDone.nanodrop ? "border-emerald-500/50 bg-emerald-900/20" : "border-slate-700 bg-slate-900"} p-6 rounded-2xl`}>
                         <div className="text-center mb-4">
-                          <NanodropVisualComp step={ndStep} measured={verificationDone.nanodrop} hasDNA={finalConc > 0} purityScore={a260_280} />
+                          <NanodropVisualComp step={ndStep} measured={verificationDone.nanodrop} hasDNA={yieldUg > 0 && finalConc > 0} purityScore={a260_280} />
                         </div>
                         {!verificationDone.nanodrop ? (
                           <div className="space-y-3">
