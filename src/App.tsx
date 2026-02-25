@@ -877,14 +877,30 @@ const IncubatorVisual = ({ isIncubating, hasTube, temperature, onLoadTube, onSta
       </svg>
 
       <div className="mt-2 space-y-2 w-full flex flex-col items-center">
-        {!hasTube && canLoad && (
-          <button onClick={onLoadTube} className="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-lg text-xs font-bold uppercase transition-all border-0 cursor-pointer animate-pulse">
+        {!hasTube && (
+          <button
+            onClick={onLoadTube}
+            disabled={!canLoad}
+            className={`px-4 py-2 rounded-lg text-xs font-bold uppercase transition-all border-0 ${
+              canLoad
+                ? 'bg-indigo-600 hover:bg-indigo-500 text-white cursor-pointer animate-pulse'
+                : 'bg-slate-700 text-slate-400 cursor-not-allowed opacity-50'
+            }`}
+          >
             Load Tube
           </button>
         )}
 
-        {hasTube && !isIncubating && canStart && (
-          <button onClick={onStartIncubation} className="bg-red-600 hover:bg-red-500 text-white px-4 py-2 rounded-lg text-xs font-bold uppercase transition-all border-0 cursor-pointer animate-bounce">
+        {hasTube && !isIncubating && (
+          <button
+            onClick={onStartIncubation}
+            disabled={!canStart}
+            className={`px-4 py-2 rounded-lg text-xs font-bold uppercase transition-all border-0 ${
+              canStart
+                ? 'bg-red-600 hover:bg-red-500 text-white cursor-pointer animate-bounce'
+                : 'bg-slate-700 text-slate-400 cursor-not-allowed opacity-50'
+            }`}
+          >
             Start Incubation
           </button>
         )}
@@ -975,14 +991,30 @@ const ThermocyclerVisual = ({ isIncubating, hasTube, temperature, duration, onLo
           </div>
         )}
 
-        {!hasTube && canLoad && (
-          <button onClick={onLoadTube} className="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-lg text-xs font-bold uppercase transition-all border-0 cursor-pointer animate-pulse">
+        {!hasTube && (
+          <button
+            onClick={onLoadTube}
+            disabled={!canLoad}
+            className={`px-4 py-2 rounded-lg text-xs font-bold uppercase transition-all border-0 ${
+              canLoad
+                ? 'bg-indigo-600 hover:bg-indigo-500 text-white cursor-pointer animate-pulse'
+                : 'bg-slate-700 text-slate-400 cursor-not-allowed opacity-50'
+            }`}
+          >
             Load Tube
           </button>
         )}
 
-        {hasTube && !isIncubating && canStart && (
-          <button onClick={onStartIncubation} className="bg-red-600 hover:bg-red-500 text-white px-4 py-2 rounded-lg text-xs font-bold uppercase transition-all border-0 cursor-pointer animate-bounce">
+        {hasTube && !isIncubating && (
+          <button
+            onClick={onStartIncubation}
+            disabled={!canStart}
+            className={`px-4 py-2 rounded-lg text-xs font-bold uppercase transition-all border-0 ${
+              canStart
+                ? 'bg-red-600 hover:bg-red-500 text-white cursor-pointer animate-bounce'
+                : 'bg-slate-700 text-slate-400 cursor-not-allowed opacity-50'
+            }`}
+          >
             Start Incubation
           </button>
         )}
@@ -1047,19 +1079,29 @@ const CentrifugeVisual = ({ isSpinning, hasTube, onLoadTube, onStartSpin, canLoa
       </svg>
 
       <div className="mt-2 space-y-2 w-full flex flex-col items-center">
-        {!hasTube && canLoad && (
+        {!hasTube && (
           <button
             onClick={onLoadTube}
-            className="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-lg text-xs font-bold uppercase transition-all border-0 cursor-pointer animate-pulse"
+            disabled={!canLoad}
+            className={`px-4 py-2 rounded-lg text-xs font-bold uppercase transition-all border-0 ${
+              canLoad
+                ? 'bg-indigo-600 hover:bg-indigo-500 text-white cursor-pointer animate-pulse'
+                : 'bg-slate-700 text-slate-400 cursor-not-allowed opacity-50'
+            }`}
           >
             Load Tube
           </button>
         )}
 
-        {hasTube && !isSpinning && canSpin && (
+        {hasTube && !isSpinning && (
           <button
             onClick={onStartSpin}
-            className="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg text-xs font-bold uppercase transition-all border-0 cursor-pointer animate-bounce"
+            disabled={!canSpin}
+            className={`px-4 py-2 rounded-lg text-xs font-bold uppercase transition-all border-0 ${
+              canSpin
+                ? 'bg-emerald-600 hover:bg-emerald-500 text-white cursor-pointer animate-bounce'
+                : 'bg-slate-700 text-slate-400 cursor-not-allowed opacity-50'
+            }`}
           >
             Start Spin
           </button>
@@ -1765,7 +1807,7 @@ export default function App() {
   const [hasDispensedThisStep, setHasDispensedThisStep] = useState(false);
   const [isSpinning, setIsSpinning] = useState(false);
   const [hasSpunThisStep, setHasSpunThisStep] = useState(false);
-  const [tubeInCentrifuge, setTubeInCentrifuge] = useState(false);
+  const [tubeLocation, setTubeLocation] = useState<'desk' | 'centrifuge' | 'thermocycler' | 'hidden'>('desk');
   const [selectedPipetteForTransfer, setSelectedPipetteForTransfer] = useState(null);
   const [hasAspiratedFromTube, setHasAspiratedFromTube] = useState(false);
   const [liquidInColumn, setLiquidInColumn] = useState(false);
@@ -2124,11 +2166,11 @@ export default function App() {
       addLog("Loading tube into centrifuge...", "info");
       setTimeout(() => {
         setTubeAnimating(false);
-        setTubeInCentrifuge(true);
+        setTubeLocation('centrifuge');
         addLog("Tube loaded into centrifuge.", "success");
       }, 800);
     } else if (action === 'remove' && equipment === 'centrifuge') {
-      setTubeInCentrifuge(false);
+      setTubeLocation('desk');
       addLog("Tube removed from centrifuge.", "info");
     } else if (action === 'spin' && equipment === 'centrifuge') {
       setIsSpinning(true);
@@ -2222,7 +2264,6 @@ export default function App() {
       if (settings.temp !== undefined) {
         setIncubationTemp(settings.temp);
       }
-      setTubeInCentrifuge(true);
 
       const tempOK = (settings.temp || incubationTemp) >= 50 && (settings.temp || incubationTemp) <= 60;
       if (!tempOK) {
@@ -2260,11 +2301,11 @@ export default function App() {
       addLog("Loading tube into thermocycler...", "info");
       setTimeout(() => {
         setTubeAnimating(false);
-        setTubeInCentrifuge(true);
+        setTubeLocation('thermocycler');
         addLog("Tube loaded into thermocycler.", "success");
       }, 800);
     } else if (action === 'remove' && equipment === 'thermocycler') {
-      setTubeInCentrifuge(false);
+      setTubeLocation('desk');
       addLog("Tube removed from thermocycler.", "info");
     }
   };
@@ -2842,6 +2883,10 @@ export default function App() {
       addLog("Hardware Error: Centrifuge required.", "error");
       return;
     }
+    if (tubeLocation !== 'desk') {
+      addLog("Error: Tube is currently in another piece of equipment. Remove it first.", "error");
+      return;
+    }
     if (currentStep?.requiresVortexing && !tubeVortexed) {
       addLog("Error: Must vortex tube before centrifuging.", "error");
       return;
@@ -2850,7 +2895,7 @@ export default function App() {
     addLog("Loading tube into centrifuge...", "info");
     setTimeout(() => {
       setTubeAnimating(false);
-      setTubeInCentrifuge(true);
+      setTubeLocation('centrifuge');
       addLog("Tube loaded with balance tube.", "success");
       if (!hasSeenBalancingTip) {
         setShowBioPopup("balance");
@@ -2864,8 +2909,8 @@ export default function App() {
       addLog("Hardware Error: Centrifuge required.", "error");
       return;
     }
-    if (!tubeInCentrifuge) {
-      addLog("Error: Load tube first.", "error");
+    if (tubeLocation !== 'centrifuge') {
+      addLog("Error: Load tube into centrifuge first.", "error");
       return;
     }
     setIsSpinning(true);
@@ -2903,18 +2948,22 @@ export default function App() {
   };
 
   const handleLoadTubeThermocycler = () => {
+    if (tubeLocation !== 'desk') {
+      addLog("Error: Tube is currently in another piece of equipment. Remove it first.", "error");
+      return;
+    }
     setTubeAnimating(true);
     addLog("Loading tube into thermocycler...", "info");
     setTimeout(() => {
       setTubeAnimating(false);
-      setTubeInCentrifuge(true);
+      setTubeLocation('thermocycler');
       addLog("Tube loaded into thermocycler.", "success");
     }, 800);
   };
 
   const handleStartIncubation = () => {
-    if (!tubeInCentrifuge) {
-      addLog("Error: Load tube first.", "error");
+    if (tubeLocation !== 'thermocycler') {
+      addLog("Error: Load tube into thermocycler first.", "error");
       return;
     }
 
