@@ -4604,33 +4604,35 @@ export default function App() {
                                 }
                               }}
                             />
-                            {showMixPrompt && (
+                            {showMixPrompt && step3SubActions.supernatantTransferred && (
                               <div className="absolute top-0 left-1/2 transform -translate-x-1/2 bg-emerald-600 text-white text-xs font-bold px-3 py-1 rounded-lg animate-pulse whitespace-nowrap z-10">
                                 👆 Click fresh tube to mix
                               </div>
                             )}
-                            <div
-                              className={`${showMixPrompt ? 'cursor-pointer hover:opacity-80 transition-opacity' : ''} absolute inset-0`}
-                              onClick={() => {
-                                if (showMixPrompt && !isMixing) {
-                                  setIsMixing(true);
-                                  if (difficultyMode !== "challenge") {
-                                    addLog("Mixing by inversion...", "info");
-                                  }
-                                  setTimeout(() => {
-                                    setIsMixing(false);
-                                    setShowMixPrompt(false);
-                                    setNeedsMixing(false);
-                                    checkTaskOrder('Binding Preparation', 'mixed');
-                                    setStep3SubActions(prev => ({ ...prev, mixed: true }));
-                                    setStep3Mixed(true);
+                            {step3SubActions.supernatantTransferred && (
+                              <div
+                                className={`${showMixPrompt ? 'cursor-pointer hover:opacity-80 transition-opacity' : 'pointer-events-none'} absolute inset-0`}
+                                onClick={() => {
+                                  if (showMixPrompt && !isMixing) {
+                                    setIsMixing(true);
                                     if (difficultyMode !== "challenge") {
-                                      addLog("✓ Mixed. Ready for column binding.", "success");
+                                      addLog("Mixing by inversion...", "info");
                                     }
-                                  }, 2000);
-                                }
-                              }}
-                            />
+                                    setTimeout(() => {
+                                      setIsMixing(false);
+                                      setShowMixPrompt(false);
+                                      setNeedsMixing(false);
+                                      checkTaskOrder('Binding Preparation', 'mixed');
+                                      setStep3SubActions(prev => ({ ...prev, mixed: true }));
+                                      setStep3Mixed(true);
+                                      if (difficultyMode !== "challenge") {
+                                        addLog("✓ Mixed. Ready for column binding.", "success");
+                                      }
+                                    }, 2000);
+                                  }
+                                }}
+                              />
+                            )}
                           </div>
                         ) : (
                           <div className="relative">
