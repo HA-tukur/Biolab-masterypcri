@@ -196,7 +196,7 @@ const TubeVisual = ({ volume, solidMass, hasPellet, showSeparation, onSupernatan
   );
 };
 
-const DualTubeVisual = ({ oldTubeHasSupernatant, freshTubeVolume, freshTubeColor = "#E6F3FF" }) => {
+const DualTubeVisual = ({ oldTubeHasSupernatant, freshTubeVolume, freshTubeColor = "#E6F3FF", onTransfer, transferComplete }) => {
   const supernatantFill = oldTubeHasSupernatant ? 30 : 0;
   const freshFill = Math.min((freshTubeVolume / 2000) * 85, 85);
 
@@ -205,32 +205,50 @@ const DualTubeVisual = ({ oldTubeHasSupernatant, freshTubeVolume, freshTubeColor
       {/* LEFT TUBE - Old tube with pellet */}
       <div className="flex flex-col items-center">
         <p className="text-[9px] text-slate-400 font-bold uppercase mb-2">Step 2 Tube (Waste)</p>
-        <svg width="60" height="120" viewBox="0 0 100 180" fill="none" xmlns="http://www.w3.org/2000/svg">
-          {/* Original Eppendorf tube shape */}
-          <path d="M20 10C20 10 20 150 50 170C80 150 80 10 80 10" stroke="#475569" strokeWidth="4" strokeLinecap="round"/>
-          <line x1="15" y1="10" x2="85" y2="10" stroke="#475569" strokeWidth="4" strokeLinecap="round"/>
+        <button
+          onClick={onTransfer}
+          disabled={transferComplete}
+          className={`${transferComplete ? 'cursor-default' : 'cursor-pointer hover:scale-105 transition-transform'}`}
+        >
+          <svg width="60" height="120" viewBox="0 0 100 180" fill="none" xmlns="http://www.w3.org/2000/svg">
+            {/* Original Eppendorf tube shape */}
+            <path d="M20 10C20 10 20 150 50 170C80 150 80 10 80 10" stroke="#475569" strokeWidth="4" strokeLinecap="round"/>
+            <line x1="15" y1="10" x2="85" y2="10" stroke="#475569" strokeWidth="4" strokeLinecap="round"/>
 
-          {/* Remaining supernatant (if any) */}
-          {supernatantFill > 0 && (
-            <path
-              d={`M25 ${150 - supernatantFill}C25 ${150 - supernatantFill} 25 150 50 165C75 150 75 ${150 - supernatantFill} 75 ${150 - supernatantFill}`}
-              fill="#F5DEB3"
-              fillOpacity="0.5"
-            />
-          )}
+            {/* Remaining supernatant (if any) - only show if transfer NOT complete */}
+            {supernatantFill > 0 && !transferComplete && (
+              <path
+                d={`M25 ${150 - supernatantFill}C25 ${150 - supernatantFill} 25 150 50 165C75 150 75 ${150 - supernatantFill} 75 ${150 - supernatantFill}`}
+                fill="#F5DEB3"
+                fillOpacity="0.5"
+              />
+            )}
 
-          {/* Brown pellet at bottom */}
-          <ellipse cx="50" cy="166" rx="10" ry="3" fill="#654321" fillOpacity="0.9" />
-          <text x="50" y="169" textAnchor="middle" fontSize="7" fill="#fbbf24" fontWeight="600">Pellet</text>
-        </svg>
+            {/* Brown pellet at bottom - always visible */}
+            <ellipse cx="50" cy="166" rx="10" ry="3" fill="#654321" fillOpacity="0.9" />
+            <text x="50" y="169" textAnchor="middle" fontSize="7" fill="#fbbf24" fontWeight="600">Pellet</text>
+          </svg>
+        </button>
       </div>
 
-      {/* ARROW */}
+      {/* ARROW / TRANSFER BUTTON */}
       <div className="flex flex-col items-center">
-        <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M5 20 L30 20 M30 20 L23 13 M30 20 L23 27" stroke="#10b981" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
-        </svg>
-        <p className="text-[8px] text-emerald-500 font-semibold mt-1">Transfer</p>
+        <button
+          onClick={onTransfer}
+          disabled={transferComplete}
+          className={`flex flex-col items-center px-3 py-2 rounded-lg transition-all ${
+            transferComplete
+              ? 'bg-emerald-900/20 cursor-default'
+              : 'bg-emerald-600 hover:bg-emerald-700 cursor-pointer'
+          }`}
+        >
+          <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M5 20 L30 20 M30 20 L23 13 M30 20 L23 27" stroke={transferComplete ? "#34d399" : "#ffffff"} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+          <p className={`text-[8px] font-semibold mt-1 ${transferComplete ? 'text-emerald-400' : 'text-white'}`}>
+            {transferComplete ? '✓ Transferred' : 'Transfer'}
+          </p>
+        </button>
       </div>
 
       {/* RIGHT TUBE - Fresh tube */}
@@ -1815,6 +1833,7 @@ export default function App() {
     spun: false
   });
   const [step3SubActions, setStep3SubActions] = useState({
+    supernatantTransferred: false,
     bindingBufferAdded: false,
     ethanolAdded: false,
     mixed: false
@@ -2065,7 +2084,7 @@ export default function App() {
     }
     if (currentStep?.title === "Binding Preparation") {
       const completed = Object.values(step3SubActions).filter(Boolean).length;
-      return { completed, total: 3, actions: step3SubActions };
+      return { completed, total: 4, actions: step3SubActions };
     }
     if (currentStep?.title === "Wash & Dry") {
       const completed = Object.values(step5SubActions).filter(Boolean).length;
@@ -2257,7 +2276,7 @@ export default function App() {
   const checkTaskOrder = (step, action) => {
     const correctOrder = {
       'Lysis & Protein Digestion': ['lysisBufferAdded', 'proteinaseKAdded', 'mixed', 'incubated'],
-      'Binding Preparation': ['bindingBufferAdded', 'ethanolAdded', 'mixed']
+      'Binding Preparation': ['supernatantTransferred', 'bindingBufferAdded', 'ethanolAdded', 'mixed']
     };
 
     if (step === 'Lysis & Protein Digestion') {
@@ -2303,6 +2322,7 @@ export default function App() {
 
       if (outOfOrder) {
         const actionNames = {
+          supernatantTransferred: 'Transferring supernatant to fresh tube',
           bindingBufferAdded: 'Adding Binding Buffer',
           ethanolAdded: 'Adding Ethanol',
           mixed: 'Mixing by inversion'
@@ -2678,7 +2698,7 @@ export default function App() {
     setStep1SubActions({ lysisBufferAdded: false, proteinaseKAdded: false, mixed: false, incubated: false });
     setStep1ActionOrder([]);
     setStep2SubActions({ lysisBufferAdded: false, vortexed: false, spun: false });
-    setStep3SubActions({ bindingBufferAdded: false, ethanolAdded: false, mixed: false });
+    setStep3SubActions({ supernatantTransferred: false, bindingBufferAdded: false, ethanolAdded: false, mixed: false });
     setStep3ActionOrder([]);
     setStep5SubActions({ wash1Added: false, wash1Spun: false, wash2Added: false, wash2Spun: false, drySpun: false });
     setWashBufferAddedSinceLastSpin(false);
@@ -4185,10 +4205,10 @@ export default function App() {
                             } else {
                               const nextStep = protocolSteps[protocolIndex + 1];
 
-                              // For Binding Preparation step (Step 3), reset volume to ~200µL (supernatant only)
+                              // For Binding Preparation step (Step 3), start with empty fresh tube (0µL)
                               if (nextStep?.title === "Binding Preparation") {
-                                setBufferVolume(200);
-                                addLog("Transferred ~200µL clear supernatant to fresh tube. Pellet discarded.", "info");
+                                setBufferVolume(0);
+                                addLog("Fresh tube is ready. Transfer the clear supernatant from Step 2 tube.", "info");
                               }
                               // For Elution step, reset buffer volume to show fresh, empty tube
                               else if (nextStep?.isElution) {
@@ -4309,6 +4329,10 @@ export default function App() {
                       })()}
                       {currentStep.title === "Binding Preparation" && (
                         <>
+                          <div className={`flex items-center gap-2 text-xs ${step3SubActions.supernatantTransferred ? 'text-emerald-400' : 'text-slate-500'}`}>
+                            <span>{step3SubActions.supernatantTransferred ? '☑' : '☐'}</span>
+                            <span>Transfer supernatant to Fresh Tube</span>
+                          </div>
                           <div className={`flex items-center gap-2 text-xs ${step3SubActions.bindingBufferAdded ? 'text-emerald-400' : 'text-slate-500'}`}>
                             <span>{step3SubActions.bindingBufferAdded ? '☑' : '☐'}</span>
                             <span>Add Binding Buffer (200 µL)</span>
@@ -4572,6 +4596,17 @@ export default function App() {
                               oldTubeHasSupernatant={showPhaseSeparation}
                               freshTubeVolume={bufferVolume + volumeAddedThisStep}
                               freshTubeColor="#E6F3FF"
+                              transferComplete={step3SubActions.supernatantTransferred}
+                              onTransfer={() => {
+                                if (!step3SubActions.supernatantTransferred) {
+                                  checkTaskOrder('Binding Preparation', 'supernatantTransferred');
+                                  setStep3SubActions(prev => ({ ...prev, supernatantTransferred: true }));
+                                  setBufferVolume(200);
+                                  setShowPhaseSeparation(false);
+                                  addLog("Transferred 200µL clear supernatant to fresh tube. Pellet remains in waste tube.", "success");
+                                  showToastNotification("✓ Supernatant transferred to fresh tube");
+                                }
+                              }}
                             />
                             {showMixPrompt && (
                               <div className="absolute top-0 left-1/2 transform -translate-x-1/2 bg-emerald-600 text-white text-xs font-bold px-3 py-1 rounded-lg animate-pulse whitespace-nowrap z-10">
@@ -4760,9 +4795,16 @@ export default function App() {
                             }
                           }
                         }}
-                        canAspirate={pipetteVolume !== null && (!hasDispensedThisStep || currentStep.title === "Wash & Dry") && !pipetteHasLiquid}
+                        canAspirate={pipetteVolume !== null && (!hasDispensedThisStep || currentStep.title === "Wash & Dry") && !pipetteHasLiquid && (currentStep.title !== "Binding Preparation" || step3SubActions.supernatantTransferred)}
                         selectedPipette={activeTool === 'pipette'}
                       />
+                      {currentStep.title === "Binding Preparation" && !step3SubActions.supernatantTransferred && (
+                        <div className="mt-3 p-2 bg-amber-900/20 border border-amber-500/30 rounded-lg">
+                          <p className="text-xs text-amber-300 text-center">
+                            Transfer the clear supernatant to the Fresh Tube first
+                          </p>
+                        </div>
+                      )}
                     </div>
                   )}
 
@@ -5324,9 +5366,10 @@ export default function App() {
                           }
                         }}
                         disabled={
-                          currentStep.multipleReagents
+                          (currentStep.multipleReagents
                             ? currentStep.reagents.every(r => currentStepReagents[r.id])
-                            : (hasDispensedThisStep && currentStep.title !== "Wash & Dry")
+                            : (hasDispensedThisStep && currentStep.title !== "Wash & Dry")) ||
+                          (currentStep.title === "Binding Preparation" && !step3SubActions.supernatantTransferred)
                         }
                         hasLiquid={pipetteHasLiquid}
                         liquidColor={pipetteLiquidColor}
@@ -5408,6 +5451,11 @@ export default function App() {
                   }
 
                   if (currentStep.title === "Binding Preparation") {
+                    if (!step3SubActions.supernatantTransferred) {
+                      addLog("⚠️ Critical Deviation: Supernatant was not transferred to fresh tube!", "warning");
+                      setProtocolAdherenceCompromised(true);
+                      trackMistake('skipped_task', { step: 'Binding Preparation', task: 'Transfer supernatant' });
+                    }
                     if (!step3SubActions.bindingBufferAdded) {
                       addLog("⚠️ Protocol Deviation: Binding Buffer was not added. DNA will not bind properly.", "warning");
                       setProtocolAdherenceCompromised(true);
