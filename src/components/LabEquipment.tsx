@@ -5,12 +5,14 @@ interface LabEquipmentProps {
   inventory: string[];
   onEquipmentUse: (equipment: string, action: string, settings?: any) => void;
   disabled?: boolean;
+  tubeLocation?: 'desk' | 'centrifuge' | 'thermocycler' | 'vortex' | 'ice_bucket' | 'hidden';
 }
 
 export const LabEquipment: React.FC<LabEquipmentProps> = ({
   inventory,
   onEquipmentUse,
-  disabled = false
+  disabled = false,
+  tubeLocation = 'desk'
 }) => {
   const [centrifugeState, setCentrifugeState] = useState<'idle' | 'loaded' | 'spinning' | 'complete'>('idle');
   const [centrifugeSpeed, setCentrifugeSpeed] = useState(13000);
@@ -42,6 +44,9 @@ export const LabEquipment: React.FC<LabEquipmentProps> = ({
 
   const handleCentrifugeAction = (action: string) => {
     if (action === 'load') {
+      if (tubeLocation !== 'desk') {
+        return;
+      }
       setCentrifugeState('loaded');
       setIsBalanced(false);
       onEquipmentUse('centrifuge', 'load');
@@ -66,6 +71,9 @@ export const LabEquipment: React.FC<LabEquipmentProps> = ({
 
   const handleThermocyclerAction = (action: string) => {
     if (action === 'load') {
+      if (tubeLocation !== 'desk') {
+        return;
+      }
       setThermocyclerState('loaded');
       onEquipmentUse('thermocycler', 'load');
     } else if (action === 'start') {
@@ -82,6 +90,9 @@ export const LabEquipment: React.FC<LabEquipmentProps> = ({
 
   const handleVortexAction = (action: string) => {
     if (action === 'load') {
+      if (tubeLocation !== 'desk') {
+        return;
+      }
       setVortexState('loaded');
       onEquipmentUse('vortex', 'load');
     } else if (action === 'start') {
@@ -98,6 +109,9 @@ export const LabEquipment: React.FC<LabEquipmentProps> = ({
 
   const handleIceBucketAction = (action: string) => {
     if (action === 'place') {
+      if (tubeLocation !== 'desk') {
+        return;
+      }
       setIceBucketState('on_ice');
       onEquipmentUse('ice_bucket', 'place');
     } else if (action === 'remove') {
@@ -224,9 +238,14 @@ export const LabEquipment: React.FC<LabEquipmentProps> = ({
               {centrifugeState === 'idle' && (
                 <button
                   onClick={() => handleCentrifugeAction('load')}
-                  className="w-full py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-bold uppercase transition-all border-0 cursor-pointer"
+                  disabled={tubeLocation !== 'desk'}
+                  className={`w-full py-2 rounded-lg text-xs font-bold uppercase transition-all border-0 ${
+                    tubeLocation !== 'desk'
+                      ? 'bg-slate-700 text-slate-400 cursor-not-allowed opacity-50'
+                      : 'bg-indigo-600 hover:bg-indigo-500 text-white cursor-pointer'
+                  }`}
                 >
-                  Load Tube
+                  {tubeLocation !== 'desk' ? 'Tube in Use' : 'Load Tube'}
                 </button>
               )}
               {centrifugeState === 'loaded' && (
@@ -376,9 +395,14 @@ export const LabEquipment: React.FC<LabEquipmentProps> = ({
               {thermocyclerState === 'idle' && (
                 <button
                   onClick={() => handleThermocyclerAction('load')}
-                  className="w-full py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-bold uppercase transition-all border-0 cursor-pointer"
+                  disabled={tubeLocation !== 'desk'}
+                  className={`w-full py-2 rounded-lg text-xs font-bold uppercase transition-all border-0 ${
+                    tubeLocation !== 'desk'
+                      ? 'bg-slate-700 text-slate-400 cursor-not-allowed opacity-50'
+                      : 'bg-indigo-600 hover:bg-indigo-500 text-white cursor-pointer'
+                  }`}
                 >
-                  Load Tube
+                  {tubeLocation !== 'desk' ? 'Tube in Use' : 'Load Tube'}
                 </button>
               )}
               {thermocyclerState === 'loaded' && (
@@ -472,9 +496,14 @@ export const LabEquipment: React.FC<LabEquipmentProps> = ({
               {vortexState === 'idle' && (
                 <button
                   onClick={() => handleVortexAction('load')}
-                  className="w-full py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-bold uppercase transition-all border-0 cursor-pointer"
+                  disabled={tubeLocation !== 'desk'}
+                  className={`w-full py-2 rounded-lg text-xs font-bold uppercase transition-all border-0 ${
+                    tubeLocation !== 'desk'
+                      ? 'bg-slate-700 text-slate-400 cursor-not-allowed opacity-50'
+                      : 'bg-indigo-600 hover:bg-indigo-500 text-white cursor-pointer'
+                  }`}
                 >
-                  Place Tube
+                  {tubeLocation !== 'desk' ? 'Tube in Use' : 'Place Tube'}
                 </button>
               )}
               {vortexState === 'loaded' && (
@@ -541,9 +570,14 @@ export const LabEquipment: React.FC<LabEquipmentProps> = ({
               {iceBucketState === 'idle' ? (
                 <button
                   onClick={() => handleIceBucketAction('place')}
-                  className="w-full py-2 bg-cyan-600 hover:bg-cyan-500 text-white rounded-lg text-xs font-bold uppercase transition-all border-0 cursor-pointer"
+                  disabled={tubeLocation !== 'desk'}
+                  className={`w-full py-2 rounded-lg text-xs font-bold uppercase transition-all border-0 ${
+                    tubeLocation !== 'desk'
+                      ? 'bg-slate-700 text-slate-400 cursor-not-allowed opacity-50'
+                      : 'bg-cyan-600 hover:bg-cyan-500 text-white cursor-pointer'
+                  }`}
                 >
-                  Place on Ice
+                  {tubeLocation !== 'desk' ? 'Tube in Use' : 'Place on Ice'}
                 </button>
               ) : (
                 <>

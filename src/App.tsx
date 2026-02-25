@@ -2307,6 +2307,33 @@ export default function App() {
     } else if (action === 'remove' && equipment === 'thermocycler') {
       setTubeLocation('desk');
       addLog("Tube removed from thermocycler.", "info");
+    } else if (action === 'load' && equipment === 'vortex') {
+      setTubeAnimating(true);
+      addLog("Placing tube in vortex mixer...", "info");
+      setTimeout(() => {
+        setTubeAnimating(false);
+        setTubeLocation('vortex');
+        addLog("Tube placed in vortex mixer.", "success");
+      }, 800);
+    } else if (action === 'remove' && equipment === 'vortex') {
+      setTubeLocation('desk');
+      addLog("Tube removed from vortex mixer.", "info");
+    } else if (action === 'start' && equipment === 'vortex') {
+      addLog(`Vortexing at high speed for ${settings.time || 10} seconds...`, "info");
+      setTimeout(() => {
+        addLog("Vortexing complete. Sample is well mixed.", "success");
+      }, 2000);
+    } else if (action === 'place' && equipment === 'ice_bucket') {
+      setTubeAnimating(true);
+      addLog("Placing tube on ice...", "info");
+      setTimeout(() => {
+        setTubeAnimating(false);
+        setTubeLocation('ice_bucket');
+        addLog("Tube placed on ice (0-4°C).", "success");
+      }, 800);
+    } else if (action === 'remove' && equipment === 'ice_bucket') {
+      setTubeLocation('desk');
+      addLog("Tube removed from ice.", "info");
     }
   };
 
@@ -5442,6 +5469,7 @@ export default function App() {
                 inventory={inventory}
                 onEquipmentUse={handleEquipmentUse}
                 disabled={hasDispensedThisStep && !needsMixing && !(currentStep?.requiresSpin || currentStep?.requiresIncubation) && currentStep?.title !== "Wash & Dry"}
+                tubeLocation={tubeLocation}
               />
 
               {/* Continue Button - Full Width - DISABLED (now in header) */}
