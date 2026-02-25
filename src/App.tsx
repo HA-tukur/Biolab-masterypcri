@@ -1188,11 +1188,7 @@ const ReadinessOverlay = ({ onClose, onCancel }) => (
       </h3>
 
       {/* Main disclaimer box */}
-      <div className="bg-indigo-900/20 border border-indigo-500/30 p-5 rounded-xl text-left space-y-3">
-        <h4 className="text-indigo-300 font-bold text-sm flex items-center gap-2">
-          <Lightbulb size={16} /> What You're Learning
-        </h4>
-
+      <div className="bg-indigo-900/20 border border-indigo-500/30 p-4 rounded-xl text-left space-y-3">
         <p className="text-sm text-slate-200 leading-relaxed">
           <span className="font-bold text-white">BioSim Lab teaches universal principles,</span>{' '}
           not brand-specific protocols.
