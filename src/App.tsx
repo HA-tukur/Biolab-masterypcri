@@ -3195,6 +3195,16 @@ export default function App() {
     setA260_280(enhanced.a260_280.toString());
     setStatus(enhanced.status === 'mastery' ? 'mastery' : 'fail');
     setFailReason(enhanced.masteryBadge.blockReason || '');
+
+    // Debug logging to verify state updates
+    console.log('[FINALIZE] Enhanced Result:', {
+      yield: enhanced.yield,
+      concentration: enhanced.concentration,
+      a260_280: enhanced.a260_280,
+      status: enhanced.status,
+      masteryBadge: enhanced.masteryBadge
+    });
+
     if (localStatus !== "unverified") {
       setShowQuant(true);
     }
@@ -3366,8 +3376,27 @@ export default function App() {
   const criticalDeviations = masteryReport?.deviations?.filter(d => d.severity === 'critical') || [];
   const hasCriticalDeviations = criticalDeviations.length > 0;
 
-  // Derive gel visualization from actual yield and protocol deviations
-  const isFail = status === "fail" || !yieldUg || yieldUg <= 0 || !finalConc || finalConc <= 0;
+  // Derive gel visualization from enhanced result if available, otherwise fall back to state
+  const effectiveYield = enhancedResult?.yield ?? yieldUg ?? 0;
+  const effectiveConc = enhancedResult?.concentration ?? finalConc ?? 0;
+  const effectiveStatus = enhancedResult?.status ?? status;
+
+  // Debug: Log visual component values
+  if (status === "verification" && screen === "lab") {
+    console.log('[VISUAL] Effective values for display:', {
+      effectiveYield,
+      effectiveConc,
+      effectiveStatus,
+      yieldUg,
+      finalConc,
+      status,
+      enhancedResult
+    });
+  }
+
+  // Use enhanced result status for determination - if it shows technical success or mastery, DNA exists
+  const isFail = (effectiveStatus === 'critical_failure') ||
+                 (status === "fail" && effectiveYield <= 0 && effectiveConc <= 0);
 
   // Check for contamination that causes smearing (salt/ethanol issues from missing dry spin or wash)
   const hasContaminationIssues = masteryReport?.deviations?.some(d =>
@@ -3378,7 +3407,7 @@ export default function App() {
   const hasDegradation = masteryReport?.safetyViolations?.some(v => v.type === 'no_gloves') || missedSpins > 0;
 
   const isSheared = hasDegradation || hasContaminationIssues;
-  const isFaint = !isFail && finalConc > 0 && finalConc < 100;
+  const isFaint = !isFail && effectiveConc > 0 && effectiveConc < 100;
 
   return (
     <div className="min-h-screen text-slate-100 font-sans bg-[#0f172a]" style={screen === "welcome" ? {background: '#f9fafb'} : {}}>
@@ -4285,6 +4314,36 @@ export default function App() {
                             if (protocolIndex === protocolSteps.length - 1) {
                               setCanNanodropNow(true);
                               setStatus("verification");
+
+                              // Pre-calculate enhanced results for verification screen display
+                              const hasGoggles = has("safety_goggles");
+                              const hasGloves = has("gloves");
+                              const hasLabCoat = has("lab_coat");
+
+                              const previewEnhanced = calculateEnhancedResults(
+                                userPerformance,
+                                stepVolumes,
+                                missionId,
+                                sampleMass,
+                                elutionBufferPreWarmed,
+                                {
+                                  goggles: hasGoggles,
+                                  gloves: hasGloves,
+                                  labCoat: hasLabCoat
+                                },
+                                showPhaseSeparation
+                              );
+
+                              setEnhancedResult(previewEnhanced);
+                              setYieldUg(previewEnhanced.yield);
+                              setFinalConc(previewEnhanced.concentration);
+                              setA260_280(previewEnhanced.a260_280.toString());
+
+                              console.log('[PRE-CALC] Preview results for verification screen:', {
+                                yield: previewEnhanced.yield,
+                                concentration: previewEnhanced.concentration,
+                                status: previewEnhanced.status
+                              });
                             } else {
                               const nextStep = protocolSteps[protocolIndex + 1];
 
@@ -5654,7 +5713,7 @@ export default function App() {
                     {missionVerification.options.includes(VERIFICATION.NANODROP) && (
                       <div className={`border ${verificationDone.nanodrop ? "border-emerald-500/50 bg-emerald-900/20" : "border-slate-700 bg-slate-900"} p-6 rounded-2xl`}>
                         <div className="text-center mb-4">
-                          <NanodropVisualComp step={ndStep} measured={verificationDone.nanodrop} hasDNA={yieldUg > 0 && finalConc > 0} purityScore={a260_280} />
+                          <NanodropVisualComp step={ndStep} measured={verificationDone.nanodrop} hasDNA={effectiveYield > 0 && effectiveConc > 0} purityScore={enhancedResult?.a260_280?.toString() ?? a260_280} />
                         </div>
                         {!verificationDone.nanodrop ? (
                           <div className="space-y-3">
