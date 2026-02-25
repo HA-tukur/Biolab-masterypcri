@@ -1655,9 +1655,11 @@ export default function App() {
   const [user, setUser] = useState(null);
   const [historyRecords, setHistoryRecords] = useState([]);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [loggedInModalIsSuccess, setLoggedInModalIsSuccess] = useState(true);
   const [savedRecordId, setSavedRecordId] = useState(null);
   const [showClassCodePrompt, setShowClassCodePrompt] = useState(false);
   const [showGuestSignupModal, setShowGuestSignupModal] = useState(false);
+  const [guestModalIsSuccess, setGuestModalIsSuccess] = useState(true);
   const [screen, setScreen] = useState("welcome");
   const [selectedCategory, setSelectedCategory] = useState(null);
 
@@ -2866,8 +2868,10 @@ export default function App() {
 
       if (!user && techniqueId === 'DNA_EXT') {
         localStorage.removeItem('guestTrial');
+        setGuestModalIsSuccess(true);
         setShowGuestSignupModal(true);
       } else {
+        setLoggedInModalIsSuccess(true);
         setShowSuccessModal(true);
       }
     } catch (error) {
@@ -3301,8 +3305,11 @@ export default function App() {
         } else {
           if (!user && techniqueId === 'DNA_EXT') {
             localStorage.removeItem('guestTrial');
+            // Determine if this is a success (yield > 0) or failure (yield = 0)
+            setGuestModalIsSuccess(localYield > 0);
             setShowGuestSignupModal(true);
           } else {
+            setLoggedInModalIsSuccess(localYield > 0);
             setShowSuccessModal(true);
           }
         }
@@ -5848,6 +5855,8 @@ export default function App() {
                     concentration={enhancedResult.concentration}
                     a260_280={enhancedResult.a260_280}
                     successCount={masteryProgress.successCount}
+                    yield={enhancedResult.yield}
+                    protocolDeviations={mistakes.length}
                   />
 
                   <TimelineAnalysis
@@ -5869,7 +5878,7 @@ export default function App() {
                   </div>
                   <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-700">
                     <p className="text-[8px] text-slate-500 uppercase font-bold tracking-wider mb-1">A260/A280</p>
-                    <p className="text-2xl font-black text-white font-mono">{a260_280}</p>
+                    <p className="text-2xl font-black text-white font-mono">{parseFloat(a260_280).toFixed(2)}</p>
                     <p className="text-[10px] text-slate-400 mt-0.5">{parseFloat(a260_280) >= 1.7 ? "Pure" : "Protein"}</p>
                   </div>
                   <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-700">
@@ -5994,7 +6003,7 @@ export default function App() {
 
                 <button
                   onClick={() => {
-                    const shareText = `I just ${status === "mastery" ? "achieved mastery" : "completed"} DNA Extraction on BioSim! 🧬\n\nPurity: ${a260_280} | Concentration: ${finalConc} ng/µL`;
+                    const shareText = `I just ${status === "mastery" ? "achieved mastery" : "completed"} DNA Extraction on BioSim! 🧬\n\nPurity: ${parseFloat(a260_280).toFixed(2)} | Concentration: ${finalConc} ng/µL`;
                     if (navigator.share) {
                       navigator.share({ text: shareText }).catch(() => {});
                     } else {
@@ -6024,7 +6033,7 @@ export default function App() {
 
       {showSuccessModal && (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-          <div className="bg-gradient-to-br from-slate-900 to-slate-800 border-2 border-emerald-500/50 rounded-3xl shadow-2xl max-w-md w-full p-8 relative animate-in fade-in duration-300">
+          <div className={`bg-gradient-to-br from-slate-900 to-slate-800 border-2 rounded-3xl shadow-2xl max-w-md w-full p-8 relative animate-in fade-in duration-300 ${loggedInModalIsSuccess ? 'border-emerald-500/50' : 'border-amber-500/50'}`}>
             <button
               onClick={() => setShowSuccessModal(false)}
               className="absolute top-4 right-4 text-slate-400 hover:text-white transition-colors"
@@ -6033,28 +6042,31 @@ export default function App() {
             </button>
 
             <div className="text-center space-y-6">
-              <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-emerald-500/20 border-2 border-emerald-500/50 mb-4">
-                <Dna size={40} className="text-emerald-400" />
+              <div className={`inline-flex items-center justify-center w-20 h-20 rounded-full border-2 mb-4 ${loggedInModalIsSuccess ? 'bg-emerald-500/20 border-emerald-500/50' : 'bg-amber-500/20 border-amber-500/50'}`}>
+                <Dna size={40} className={loggedInModalIsSuccess ? 'text-emerald-400' : 'text-amber-400'} />
               </div>
 
               <div>
-                <h2 className="text-2xl font-black text-emerald-400 mb-2 flex items-center justify-center gap-2">
-                  <span>Protocol Logged</span>
+                <h2 className={`text-2xl font-black mb-2 flex items-center justify-center gap-2 ${loggedInModalIsSuccess ? 'text-emerald-400' : 'text-amber-400'}`}>
+                  <span>{loggedInModalIsSuccess ? 'Achievement Saved!' : 'Trial Logged'}</span>
                 </h2>
                 <p className="text-slate-400 text-sm font-mono">
                   ID: {savedRecordId?.substring(0, 8)}...
                 </p>
               </div>
 
-              <div className="bg-slate-800/50 border border-emerald-500/30 rounded-xl p-6 space-y-3">
+              <div className={`bg-slate-800/50 border rounded-xl p-6 space-y-3 ${loggedInModalIsSuccess ? 'border-emerald-500/30' : 'border-amber-500/30'}`}>
                 <p className="text-slate-300 text-sm leading-relaxed">
-                  Your mastery has been verified and synced to the BioSim Research Cloud for instructor review.
+                  {loggedInModalIsSuccess
+                    ? 'You have earned 1 Mastery Point for this protocol. Your achievement has been synced to the BioSim Research Cloud.'
+                    : 'Review the Diagnostic Feedback to understand why the yield was zero before your next attempt.'
+                  }
                 </p>
 
                 <div className="pt-4 border-t border-slate-700">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-slate-400 text-xs uppercase tracking-wider">Final Purity</span>
-                    <span className="text-emerald-400 text-2xl font-black">{a260_280}</span>
+                    <span className={`text-2xl font-black ${loggedInModalIsSuccess ? 'text-emerald-400' : 'text-amber-400'}`}>{parseFloat(a260_280).toFixed(2)}</span>
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-slate-400 text-xs uppercase tracking-wider">Concentration</span>
@@ -6065,7 +6077,7 @@ export default function App() {
 
               <button
                 onClick={() => setShowSuccessModal(false)}
-                className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-4 rounded-xl transition-all uppercase tracking-wider text-sm"
+                className={`w-full font-bold py-4 rounded-xl transition-all uppercase tracking-wider text-sm ${loggedInModalIsSuccess ? 'bg-emerald-600 hover:bg-emerald-500' : 'bg-amber-600 hover:bg-amber-500'} text-white`}
               >
                 Continue
               </button>
@@ -6078,16 +6090,19 @@ export default function App() {
         <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
           <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 relative animate-in fade-in duration-300">
             <div className="text-center space-y-6">
-              <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-green-100 mb-4">
-                <Trophy size={40} className="text-green-600" />
+              <div className={`inline-flex items-center justify-center w-20 h-20 rounded-full mb-4 ${guestModalIsSuccess ? 'bg-green-100' : 'bg-amber-100'}`}>
+                <Trophy size={40} className={guestModalIsSuccess ? 'text-green-600' : 'text-amber-600'} />
               </div>
 
               <div>
                 <h2 className="text-2xl font-bold text-gray-900 mb-2">
-                  Nice work!
+                  {guestModalIsSuccess ? 'Nice work!' : 'Lab Review Required'}
                 </h2>
                 <p className="text-gray-600 text-base">
-                  You've completed the DNA Extraction trial. Sign up free to unlock all simulations and track your progress.
+                  {guestModalIsSuccess
+                    ? "You've mastered the DNA Extraction protocol! Sign up free to save your achievement and unlock advanced simulations."
+                    : "Your extraction resulted in no yield. Create a free account to access detailed protocol guides and try again to improve your skills."
+                  }
                 </p>
               </div>
 

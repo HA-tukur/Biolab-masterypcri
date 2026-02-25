@@ -11,9 +11,14 @@ interface MasteryBadgeProps {
   concentration: number;
   a260_280: number;
   successCount?: number;
+  yield?: number;
+  protocolDeviations?: number;
 }
 
-export function MasteryBadge({ badge, concentration, a260_280, successCount = 0 }: MasteryBadgeProps) {
+export function MasteryBadge({ badge, concentration, a260_280, successCount = 0, yield: yieldValue = 0, protocolDeviations = 0 }: MasteryBadgeProps) {
+  // Success criteria: yield > 0 and protocolDeviations === 0
+  const isSuccess = yieldValue > 0 && protocolDeviations === 0;
+  const isCriticalFailure = yieldValue === 0;
   if (!badge.safetyExcellence && badge.technicalSuccess) {
     return (
       <div className="border-2 rounded-2xl p-6 bg-gradient-to-br from-amber-900/30 to-rose-900/20 border-amber-500">
@@ -66,25 +71,44 @@ export function MasteryBadge({ badge, concentration, a260_280, successCount = 0 
       </div>
     );
   }
+  // Dynamic headline based on performance
+  const getHeadline = () => {
+    if (isCriticalFailure) {
+      return 'Lab Review Required';
+    }
+    if (isSuccess && badge.earned) {
+      return successCount > 0 ? `Mastery x${successCount}` : 'Mastery Achieved!';
+    }
+    if (badge.technicalSuccess && !badge.protocolPrecision) {
+      return 'Technical Success - Protocol Deviations Detected';
+    }
+    if (yieldValue > 0) {
+      return 'DNA Extracted - Optimization Needed';
+    }
+    return 'Experiment Unsuccessful';
+  };
+
   return (
     <div className={`border-2 rounded-2xl p-6 ${
       badge.earned
         ? 'bg-gradient-to-br from-emerald-900/30 to-emerald-800/20 border-emerald-500'
+        : isCriticalFailure
+        ? 'bg-gradient-to-br from-rose-900/30 to-slate-900 border-rose-500'
         : 'bg-slate-900/50 border-slate-700'
     }`}>
       <div className="flex items-start gap-4">
         <div className={`w-16 h-16 rounded-full flex items-center justify-center ${
-          badge.earned ? 'bg-emerald-500/20' : 'bg-slate-800'
+          badge.earned ? 'bg-emerald-500/20' : isCriticalFailure ? 'bg-rose-500/20' : 'bg-slate-800'
         }`}>
-          <Award size={32} className={badge.earned ? 'text-emerald-400' : 'text-slate-500'} />
+          <Award size={32} className={badge.earned ? 'text-emerald-400' : isCriticalFailure ? 'text-rose-400' : 'text-slate-500'} />
         </div>
 
         <div className="flex-1 space-y-4">
           <div>
             <h3 className={`text-xl font-black uppercase tracking-tight ${
-              badge.earned ? 'text-emerald-400' : 'text-slate-400'
+              badge.earned ? 'text-emerald-400' : isCriticalFailure ? 'text-rose-400' : 'text-slate-400'
             }`}>
-              {badge.earned ? (successCount > 0 ? `Mastery x${successCount}` : 'Mastery Achieved') : 'Mastery Badge'}
+              {getHeadline()}
             </h3>
             {successCount > 1 && badge.earned && (
               <p className="text-sm text-emerald-300 mt-1">
@@ -185,6 +209,14 @@ export function MasteryBadge({ badge, concentration, a260_280, successCount = 0 
             <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-lg p-4 mt-4">
               <p className="text-sm text-emerald-300 text-center font-medium">
                 Outstanding work! You have demonstrated mastery of DNA extraction through technical precision, protocol adherence, and safety compliance.
+              </p>
+            </div>
+          )}
+
+          {isCriticalFailure && (
+            <div className="bg-rose-500/10 border border-rose-500/30 rounded-lg p-4 mt-4">
+              <p className="text-sm text-rose-300 text-center font-medium">
+                Your extraction resulted in no DNA yield. Review the Diagnostic Feedback below to identify critical errors and understand proper protocol execution.
               </p>
             </div>
           )}
